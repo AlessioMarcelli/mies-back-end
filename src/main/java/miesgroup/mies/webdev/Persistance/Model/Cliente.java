@@ -10,6 +10,7 @@ public class Cliente {
     private String tipologia;
     private String email;
     private String telefono;
+    //classe agevolazione puo cambiare in futuro
     private int id;
 
     public Cliente() {
