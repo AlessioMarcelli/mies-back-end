@@ -1,6 +1,7 @@
 package miesgroup.mies.webdev.Persistance.Repository;
 
 import jakarta.enterprise.context.ApplicationScoped;
+import jakarta.persistence.EntityNotFoundException;
 import miesgroup.mies.webdev.Persistance.Model.Cliente;
 import miesgroup.mies.webdev.Service.HashCalculator;
 
@@ -39,7 +40,7 @@ public class ClienteRepo {
     public void insert(Cliente nuovoCliente) {
         try (Connection connection = dataSources.getConnection()) {
             try (PreparedStatement statement = connection.prepareStatement(
-                    "INSERT INTO utente (Username, Password, Sede_Legale, Piva, Email, Telefono, Stato) VALUES (?, ?, ?, ?, ?, ?, ?)",
+                    "INSERT INTO utente (Username, Password, Sede_Legale, Piva, Email, Telefono, Stato, Tipologia) VALUES (?, ?, ?, ?, ?, ?, ?, ?)",
                     PreparedStatement.RETURN_GENERATED_KEYS)) {
                 statement.setString(1, nuovoCliente.getUsername());
                 statement.setString(2, nuovoCliente.getPassword());
@@ -48,6 +49,7 @@ public class ClienteRepo {
                 statement.setString(5, nuovoCliente.getEmail());
                 statement.setString(6, nuovoCliente.getTelefono());
                 statement.setString(7, nuovoCliente.getStato());
+                statement.setString(8, nuovoCliente.getTipologia());
                 statement.executeUpdate();
                 ResultSet generatedKeys = statement.getGeneratedKeys();
                 if (generatedKeys.next()) {
@@ -75,6 +77,7 @@ public class ClienteRepo {
                         utente.setSedeLegale(rs.getString("Sede_Legale"));
                         utente.setTelefono(rs.getString("Telefono"));
                         utente.setStato(rs.getString("Stato"));
+                        utente.setTipologia(rs.getString("Tipologia"));
                         return Optional.of(utente);
                     }
                 }
@@ -104,6 +107,22 @@ public class ClienteRepo {
             throw new RuntimeException(e);
         }
         return Optional.empty();
+    }
+
+    public int idUtenteDaIdSessione(int sessionId) {
+        try (Connection connection = dataSources.getConnection()) {
+            try (PreparedStatement statement = connection.prepareStatement("SELECT ID_Utente FROM sessione WHERE ID_Sessione = ?")) {
+                statement.setInt(1, sessionId);
+                ResultSet rs = statement.executeQuery();
+                if (rs.next()) {
+                    return rs.getInt("ID_Utente");
+                } else {
+                    throw new EntityNotFoundException("Non è presente alcuna sessione con id " + sessionId);
+                }
+            }
+        } catch (SQLException e) {
+            throw new RuntimeException(e);
+        }
     }
 
 }

@@ -1,4 +1,4 @@
-package miesgroup.mies.webdev.Persistance;
+package miesgroup.mies.webdev.Persistance.Model;
 
 public class Pod {
     private String id;
@@ -6,6 +6,8 @@ public class Pod {
     private double potenza_Impegnata;
     private double Potenza_Disponibile;
     private int id_utente;//fk
+    private String sede;
+    private String nazione;
 
     public String getId() {
         return id;
@@ -45,5 +47,21 @@ public class Pod {
 
     public void setId_utente(int id_utente) {
         this.id_utente = id_utente;
+    }
+
+    public String getSede() {
+        return sede;
+    }
+
+    public void setSede(String sede) {
+        this.sede = sede;
+    }
+
+    public String getNazione() {
+        return nazione;
+    }
+
+    public void setNazione(String nazione) {
+        this.nazione = nazione;
     }
 }

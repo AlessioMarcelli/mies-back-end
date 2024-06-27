@@ -26,15 +26,17 @@ public class FileRepo {
                 statement.setString(1, pdfFile.getFile_Name());
                 statement.setBytes(2, pdfFile.getFile_Data());
                 statement.executeUpdate();
-                ResultSet generatedKeys = statement.getGeneratedKeys();
-                if (generatedKeys.next()) {
-                    int id = generatedKeys.getInt(1);
-                    pdfFile.setId_File(id);
+                try (ResultSet generatedKeys = statement.getGeneratedKeys()) {
+                    if (generatedKeys.next()) {
+                        int id = generatedKeys.getInt(1);
+                        pdfFile.setId_File(id);
+                    }
                 }
             } catch (SQLException e) {
-                throw new RuntimeException(e);
+                throw new RuntimeException("Error inserting file into database", e);
             }
-
+        } catch (SQLException e) {
+            throw new RuntimeException("Error connecting to database", e);
         }
     }
 

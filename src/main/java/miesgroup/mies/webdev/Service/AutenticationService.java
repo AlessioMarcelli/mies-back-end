@@ -23,7 +23,7 @@ public class AutenticationService {
         this.sessionRepo = sessionRepo;
     }
 
-    public void register(String username, String password, String sedelegale, String pIva, String email, String telefono, String stato) throws ClienteCreationException {
+    public void register(String username, String password, String sedelegale, String pIva, String email, String telefono, String stato,String tipologia) throws ClienteCreationException {
         if (clienteRepo.existsByUsername(username)) {
             throw new ClienteCreationException();
         }
@@ -36,6 +36,7 @@ public class AutenticationService {
         nuovoCliente.setSedeLegale(sedelegale);
         nuovoCliente.setTelefono(telefono);
         nuovoCliente.setStato(stato);
+        nuovoCliente.setTipologia(tipologia);
         clienteRepo.insert(nuovoCliente);
     }
 

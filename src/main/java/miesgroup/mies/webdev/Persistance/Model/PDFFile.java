@@ -9,6 +9,8 @@ public class PDFFile {
 
     private byte[] file_Data;
 
+    private String id_pod;
+
     // Getters and setters
     public int getId_File() {
         return id_File;
@@ -32,5 +34,13 @@ public class PDFFile {
 
     public void setFile_Data(byte[] file_Data) {
         this.file_Data = file_Data;
+    }
+
+    public String getId_pod() {
+        return id_pod;
+    }
+
+    public void setId_pod(String id_pod) {
+        this.id_pod = id_pod;
     }
 }

@@ -9,6 +9,9 @@ public class Bolletta {
     private double f1R;
     private double f2R;
     private double f3R;
+    private double f1P;
+    private double f2P;
+    private double f3P;
     private double TOT_Attiva;
     private double TOT_Reattiva;
     private double Spese_Energia;
@@ -82,6 +85,30 @@ public class Bolletta {
 
     public void setF3R(double f3R) {
         this.f3R = f3R;
+    }
+
+    public double getF1P() {
+        return f1P;
+    }
+
+    public void setF1P(double f1P) {
+        this.f1P = f1P;
+    }
+
+    public double getF2P() {
+        return f2P;
+    }
+
+    public void setF2P(double f2P) {
+        this.f2P = f2P;
+    }
+
+    public double getF3P() {
+        return f3P;
+    }
+
+    public void setF3P(double f3P) {
+        this.f3P = f3P;
     }
 
     public double getTOT_Attiva() {

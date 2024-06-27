@@ -1,9 +1,11 @@
 package miesgroup.mies.webdev.Rest.Model;
 
+import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.ws.rs.FormParam;
 import jakarta.ws.rs.core.MediaType;
 import org.jboss.resteasy.annotations.providers.multipart.PartType;
 
+@ApplicationScoped
 public class FileUploadForm {
 
     @FormParam("fileName")

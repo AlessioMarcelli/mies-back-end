@@ -1,6 +1,7 @@
 package miesgroup.mies.webdev.Service;//package miesgroup.mies.webdev.Service;
 
 import jakarta.enterprise.context.ApplicationScoped;
+import miesgroup.mies.webdev.Persistance.Model.Bolletta;
 import miesgroup.mies.webdev.Persistance.Model.PDFFile;
 import miesgroup.mies.webdev.Persistance.Repository.BollettaRepo;
 import miesgroup.mies.webdev.Persistance.Repository.FileRepo;
@@ -41,6 +42,10 @@ public class FileService {
     }
 
     public void saveFile(String fileName, byte[] fileData) throws SQLException {
+        if (fileName == null || fileData == null || fileData.length == 0) {
+            throw new IllegalArgumentException("File name and data must not be null or empty");
+        }
+
         PDFFile pdfFile = new PDFFile();
         pdfFile.setFile_Name(fileName);
         pdfFile.setFile_Data(fileData);
@@ -64,14 +69,12 @@ public class FileService {
             Element rootElement = xmlDocument.createElement("PDFContent");
             xmlDocument.appendChild(rootElement);
 
-
             String[] lines = text.split("\\r?\\n");
             for (String line : lines) {
                 Element lineElement = xmlDocument.createElement("Line");
                 lineElement.appendChild(xmlDocument.createTextNode(line));
                 rootElement.appendChild(lineElement);
             }
-
             return xmlDocument;
         }
     }
@@ -88,7 +91,7 @@ public class FileService {
 
 
     //ESTRAI VALORI DA XML
-    public ArrayList<Double> extractValuesFromXml(byte[] xmlData) {
+    public void extractValuesFromXml(byte[] xmlData) throws SQLException {
         ArrayList<Double> extractedValues = new ArrayList<>();
         int fasciaOrariaCount = 0; // Contatore per "Fascia oraria"
         int spesaMateriaEnergiaCount = 0; // Contatore per "SPESA PER LA MATERIA ENERGIA"
@@ -114,7 +117,7 @@ public class FileService {
                     // Debug: stampa il contenuto di lineText
                     System.out.println("Processing line: " + lineText);
 
-                    if (lineText.contains("Fascia oraria") && fasciaOrariaCount < 8) {
+                    if (lineText.contains("Fascia oraria") && fasciaOrariaCount < 9) {
                         fasciaOrariaCount++;
                         Double value = extractValueFromLine(lineText);
                         if (value != null) {
@@ -162,22 +165,50 @@ public class FileService {
         } catch (Exception e) {
             e.printStackTrace();
         }
+        insertBolletta(extractedValues);
+    }
 
-        return extractedValues;
+    public void insertBolletta(ArrayList<Double> extractedValues) throws SQLException {
+        Bolletta bolletta = new Bolletta();
+        bolletta.setF1A(extractedValues.get(0));
+        bolletta.setF2A(extractedValues.get(1));
+        bolletta.setF3A(extractedValues.get(2));
+        bolletta.setF1R(extractedValues.get(3));
+        bolletta.setF2R(extractedValues.get(4));
+        bolletta.setF3R(extractedValues.get(5));
+        bolletta.setF1P(extractedValues.get(6));
+        bolletta.setF2P(extractedValues.get(7));
+        bolletta.setF3P(extractedValues.get(8));
+        bolletta.setSpese_Energia(extractedValues.get(9));
+        bolletta.setOneri(extractedValues.get(10));
+        bolletta.setImposte(extractedValues.get(11));
+        bolletta.setTrasporti(extractedValues.get(12));
+        bollettaRepo.insert(bolletta);
     }
 
     private static Double extractValueFromLine(String lineText) {
         try {
+            int contatoreF = 0;
             // Aggiungi log per il debug
             System.out.println("Extracting value from line: " + lineText);
 
             // Rimuovi i valori in formato data
             String regexDateAtStart = "^(\\d{1,2}\\.\\d{1,2}\\.\\d{2,4}\\s+){1,2}";
-            String lineTextWithoutDate1 = lineText.replaceAll(regexDateAtStart, "").trim();
+            String lineTextWithoutDate1 = lineText.replaceAll(regexDateAtStart, "");
 
+            String valueString;
+            if (contatoreF < 9) {
+                contatoreF++;
+                // Rimuove la prima cifra numerica dopo la lettera "F"
+                String remuveAfterF = lineTextWithoutDate1.replaceFirst("F\\d", "F");
 
-            // Rimuove tutto tranne numeri, virgole, punti e segni meno
-            String valueString = lineTextWithoutDate1.replaceAll("[^\\d.,-]", "").replace("€", "");
+                // Rimuove tutto tranne numeri, virgole, punti e segni meno
+                valueString = remuveAfterF.replaceAll("[^\\d.,-]", "").replace("€", "");
+            } else {
+                // Rimuove tutto tranne numeri, virgole, punti e segni meno
+                valueString = lineTextWithoutDate1.replaceAll("[^\\d.,-]", "").replace("€", "");
+            }
+
 
             // Sostituisce le virgole con punti per la conversione
             valueString = valueString.replace(".", "");

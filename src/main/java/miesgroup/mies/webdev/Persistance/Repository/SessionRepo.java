@@ -21,7 +21,7 @@ public class SessionRepo {
     public int insertSession(int idUtente) throws SQLException {
 
         try (Connection connection = dataSources.getConnection()) {
-            try (PreparedStatement statement = connection.prepareStatement("INSERT INTO sessione (Id_utente) VALUES (?)", PreparedStatement.RETURN_GENERATED_KEYS)) {
+            try (PreparedStatement statement = connection.prepareStatement("INSERT INTO sessione (id_utente) VALUES (?)", PreparedStatement.RETURN_GENERATED_KEYS)) {
                 statement.setInt(1, idUtente);
                 statement.executeUpdate();
                 ResultSet generatedKeys = statement.getGeneratedKeys();
@@ -36,13 +36,13 @@ public class SessionRepo {
 
     public Optional<Sessione> getSessionByUserId(int userId) {
         try (Connection conn = dataSources.getConnection()) {
-            try (PreparedStatement ps = conn.prepareStatement("SELECT * FROM sessione WHERE Id_utente = ?")) {
+            try (PreparedStatement ps = conn.prepareStatement("SELECT * FROM sessione WHERE id_utente = ?")) {
                 ps.setInt(1, userId);
                 try (ResultSet rs = ps.executeQuery()) {
                     if (rs.next()) {
                         Sessione sessione = new Sessione();
                         sessione.setId(rs.getInt("Id_Sessione"));
-                        sessione.setUtenteId(rs.getInt("Id_Utente"));
+                        sessione.setUtenteId(rs.getInt("id_Utente"));
                         sessione.setData_Sessione(rs.getTimestamp("Data_Sessione"));
                         return Optional.of(sessione);
                     }
@@ -66,5 +66,21 @@ public class SessionRepo {
             throw new RuntimeException(e);
         }
         return sessionId;
+    }
+
+    public Integer find(int idSessione) {
+        try (Connection connsessione = dataSources.getConnection()) {
+            try(PreparedStatement statement = connsessione.prepareStatement("SELECT id_utente FROM sessione WHERE Id_Sessione = ?")) {
+                statement.setInt(1, idSessione);
+                try (ResultSet resultSet = statement.executeQuery()) {
+                    if (resultSet.next()) {
+                        return resultSet.getInt("id_utente");
+                    }
+                }
+            }
+        } catch (SQLException e) {
+            throw new RuntimeException(e);
+        }
+        return null;
     }
 }
