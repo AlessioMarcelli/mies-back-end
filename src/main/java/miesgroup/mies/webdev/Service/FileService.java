@@ -13,6 +13,7 @@ import javax.xml.parsers.DocumentBuilderFactory;
 import javax.xml.parsers.ParserConfigurationException;
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
+import java.sql.Date;
 import java.sql.SQLException;
 import javax.xml.transform.OutputKeys;
 import javax.xml.transform.Transformer;
@@ -28,7 +29,12 @@ import org.w3c.dom.Node;
 import org.w3c.dom.NodeList;
 
 import java.io.InputStream;
+import java.text.ParseException;
+import java.text.SimpleDateFormat;
 import java.util.ArrayList;
+
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 @ApplicationScoped
 public class FileService {
@@ -52,9 +58,9 @@ public class FileService {
         fileRepo.insert(pdfFile);
     }
 
-    public PDFFile getFile(int id) {
+/*    public PDFFile getFile(int id) {
         return fileRepo.find(id);
-    }
+    }*/
 
     //CONVERTI FILE IN XML
     public Document convertPdfToXml(byte[] pdfData) throws IOException, ParserConfigurationException {
@@ -91,13 +97,19 @@ public class FileService {
 
 
     //ESTRAI VALORI DA XML
-    public void extractValuesFromXml(byte[] xmlData) throws SQLException {
+    public void extractValuesFromXml(byte[] xmlData,String idPod) throws SQLException {
         ArrayList<Double> extractedValues = new ArrayList<>();
+        String nomeBolletta = "";
+        Date periodoInizio = null;
+        Date periodoFine = null;
+
         int fasciaOrariaCount = 0; // Contatore per "Fascia oraria"
         int spesaMateriaEnergiaCount = 0; // Contatore per "SPESA PER LA MATERIA ENERGIA"
         int spesaTrasportoGestioneContatoreCount = 0; // Contatore per "SPESA PER IL TRASPORTO E LA GESTIONE DEL CONTATORE"
         int spesaOneriSistemaCount = 0; // Contatore per "SPESA PER ONERI DI SISTEMA"
         int totaleImposteCount = 0; // Contatore per "TOTALE IMPOSTE"
+        int NomeBolletta = 0; // Contatore per "Nome Bolletta"
+        int estrazioneDate = 0; // Contatore per "Data"
 
         try {
             DocumentBuilderFactory factory = DocumentBuilderFactory.newInstance();
@@ -114,11 +126,18 @@ public class FileService {
                     Element lineElement = (Element) lineNode;
                     String lineText = lineElement.getTextContent();
 
-                    // Debug: stampa il contenuto di lineText
-                    System.out.println("Processing line: " + lineText);
-
+                    if (lineText.contains("Bolletta") && NomeBolletta < 2) {
+                        NomeBolletta++;
+                        nomeBolletta = extractBollettaNumero(lineText);
+                    }
                     if (lineText.contains("Fascia oraria") && fasciaOrariaCount < 9) {
                         fasciaOrariaCount++;
+                        ArrayList<Date> dates = extractDates(lineText);
+                        if (dates.size() == 2 && estrazioneDate < 1) {
+                            estrazioneDate++;
+                            periodoInizio = dates.get(0);
+                            periodoFine = dates.get(1);
+                        }
                         Double value = extractValueFromLine(lineText);
                         if (value != null) {
                             extractedValues.add(value);
@@ -165,11 +184,14 @@ public class FileService {
         } catch (Exception e) {
             e.printStackTrace();
         }
-        insertBolletta(extractedValues);
+        insertBolletta(extractedValues, nomeBolletta, periodoInizio, periodoFine, idPod);
     }
 
-    public void insertBolletta(ArrayList<Double> extractedValues) throws SQLException {
+    public void insertBolletta(ArrayList<Double> extractedValues, String nomeBolletta, Date periodoInizio, Date periodoFine,String idPod) throws SQLException {
         Bolletta bolletta = new Bolletta();
+        bolletta.setNomeBolletta(nomeBolletta);
+        bolletta.setPeriodoInizio(periodoInizio);
+        bolletta.setPeriodoFine(periodoFine);
         bolletta.setF1A(extractedValues.get(0));
         bolletta.setF2A(extractedValues.get(1));
         bolletta.setF3A(extractedValues.get(2));
@@ -183,7 +205,38 @@ public class FileService {
         bolletta.setOneri(extractedValues.get(10));
         bolletta.setImposte(extractedValues.get(11));
         bolletta.setTrasporti(extractedValues.get(12));
+        bolletta.setId_pod(idPod);
         bollettaRepo.insert(bolletta);
+    }
+
+    public static String extractBollettaNumero(String lineText) {
+        Pattern pattern = Pattern.compile("Bolletta n\\. (\\d+)");
+        Matcher matcher = pattern.matcher(lineText);
+
+        if (matcher.find()) {
+            return matcher.group(1);
+        }
+
+        return null;
+    }
+
+    public static ArrayList<Date> extractDates(String lineText) {
+        ArrayList<Date> dates = new ArrayList<>();
+        Pattern datePattern = Pattern.compile("\\d{2}\\.\\d{2}\\.\\d{4}");
+        Matcher matcher = datePattern.matcher(lineText);
+        SimpleDateFormat dateFormat = new SimpleDateFormat("dd.MM.yyyy");
+
+        while (matcher.find()) {
+            String dateString = matcher.group();
+            try {
+                Date date = new Date(dateFormat.parse(dateString).getTime());
+                dates.add(date);
+            } catch (ParseException e) {
+                e.printStackTrace();
+            }
+        }
+
+        return dates;
     }
 
     private static Double extractValueFromLine(String lineText) {

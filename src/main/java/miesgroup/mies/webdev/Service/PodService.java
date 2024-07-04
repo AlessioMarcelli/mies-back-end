@@ -3,7 +3,7 @@ package miesgroup.mies.webdev.Service;
 import jakarta.enterprise.context.ApplicationScoped;
 import miesgroup.mies.webdev.Persistance.Model.Pod;
 import miesgroup.mies.webdev.Persistance.Repository.PodRepo;
-import miesgroup.mies.webdev.Rest.SessionService;
+import miesgroup.mies.webdev.Persistance.Repository.SessionRepo;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 import org.w3c.dom.Node;
@@ -23,16 +23,19 @@ public class PodService {
 
     private final PodRepo podRepo;
     private final SessionService sessionService;
+    private final SessionRepo sessionRepo;
 
-    public PodService(PodRepo podRepo, SessionService sessionService) {
+    public PodService(PodRepo podRepo, SessionService sessionService, SessionRepo sessionRepo) {
         this.podRepo = podRepo;
         this.sessionService = sessionService;
+        this.sessionRepo = sessionRepo;
     }
 
-    public void extractValuesFromXml(byte[] xmlData, int utente) {
+    public String extractValuesFromXml(byte[] xmlData, int sessione) {
         ArrayList<Double> extractedValues = new ArrayList<>();
         String id_pod = "";
-        int id_utente = sessionService.trovaUtentebBySessione(utente);
+        int id_utente = sessionService.trovaUtentebBySessione(sessione);
+        boolean esiste = false;
         try {
             DocumentBuilderFactory factory = DocumentBuilderFactory.newInstance();
             DocumentBuilder builder = factory.newDocumentBuilder();
@@ -41,45 +44,49 @@ public class PodService {
 
             NodeList lineNodes = document.getElementsByTagName("Line");
             int estrai = 0;
-            for (int i = 0; i < lineNodes.getLength(); i++) {
+            for (int i = 0; i < lineNodes.getLength() && !esiste; i++) {
                 Node lineNode = lineNodes.item(i);
                 if (lineNode.getNodeType() == Node.ELEMENT_NODE) {
                     Element lineElement = (Element) lineNode;
                     String lineText = lineElement.getTextContent();
 
-                    if (lineText.contains("POD") && estrai < 2) {
+                    if (lineText.contains("POD") && estrai < 1) {
                         Node LineNode = lineNodes.item(i + 1);
                         Element LineElement = (Element) LineNode;
                         id_pod = LineElement.getTextContent();
                     }
-                    if (lineText.contains("Tensione di alimentazione") || lineText.contains("Potenza impegnata") || lineText.contains("Potenza disponibile") && estrai < 3) {
-                        estrai++;
-                        if (i + 1 < lineNodes.getLength()) {
-                            Node nextLineNode = lineNodes.item(i + 1);
-                            if (nextLineNode.getNodeType() == Node.ELEMENT_NODE) {
-                                Element nextLineElement = (Element) nextLineNode;
-                                String nextLineText = nextLineElement.getTextContent();
+                    if (podRepo.verificaSePodEsiste(id_pod, id_utente) == null) {
+                        if (lineText.contains("Tensione di alimentazione") || lineText.contains("Potenza impegnata") || lineText.contains("Potenza disponibile") && estrai < 3) {
+                            estrai++;
+                            if (i + 1 < lineNodes.getLength()) {
+                                Node nextLineNode = lineNodes.item(i + 1);
+                                if (nextLineNode.getNodeType() == Node.ELEMENT_NODE) {
+                                    Element nextLineElement = (Element) nextLineNode;
+                                    String nextLineText = nextLineElement.getTextContent();
 
-                                // Rimuovi i valori in formato data
-                                String regexDateAtStart = "^(\\d{1,2}\\.\\d{1,2}\\.\\d{2,4}\\s+){1,2}";
-                                String lineTextWithoutDate = nextLineText.replaceAll(regexDateAtStart, "").trim();
+                                    // Rimuovi i valori in formato data
+                                    String regexDateAtStart = "^(\\d{1,2}\\.\\d{1,2}\\.\\d{2,4}\\s+){1,2}";
+                                    String lineTextWithoutDate = nextLineText.replaceAll(regexDateAtStart, "").trim();
 
-                                // Rimuove tutto tranne numeri, virgole, punti e segni meno
-                                String valueString = lineTextWithoutDate.replaceAll("[^\\d.,-]", "").replace("€", "");
+                                    // Rimuove tutto tranne numeri, virgole, punti e segni meno
+                                    String valueString = lineTextWithoutDate.replaceAll("[^\\d.,-]", "").replace("€", "");
 
-                                // Sostituisce le virgole con punti per la conversione
-                                valueString = valueString.replace(".", "");
-                                valueString = valueString.replace(",", ".");
+                                    // Sostituisce le virgole con punti per la conversione
+                                    valueString = valueString.replace(".", "");
+                                    valueString = valueString.replace(",", ".");
 
-                                try {
-                                    Double value = Double.parseDouble(valueString);
-                                    extractedValues.add(value);
-                                } catch (NumberFormatException e) {
-                                    System.err.println("Error parsing value: " + nextLineText);
+                                    try {
+                                        Double value = Double.parseDouble(valueString);
+                                        extractedValues.add(value);
+                                    } catch (NumberFormatException e) {
+                                        System.err.println("Error parsing value: " + nextLineText);
+                                    }
                                 }
                             }
                         }
-
+                    } else {
+                        esiste = true;
+                        System.err.println("Pod già esistente" + podRepo.verificaSePodEsiste(id_pod, id_utente));
                     }
                 }
             }
@@ -87,7 +94,9 @@ public class PodService {
         } catch (SAXException | IOException | ParserConfigurationException e) {
             e.printStackTrace();
         }
+        return id_pod;
     }
+
 
     public void creaPod(ArrayList<Double> extractedValues, int id_utente, String id_pod) {
         Pod pod = new Pod();
@@ -99,11 +108,15 @@ public class PodService {
         podRepo.insert(pod);
     }
 
-    public ArrayList<Pod> tutti(int id_utente) {
-        return podRepo.findAll(id_utente);
+    public ArrayList<Pod> tutti(int id_sessione) {
+        return podRepo.findAll(sessionRepo.find(id_sessione));
     }
 
     public Pod getPod(String id, int id_utente) {
-        return podRepo.cercaIdPod(id, id_utente);
+        return podRepo.cercaIdPod(id, sessionRepo.find(id_utente));
+    }
+
+    public void addSedeNazione(String idPod, String sede, String nazione, int idUtente) {
+        podRepo.aggiungiSedeNazione(idPod, sede, nazione, sessionRepo.find(idUtente));
     }
 }

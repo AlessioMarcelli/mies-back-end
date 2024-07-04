@@ -12,14 +12,14 @@ import java.sql.SQLException;
 @ApplicationScoped
 public class FileRepo {
 
-    private final DataSource dataSources;
+    private final DataSource dataSource;
 
     public FileRepo(DataSource dataSources) {
-        this.dataSources = dataSources;
+        this.dataSource = dataSources;
     }
 
     public void insert(PDFFile pdfFile) throws SQLException {
-        try (Connection connection = dataSources.getConnection()) {
+        try (Connection connection = dataSource.getConnection()) {
             try (PreparedStatement statement = connection.prepareStatement(
                     "INSERT INTO filepdf (File_Name, file_Data) VALUES (?, ?)",
                     PreparedStatement.RETURN_GENERATED_KEYS)) {
@@ -40,8 +40,8 @@ public class FileRepo {
         }
     }
 
-    public PDFFile find(int id) {
-        try (Connection connection = dataSources.getConnection()) {
+/*    public PDFFile find(int id) {
+        try (Connection connection = dataSource.getConnection()) {
             try (PreparedStatement statement = connection.prepareStatement(
                     "SELECT Id_File, File_Name, file_Data FROM filepdf WHERE Id_File = ?")) {
                 statement.setInt(1, id);
@@ -61,5 +61,6 @@ public class FileRepo {
             throw new RuntimeException(e);
         }
         return null;
-    }
+    }*/
+
 }

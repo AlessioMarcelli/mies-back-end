@@ -74,7 +74,8 @@ public class SessionRepo {
                 statement.setInt(1, idSessione);
                 try (ResultSet resultSet = statement.executeQuery()) {
                     if (resultSet.next()) {
-                        return resultSet.getInt("id_utente");
+                        int idUtente = resultSet.getInt("id_utente");
+                        return idUtente;
                     }
                 }
             }

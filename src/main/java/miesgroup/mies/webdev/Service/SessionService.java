@@ -1,4 +1,4 @@
-package miesgroup.mies.webdev.Rest;
+package miesgroup.mies.webdev.Service;
 
 import jakarta.enterprise.context.ApplicationScoped;
 import miesgroup.mies.webdev.Persistance.Repository.SessionRepo;

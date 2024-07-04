@@ -39,7 +39,7 @@ public class PodRepo {
         try (Connection connection = dataSources.getConnection();) {
             //Query per selezionare tutti i pod
             try (PreparedStatement statement = connection.prepareStatement(
-                    "SELECT Id_Pod,Tensione_Alimentazione,Potenza_Impegnata,Potenza_Disponibile,Sede,Nazione FROM pod WHERE id_utente = ?");) {
+                    "SELECT Id_Pod,id_utente,Tensione_Alimentazione,Potenza_Impegnata,Potenza_Disponibile,Sede,Nazione FROM pod WHERE id_utente = ?");) {
                 statement.setInt(1, id_utente);
                 ResultSet resultSet = statement.executeQuery();
                 ArrayList<Pod> elenco = new ArrayList<>();
@@ -60,7 +60,7 @@ public class PodRepo {
         }
     }
 
-    //devo far ritonare una lista in quanto potrebbero essere mostrati più risultati
+    //fix id_utente
     public Pod cercaIdPod(String id, int id_utente) {
         try (Connection connection = dataSources.getConnection()) {
             try (PreparedStatement statement = connection.prepareStatement(
@@ -80,6 +80,37 @@ public class PodRepo {
                 }
                 return null;
 
+            }
+        } catch (SQLException e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+    public String verificaSePodEsiste(String id_Pod, int id_utente) {
+        try (Connection connessione = dataSources.getConnection()) {
+            try (PreparedStatement statement = connessione.prepareStatement("SELECT Id_Pod FROM pod WHERE Id_Pod = ? AND id_utente = ?")) {
+                statement.setString(1, id_Pod);
+                statement.setInt(2, id_utente);
+                try (ResultSet resultSet = statement.executeQuery()) {
+                    if (resultSet.next()) {
+                        return resultSet.getString("Id_Pod");
+                    }
+                }
+            }
+        } catch (SQLException e) {
+            throw new RuntimeException(e);
+        }
+        return null;
+    }
+
+    public void aggiungiSedeNazione(String idPod, String sede, String nazione, int id_utente) {
+        try (Connection connection = dataSources.getConnection()) {
+            try (PreparedStatement statemtment = connection.prepareStatement("UPDATE pod SET Sede = ?, Nazione = ? WHERE Id_Pod = ? AND id_utente = ?")) {
+                statemtment.setString(1, sede);
+                statemtment.setString(2, nazione);
+                statemtment.setString(3, idPod);
+                statemtment.setInt(4, id_utente);
+                statemtment.executeUpdate();
             }
         } catch (SQLException e) {
             throw new RuntimeException(e);

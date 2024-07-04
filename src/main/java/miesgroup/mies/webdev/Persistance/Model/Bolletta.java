@@ -1,8 +1,11 @@
 package miesgroup.mies.webdev.Persistance.Model;
 
+import java.sql.Date;
+
 public class Bolletta {
     private int id;
     private String id_pod;
+    private String NomeBolletta;
     private double f1A;
     private double f2A;
     private double f3A;
@@ -22,6 +25,8 @@ public class Bolletta {
     private double grandezzeTrasporti;
     private double penali;
     private double altro;
+    private Date PeriodoInizio;
+    private Date PeriodoFine;
 
     public int getId() {
         return id;
@@ -189,5 +194,29 @@ public class Bolletta {
 
     public void setAltro(double altro) {
         this.altro = altro;
+    }
+
+    public String getNomeBolletta() {
+        return NomeBolletta;
+    }
+
+    public void setNomeBolletta(String nomeBolletta) {
+        NomeBolletta = nomeBolletta;
+    }
+
+    public Date getPeriodoInizio() {
+        return PeriodoInizio;
+    }
+
+    public void setPeriodoInizio(Date periodoInizio) {
+        PeriodoInizio = periodoInizio;
+    }
+
+    public Date getPeriodoFine() {
+        return PeriodoFine;
+    }
+
+    public void setPeriodoFine(Date periodoFine) {
+        PeriodoFine = periodoFine;
     }
 }
