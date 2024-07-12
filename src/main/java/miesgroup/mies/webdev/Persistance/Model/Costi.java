@@ -6,7 +6,7 @@ public class Costi {
     private String unitaMisura;
     private int trimestre;
     private String anno;
-    private double costo;
+    private float costo;
     private String categoria;
 
     public int getId() {
@@ -49,11 +49,11 @@ public class Costi {
         this.anno = anno;
     }
 
-    public double getCosto() {
+    public float getCosto() {
         return costo;
     }
 
-    public void setCosto(double costo) {
+    public void setCosto(float costo) {
         this.costo = costo;
     }
 

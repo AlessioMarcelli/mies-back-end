@@ -86,7 +86,8 @@ public class PodService {
                         }
                     } else {
                         esiste = true;
-                        System.err.println("Pod già esistente" + podRepo.verificaSePodEsiste(id_pod, id_utente));
+                        id_pod = podRepo.verificaSePodEsiste(id_pod, id_utente);
+                        return id_pod;
                     }
                 }
             }
@@ -105,6 +106,13 @@ public class PodService {
         pod.setTensione_Alimentazione(extractedValues.get(0));
         pod.setPotenza_Impegnata(extractedValues.get(1));
         pod.setPotenza_Disponibile(extractedValues.get(2));
+        if (pod.getTensione_Alimentazione() <= 1000.0) {
+            pod.setTipo_tensione("Bassa");
+        } else if (pod.getTensione_Alimentazione() > 1000.0 && pod.getTensione_Alimentazione() <= 35000.0) {
+            pod.setTipo_tensione("Media");
+        } else {
+            pod.setTipo_tensione("Alta");
+        }
         podRepo.insert(pod);
     }
 

@@ -18,8 +18,19 @@ public class FileRepo {
         this.dataSource = dataSources;
     }
 
-    public void insert(PDFFile pdfFile) throws SQLException {
+    public int insert(PDFFile pdfFile) throws SQLException {
         try (Connection connection = dataSource.getConnection()) {
+            // Controlla se il nome del file esiste già
+            try (PreparedStatement checkStatement = connection.prepareStatement(
+                    "SELECT COUNT(*) FROM filepdf WHERE File_Name = ?")) {
+                checkStatement.setString(1, pdfFile.getFile_Name());
+                try (ResultSet resultSet = checkStatement.executeQuery()) {
+                    if (resultSet.next() && resultSet.getInt(1) > 0) {
+                        throw new RuntimeException("File name already exists in the database");
+                    }
+                }
+            }
+            // Inserisci il nuovo file
             try (PreparedStatement statement = connection.prepareStatement(
                     "INSERT INTO filepdf (File_Name, file_Data) VALUES (?, ?)",
                     PreparedStatement.RETURN_GENERATED_KEYS)) {
@@ -38,29 +49,22 @@ public class FileRepo {
         } catch (SQLException e) {
             throw new RuntimeException("Error connecting to database", e);
         }
+        return pdfFile.getId_File();
     }
 
-/*    public PDFFile find(int id) {
+
+    public void abbinaPod(int idFile, String idPod) {
         try (Connection connection = dataSource.getConnection()) {
             try (PreparedStatement statement = connection.prepareStatement(
-                    "SELECT Id_File, File_Name, file_Data FROM filepdf WHERE Id_File = ?")) {
-                statement.setInt(1, id);
-                try (ResultSet resultSet = statement.executeQuery()) {
-                    if (resultSet.next()) {
-                        PDFFile pdfFile = new PDFFile();
-                        pdfFile.setId_File(resultSet.getInt("Id_File"));
-                        pdfFile.setFile_Name(resultSet.getString("File_Name"));
-                        pdfFile.setFile_Data(resultSet.getBytes("file_Data"));
-                        return pdfFile;
-                    }
-                }
+                    "UPDATE filepdf SET id_pod = ? WHERE id_File = ?")) {
+                statement.setString(1, idPod);
+                statement.setInt(2, idFile);
+                statement.executeUpdate();
             } catch (SQLException e) {
-                throw new RuntimeException(e);
+                throw new RuntimeException("Error updating file in database", e);
             }
         } catch (SQLException e) {
-            throw new RuntimeException(e);
+            throw new RuntimeException("Error connecting to database", e);
         }
-        return null;
-    }*/
-
+    }
 }

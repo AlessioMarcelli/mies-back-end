@@ -32,5 +32,4 @@ public class CostiResource {
         costiService.createCosto(costo.getDescrizione(), costo.getCategoria(), costo.getUnitaMisura(), costo.getTrimestre(), costo.getAnno(), costo.getCosto());
         return Response.ok().build();
     }
-
 }

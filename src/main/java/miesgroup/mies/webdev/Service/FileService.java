@@ -31,8 +31,12 @@ import org.w3c.dom.NodeList;
 import java.io.InputStream;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
+import java.time.LocalDate;
+import java.time.ZoneId;
+import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 
+import java.util.Locale;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -41,26 +45,24 @@ public class FileService {
 
     private final FileRepo fileRepo;
     private final BollettaRepo bollettaRepo;
+    private final BollettaService bollettaService;
 
-    public FileService(FileRepo fileRepo, BollettaRepo bollettaRepo) {
+    public FileService(FileRepo fileRepo, BollettaRepo bollettaRepo, BollettaService bollettaService) {
         this.fileRepo = fileRepo;
         this.bollettaRepo = bollettaRepo;
+        this.bollettaService = bollettaService;
     }
 
-    public void saveFile(String fileName, byte[] fileData) throws SQLException {
+    public int saveFile(String fileName, byte[] fileData) throws SQLException {
         if (fileName == null || fileData == null || fileData.length == 0) {
             throw new IllegalArgumentException("File name and data must not be null or empty");
         }
-
         PDFFile pdfFile = new PDFFile();
         pdfFile.setFile_Name(fileName);
         pdfFile.setFile_Data(fileData);
-        fileRepo.insert(pdfFile);
+        return fileRepo.insert(pdfFile);
     }
 
-/*    public PDFFile getFile(int id) {
-        return fileRepo.find(id);
-    }*/
 
     //CONVERTI FILE IN XML
     public Document convertPdfToXml(byte[] pdfData) throws IOException, ParserConfigurationException {
@@ -97,7 +99,7 @@ public class FileService {
 
 
     //ESTRAI VALORI DA XML
-    public void extractValuesFromXml(byte[] xmlData,String idPod) throws SQLException {
+    public void extractValuesFromXml(byte[] xmlData, String idPod) throws SQLException {
         ArrayList<Double> extractedValues = new ArrayList<>();
         String nomeBolletta = "";
         Date periodoInizio = null;
@@ -126,7 +128,7 @@ public class FileService {
                     Element lineElement = (Element) lineNode;
                     String lineText = lineElement.getTextContent();
 
-                    if (lineText.contains("Bolletta") && NomeBolletta < 2) {
+                    if (lineText.contains("Bolletta") && NomeBolletta < 1) {
                         NomeBolletta++;
                         nomeBolletta = extractBollettaNumero(lineText);
                     }
@@ -181,13 +183,15 @@ public class FileService {
                     }
                 }
             }
+            insertBolletta(extractedValues, nomeBolletta, periodoInizio, periodoFine, idPod);
+            convertiDatainMese(periodoFine,nomeBolletta);
+            bollettaService.A2AVerificaDispacciamento(nomeBolletta, idPod, extractedValues.get(9));
         } catch (Exception e) {
             e.printStackTrace();
         }
-        insertBolletta(extractedValues, nomeBolletta, periodoInizio, periodoFine, idPod);
     }
 
-    public void insertBolletta(ArrayList<Double> extractedValues, String nomeBolletta, Date periodoInizio, Date periodoFine,String idPod) throws SQLException {
+    public void insertBolletta(ArrayList<Double> extractedValues, String nomeBolletta, Date periodoInizio, Date periodoFine, String idPod) throws SQLException {
         Bolletta bolletta = new Bolletta();
         bolletta.setNomeBolletta(nomeBolletta);
         bolletta.setPeriodoInizio(periodoInizio);
@@ -206,7 +210,7 @@ public class FileService {
         bolletta.setImposte(extractedValues.get(11));
         bolletta.setTrasporti(extractedValues.get(12));
         bolletta.setId_pod(idPod);
-        bollettaRepo.insert(bolletta);
+        bollettaRepo.A2Ainsert(bolletta);
     }
 
     public static String extractBollettaNumero(String lineText) {
@@ -276,4 +280,19 @@ public class FileService {
         }
     }
 
+    public void abbinaPod(int idFile, String idPod) {
+        fileRepo.abbinaPod(idFile, idPod);
+    }
+
+    public void convertiDatainMese(Date dataFine, String nomeBolletta) throws SQLException {
+        // Converte java.util.Date in java.time.LocalDate
+        LocalDate localDate = dataFine.toLocalDate();
+
+        // Definisci il formato del mese in italiano
+        DateTimeFormatter formatter = DateTimeFormatter.ofPattern("MMMM", Locale.ITALIAN);
+
+        // Estrai il nome del mese
+        String nomeMese = localDate.format(formatter);
+        bollettaRepo.updateMeseBolletta(nomeMese, nomeBolletta);
+    }
 }

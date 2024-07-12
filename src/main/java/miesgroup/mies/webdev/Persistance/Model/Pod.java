@@ -8,6 +8,7 @@ public class Pod {
     private int id_utente;//fk
     private String sede;
     private String nazione;
+    private String tipo_tensione;
 
     public String getId() {
         return id;
@@ -63,5 +64,13 @@ public class Pod {
 
     public void setNazione(String nazione) {
         this.nazione = nazione;
+    }
+
+    public String getTipo_tensione() {
+        return tipo_tensione;
+    }
+
+    public void setTipo_tensione(String tipo_tensione) {
+        this.tipo_tensione = tipo_tensione;
     }
 }
