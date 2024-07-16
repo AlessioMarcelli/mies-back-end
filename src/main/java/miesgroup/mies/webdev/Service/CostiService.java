@@ -15,20 +15,19 @@ public class CostiService {
         this.costiRepo = costiRepo;
     }
 
-    public void createCosto(String descrizione, String categoria, String unitaMisura, Integer trimestre, String anno, float valore) throws SQLException {
+    public void createCosto(String descrizione, String categoria, String unitaMisura, Integer trimestre, String anno, float valore, String tipoTensione, String classeAgevolazione) throws SQLException {
         Costi costo = new Costi();
         costo.setDescrizione(descrizione);
         costo.setCategoria(categoria);
         costo.setCosto(valore);
         costo.setUnitaMisura(unitaMisura);
-        if (trimestre == 0) {
-            costo.setAnno(anno);
-            costiRepo.aggiungiCostoAnnuale(costo);
-        } else {
-            costo.setTrimestre(trimestre);
-            costiRepo.aggiungiCostoTrimestrale(costo);
-        }
+        costo.setTrimestre(trimestre);
+        costo.setAnno(anno);
+        costo.setTipoTensione(tipoTensione);
+        costo.setClasseAgevolazione(classeAgevolazione);
+        costiRepo.aggiungiCosto(costo);
     }
+
 
     public ArrayList<Costi> getAllCosti() {
         return costiRepo.getAllCosti();

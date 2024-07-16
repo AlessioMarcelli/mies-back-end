@@ -10,8 +10,10 @@ public class Cliente {
     private String tipologia;
     private String email;
     private String telefono;
-    //classe agevolazione puo cambiare in futuro
+    private String classeAgevolazione;
+    private int loginEffettuato;
     private int id;
+
 
     public Cliente() {
     }
@@ -78,6 +80,22 @@ public class Cliente {
 
     public void setEmail(String email) {
         this.email = email;
+    }
+
+    public String getClasseAgevolazione() {
+        return classeAgevolazione;
+    }
+
+    public void setClasseAgevolazione(String classeAgevolazione) {
+        this.classeAgevolazione = classeAgevolazione;
+    }
+
+    public int getLoginEffettuato() {
+        return loginEffettuato;
+    }
+
+    public void setLoginEffettuato(int loginEffettuato) {
+        this.loginEffettuato = loginEffettuato;
     }
 
     public int getId() {

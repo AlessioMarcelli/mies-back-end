@@ -172,4 +172,214 @@ public class BollettaRepo {
         }
         return null;
     }
+
+    public Double getPotenzaImpegnata(String idPod) {
+        try (Connection connection = dataSource.getConnection()) {
+            try (PreparedStatement statemente = connection.prepareStatement("SELECT Potenza_Impegnata FROM pod WHERE Id_Pod = ?")) {
+                statemente.setString(1, idPod);
+                try (ResultSet resultSet = statemente.executeQuery()) {
+                    if (resultSet.next()) {
+                        return resultSet.getDouble(1);
+                    }
+                }
+
+            }
+        } catch (SQLException e) {
+            throw new RuntimeException(e);
+        }
+        return null;
+    }
+
+    public Double getCostiSotto100() {
+        try (Connection connection = dataSource.getConnection()) {
+            try (PreparedStatement statement = connection.prepareStatement("SELECT SUM(Costo)AS TotaleCosto FROM dettaglio_costo WHERE Categoria = 'trasporti'AND Intevallo_Potenza = '<100KW'")) {
+                try (ResultSet resultSet = statement.executeQuery()) {
+                    if (resultSet.next()) {
+                        return resultSet.getDouble(1);
+                    }
+                }
+
+            }
+
+        } catch (SQLException e) {
+            throw new RuntimeException(e);
+        }
+        return null;
+    }
+
+    public Double getCostiSotto500() {
+        try (Connection connection = dataSource.getConnection()) {
+            try (PreparedStatement statement = connection.prepareStatement("SELECT SUM(Costo)AS TotaleCosto FROM dettaglio_costo WHERE Categoria = 'trasporti'AND Intevallo_Potenza = '100-500KW'")) {
+                try (ResultSet resultSet = statement.executeQuery()) {
+                    if (resultSet.next()) {
+                        return resultSet.getDouble(1);
+                    }
+                }
+
+            }
+
+        } catch (SQLException e) {
+            throw new RuntimeException(e);
+        }
+        return null;
+    }
+
+    public Double getCostiSopra500() {
+        try (Connection connection = dataSource.getConnection()) {
+            try (PreparedStatement statement = connection.prepareStatement("SELECT SUM(Costo)AS TotaleCosto FROM dettaglio_costo WHERE Categoria = 'trasporti'AND Intevallo_Potenza = '>500KW'")) {
+                try (ResultSet resultSet = statement.executeQuery()) {
+                    if (resultSet.next()) {
+                        return resultSet.getDouble(1);
+                    }
+                }
+
+            }
+
+        } catch (SQLException e) {
+            throw new RuntimeException(e);
+        }
+        return null;
+    }
+
+    public double getF1(String nomeBolletta) {
+        try (Connection connection = dataSource.getConnection()) {
+            try (PreparedStatement statement = connection.prepareStatement("SELECT F1_Attiva FROM bolletta_pod WHERE Nome_Bolletta = ?")) {
+                statement.setString(1, nomeBolletta);
+                try (ResultSet resultSet = statement.executeQuery()) {
+                    if (resultSet.next()) {
+                        return resultSet.getDouble(1);
+                    }
+                }
+
+            }
+        } catch (SQLException e) {
+            throw new RuntimeException(e);
+        }
+        return 0;
+    }
+
+    public double getF2(String nomeBolletta) {
+        try (Connection connection = dataSource.getConnection()) {
+            try (PreparedStatement statement = connection.prepareStatement("SELECT F2_Attiva FROM bolletta_pod WHERE Nome_Bolletta = ?")) {
+                statement.setString(1, nomeBolletta);
+                try (ResultSet resultSet = statement.executeQuery()) {
+                    if (resultSet.next()) {
+                        return resultSet.getDouble(1);
+                    }
+                }
+
+            }
+        } catch (SQLException e) {
+            throw new RuntimeException(e);
+        }
+        return 0;
+    }
+
+    public double getF1Reattiva(String nomeBolletta) {
+        try (Connection connection = dataSource.getConnection()) {
+            try (PreparedStatement statement = connection.prepareStatement("SELECT F1_Reattiva FROM bolletta_pod WHERE Nome_Bolletta = ?")) {
+                statement.setString(1, nomeBolletta);
+                try (ResultSet resultSet = statement.executeQuery()) {
+                    if (resultSet.next()) {
+                        return resultSet.getDouble(1);
+                    }
+                }
+
+            }
+        } catch (SQLException e) {
+            throw new RuntimeException(e);
+        }
+        return 0;
+    }
+
+    public double getF2Reattiva(String nomeBolletta) {
+        try (Connection connection = dataSource.getConnection()) {
+            try (PreparedStatement statement = connection.prepareStatement("SELECT F2_Reattiva FROM bolletta_pod WHERE Nome_Bolletta = ?")) {
+                statement.setString(1, nomeBolletta);
+                try (ResultSet resultSet = statement.executeQuery()) {
+                    if (resultSet.next()) {
+                        return resultSet.getDouble(1);
+                    }
+                }
+
+            }
+        } catch (SQLException e) {
+            throw new RuntimeException(e);
+        }
+        return 0;
+    }
+
+    public double getPenaliSotto75() {
+        try (Connection connection = dataSource.getConnection()) {
+            try (PreparedStatement statement = connection.prepareStatement("SELECT Costo FROM dettaglio_costo WHERE Categoria = 'penali' AND Descrizione = '>33%&75%<'")) {
+                try (ResultSet resultSet = statement.executeQuery()) {
+                    if (resultSet.next()) {
+                        return resultSet.getDouble(1);
+                    }
+                }
+
+            }
+        } catch (SQLException e) {
+            throw new RuntimeException(e);
+        }
+        return 0;
+    }
+
+    public double getPenaliSopra75() {
+        try (Connection connection = dataSource.getConnection()) {
+            try (PreparedStatement statement = connection.prepareStatement("SELECT Costo FROM dettaglio_costo WHERE Categoria = 'penali' AND Descrizione = '>75%'")) {
+                try (ResultSet resultSet = statement.executeQuery()) {
+                    if (resultSet.next()) {
+                        return resultSet.getDouble(1);
+                    }
+                }
+
+            }
+        } catch (SQLException e) {
+            throw new RuntimeException(e);
+        }
+        return 0;
+    }
+
+    public void updateTrasportiA2A(double trasporti, String nomeBolletta) {
+        try (Connection connection = dataSource.getConnection()) {
+            try (PreparedStatement statement = connection.prepareStatement("UPDATE bolletta_pod SET Verifica_Trasporti = ? WHERE Nome_Bolletta = ?")) {
+                statement.setDouble(1, trasporti);
+                statement.setString(2, nomeBolletta);
+                statement.executeUpdate();
+            } catch (SQLException e) {
+                throw new RuntimeException("Error updating trasporti in database", e);
+            }
+        } catch (SQLException e) {
+            throw new RuntimeException("Error connecting to database", e);
+        }
+    }
+
+    public void updatePenali33(double penali33, String nomeBolletta) {
+        try (Connection connection = dataSource.getConnection()) {
+            try (PreparedStatement statement = connection.prepareStatement("UPDATE bolletta_pod SET Penali33 = ? WHERE Nome_Bolletta = ?")) {
+                statement.setDouble(1, penali33);
+                statement.setString(2, nomeBolletta);
+                statement.executeUpdate();
+            } catch (SQLException e) {
+                throw new RuntimeException("Error updating penali33 in database", e);
+            }
+        } catch (SQLException e) {
+            throw new RuntimeException("Error connecting to database", e);
+        }
+    }
+
+    public void updatePenali75(double penali75, String nomeBolletta) {
+        try (Connection connection = dataSource.getConnection()) {
+            try (PreparedStatement statement = connection.prepareStatement("UPDATE bolletta_pod SET Penali75 = ? WHERE Nome_Bolletta = ?")) {
+                statement.setDouble(1, penali75);
+                statement.setString(2, nomeBolletta);
+                statement.executeUpdate();
+            } catch (SQLException e) {
+                throw new RuntimeException("Error updating penali75 in database", e);
+            }
+        } catch (SQLException e) {
+            throw new RuntimeException("Error connecting to database", e);
+        }
+    }
 }

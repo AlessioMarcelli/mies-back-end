@@ -16,7 +16,8 @@ public class BollettaService {
         this.bollettaRepo = bollettaRepo;
     }
 
-    public void A2AVerificaDispacciamento(String nomeBolletta, String idPod, Double spesaMaeriaEnergia) throws SQLException {
+    public void A2AVerifica(String nomeBolletta, String idPod, Double spesaMaeriaEnergia) throws SQLException {
+        //Calcolo Dispacciamento e Generation
         Double totAttiva = bollettaRepo.getConsumoA2A(nomeBolletta);
         String mese = bollettaRepo.getMese(nomeBolletta);
         int trimestre;
@@ -45,6 +46,55 @@ public class BollettaService {
         bollettaRepo.updateDispacciamentoA2A(dispacciamento, nomeBolletta);
         Double generation = spesaMaeriaEnergia - dispacciamento;
         bollettaRepo.updateGenerationA2A(generation, nomeBolletta);
+
+        //Calcolo Trasporti
+        Double potenzaImpegnata = bollettaRepo.getPotenzaImpegnata(idPod);
+        double costi;
+        if (potenzaImpegnata < 100) {
+            costi = bollettaRepo.getCostiSotto100();
+        } else if (potenzaImpegnata > 100 || potenzaImpegnata < 500) {
+            costi = bollettaRepo.getCostiSotto500();
+        } else {
+            costi = bollettaRepo.getCostiSopra500();
+        }
+
+        double f1Attiva = bollettaRepo.getF1(nomeBolletta);
+        double f2Attiva = bollettaRepo.getF2(nomeBolletta);
+        double sommaAttiva = f1Attiva + f2Attiva;
+        double f1Reattiva = bollettaRepo.getF1Reattiva(nomeBolletta);
+        double f2Reattiva = bollettaRepo.getF2Reattiva(nomeBolletta);
+        double sommaReattiva = f1Reattiva + f2Reattiva;
+
+        double percentualeDelleAR = (sommaReattiva / sommaAttiva) * 100;
+
+        double noPenali = 0;
+        double costo3375 = 0;
+        double costo75 = 0;
+        double penali33 = 0;
+        double penali75 = 0;
+        double percentualeDelleAR3375 = 0;
+        double percentualeDelleAR75 = 0;
+        double trasporti = 0;
+        if (percentualeDelleAR < 33) {
+            noPenali = 0;
+        } else if (percentualeDelleAR > 33 || percentualeDelleAR < 75) {
+            percentualeDelleAR3375 = (percentualeDelleAR - 33) - (percentualeDelleAR - 75);
+            costo3375 = bollettaRepo.getPenaliSotto75();
+            penali33 = (costo3375 * sommaAttiva) * (percentualeDelleAR3375 / 100);
+            trasporti = costi + penali33;
+        } else {
+            percentualeDelleAR3375 = (percentualeDelleAR - 33) - (percentualeDelleAR - 75);
+            costo3375 = bollettaRepo.getPenaliSotto75();
+            penali33 = (costo3375 * sommaAttiva) * (percentualeDelleAR3375 / 100);
+            percentualeDelleAR75 = percentualeDelleAR - 75;
+            costo75 = bollettaRepo.getPenaliSopra75();
+            penali75 = (costo75 * sommaAttiva) * (percentualeDelleAR75 / 100);
+            trasporti = costi + penali33 + penali75;
+        }
+
+        bollettaRepo.updatePenali33(penali33, nomeBolletta);
+        bollettaRepo.updatePenali75(penali75, nomeBolletta);
+        bollettaRepo.updateTrasportiA2A(trasporti, nomeBolletta);
 
     }
 }

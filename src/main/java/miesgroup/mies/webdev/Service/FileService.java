@@ -32,7 +32,6 @@ import java.io.InputStream;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.time.LocalDate;
-import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 
@@ -185,7 +184,7 @@ public class FileService {
             }
             insertBolletta(extractedValues, nomeBolletta, periodoInizio, periodoFine, idPod);
             convertiDatainMese(periodoFine,nomeBolletta);
-            bollettaService.A2AVerificaDispacciamento(nomeBolletta, idPod, extractedValues.get(9));
+            bollettaService.A2AVerifica(nomeBolletta, idPod, extractedValues.get(9));
         } catch (Exception e) {
             e.printStackTrace();
         }

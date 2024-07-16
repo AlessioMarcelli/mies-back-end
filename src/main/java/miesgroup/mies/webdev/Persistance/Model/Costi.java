@@ -1,5 +1,7 @@
 package miesgroup.mies.webdev.Persistance.Model;
 
+import java.sql.Date;
+
 public class Costi {
     private int id;
     private String descrizione;
@@ -8,6 +10,9 @@ public class Costi {
     private String anno;
     private float costo;
     private String categoria;
+    private String tipoTensione;
+    private String classeAgevolazione;
+    private Date dataInserimento;
 
     public int getId() {
         return id;
@@ -63,5 +68,29 @@ public class Costi {
 
     public void setCategoria(String categoria) {
         this.categoria = categoria;
+    }
+
+    public String getTipoTensione() {
+        return tipoTensione;
+    }
+
+    public void setTipoTensione(String tipo_Tensione) {
+        this.tipoTensione = tipo_Tensione;
+    }
+
+    public String getClasseAgevolazione() {
+        return classeAgevolazione;
+    }
+
+    public void setClasseAgevolazione(String classeAgevolazione) {
+        this.classeAgevolazione = classeAgevolazione;
+    }
+
+    public Date getDataInserimento() {
+        return dataInserimento;
+    }
+
+    public void setDataInserimento(Date dataInserimento) {
+        this.dataInserimento = dataInserimento;
     }
 }
