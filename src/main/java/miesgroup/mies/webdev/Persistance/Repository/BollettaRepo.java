@@ -190,56 +190,98 @@ public class BollettaRepo {
         return null;
     }
 
-    public Double getCostiSotto100() {
-        try (Connection connection = dataSource.getConnection()) {
-            try (PreparedStatement statement = connection.prepareStatement("SELECT SUM(Costo)AS TotaleCosto FROM dettaglio_costo WHERE Categoria = 'trasporti'AND Intevallo_Potenza = '<100KW'")) {
-                try (ResultSet resultSet = statement.executeQuery()) {
-                    if (resultSet.next()) {
-                        return resultSet.getDouble(1);
-                    }
+    public Double getCostiSotto100(int trimestre) {
+        String query = "SELECT SUM(Costo) AS TotaleCosto " +
+                "FROM dettaglio_costo " +
+                "WHERE Categoria = 'trasporti' " +
+                "AND Unità_Misura = '€/KWh' " +
+                "AND Intervallo_Potenza = '<100KW' " +
+                "AND (Trimestrale = ? OR Annuale IS NOT NULL)";
+
+        try (Connection connection = dataSource.getConnection();
+             PreparedStatement statement = connection.prepareStatement(query)) {
+
+            statement.setInt(1, trimestre);
+
+            try (ResultSet resultSet = statement.executeQuery()) {
+                if (resultSet.next()) {
+                    double costi = resultSet.getDouble("TotaleCosto");
+                    System.out.println("Totale Costo: " + costi);
+                    return costi;
+                } else {
+                    System.out.println("Nessun risultato trovato.");
                 }
-
             }
-
         } catch (SQLException e) {
+            // Aggiungi un messaggio di log o stampa l'eccezione per debug
+            System.err.println("Errore durante l'esecuzione della query: " + e.getMessage());
             throw new RuntimeException(e);
         }
         return null;
     }
 
-    public Double getCostiSotto500() {
-        try (Connection connection = dataSource.getConnection()) {
-            try (PreparedStatement statement = connection.prepareStatement("SELECT SUM(Costo)AS TotaleCosto FROM dettaglio_costo WHERE Categoria = 'trasporti'AND Intevallo_Potenza = '100-500KW'")) {
-                try (ResultSet resultSet = statement.executeQuery()) {
-                    if (resultSet.next()) {
-                        return resultSet.getDouble(1);
-                    }
+
+    public Double getCostiSotto500(int trimestre) {
+        String query = "SELECT SUM(Costo) AS TotaleCosto " +
+                "FROM dettaglio_costo " +
+                "WHERE Categoria = 'trasporti' " +
+                "AND Unità_Misura = '€/KWh' " +
+                "AND Intervallo_Potenza = '100-500KW' " +
+                "AND (Trimestrale = ? OR Annuale IS NOT NULL)";
+
+        try (Connection connection = dataSource.getConnection();
+             PreparedStatement statement = connection.prepareStatement(query)) {
+
+            statement.setInt(1, trimestre);
+
+            try (ResultSet resultSet = statement.executeQuery()) {
+                if (resultSet.next()) {
+                    double costi = resultSet.getDouble("TotaleCosto");
+                    System.out.println("Totale Costo: " + costi);
+                    return costi;
+                } else {
+                    System.out.println("Nessun risultato trovato.");
                 }
-
             }
-
         } catch (SQLException e) {
+            // Aggiungi un messaggio di log o stampa l'eccezione per debug
+            System.err.println("Errore durante l'esecuzione della query: " + e.getMessage());
             throw new RuntimeException(e);
         }
         return null;
     }
 
-    public Double getCostiSopra500() {
-        try (Connection connection = dataSource.getConnection()) {
-            try (PreparedStatement statement = connection.prepareStatement("SELECT SUM(Costo)AS TotaleCosto FROM dettaglio_costo WHERE Categoria = 'trasporti'AND Intevallo_Potenza = '>500KW'")) {
-                try (ResultSet resultSet = statement.executeQuery()) {
-                    if (resultSet.next()) {
-                        return resultSet.getDouble(1);
-                    }
+
+    public Double getCostiSopra500(int trimestre) {
+        String query = "SELECT SUM(Costo) AS TotaleCosto " +
+                "FROM dettaglio_costo " +
+                "WHERE Categoria = 'trasporti' " +
+                "AND Unità_Misura = '€/KWh' " +
+                "AND Intervallo_Potenza = '>500KW' " +
+                "AND (Trimestrale = ? OR Annuale IS NOT NULL)";
+
+        try (Connection connection = dataSource.getConnection();
+             PreparedStatement statement = connection.prepareStatement(query)) {
+
+            statement.setInt(1, trimestre);
+
+            try (ResultSet resultSet = statement.executeQuery()) {
+                if (resultSet.next()) {
+                    double costi = resultSet.getDouble("TotaleCosto");
+                    System.out.println("Totale Costo: " + costi);
+                    return costi;
+                } else {
+                    System.out.println("Nessun risultato trovato.");
                 }
-
             }
-
         } catch (SQLException e) {
+            // Aggiungi un messaggio di log o stampa l'eccezione per debug
+            System.err.println("Errore durante l'esecuzione della query: " + e.getMessage());
             throw new RuntimeException(e);
         }
         return null;
     }
+
 
     public double getF1(String nomeBolletta) {
         try (Connection connection = dataSource.getConnection()) {
@@ -377,6 +419,372 @@ public class BollettaRepo {
                 statement.executeUpdate();
             } catch (SQLException e) {
                 throw new RuntimeException("Error updating penali75 in database", e);
+            }
+        } catch (SQLException e) {
+            throw new RuntimeException("Error connecting to database", e);
+        }
+    }
+
+    public double getCostiFissiSotto100(int trimestre) {
+        String query = "SELECT SUM(Costo) AS TotaleCosto " +
+                "FROM dettaglio_costo " +
+                "WHERE Categoria = 'trasporti' " +
+                "AND Unità_Misura = '€/Month' " +
+                "AND Intervallo_Potenza = '<100KW' " +
+                "AND (Trimestrale = ? OR Annuale IS NOT NULL)";
+
+        try (Connection connection = dataSource.getConnection();
+             PreparedStatement statement = connection.prepareStatement(query)) {
+
+            statement.setInt(1, trimestre);
+
+            try (ResultSet resultSet = statement.executeQuery()) {
+                if (resultSet.next()) {
+                    double costi = resultSet.getDouble("TotaleCosto");
+                    System.out.println("Totale Costo: " + costi);
+                    return costi;
+                } else {
+                    System.out.println("Nessun risultato trovato.");
+                }
+            }
+        } catch (SQLException e) {
+            // Aggiungi un messaggio di log o stampa l'eccezione per debug
+            System.err.println("Errore durante l'esecuzione della query: " + e.getMessage());
+            throw new RuntimeException(e);
+        }
+        return 0;
+    }
+
+    public double getCostiFissiSotto500(int trimestre) {
+        String query = "SELECT SUM(Costo) AS TotaleCosto " +
+                "FROM dettaglio_costo " +
+                "WHERE Categoria = 'trasporti' " +
+                "AND Unità_Misura = '€/Month' " +
+                "AND Intervallo_Potenza = '100-500KW' " +
+                "AND (Trimestrale = ? OR Annuale IS NOT NULL)";
+
+        try (Connection connection = dataSource.getConnection();
+             PreparedStatement statement = connection.prepareStatement(query)) {
+
+            statement.setInt(1, trimestre);
+
+            try (ResultSet resultSet = statement.executeQuery()) {
+                if (resultSet.next()) {
+                    double costi = resultSet.getDouble("TotaleCosto");
+                    System.out.println("Totale Costo: " + costi);
+                    return costi;
+                } else {
+                    System.out.println("Nessun risultato trovato.");
+                }
+            }
+        } catch (SQLException e) {
+            // Aggiungi un messaggio di log o stampa l'eccezione per debug
+            System.err.println("Errore durante l'esecuzione della query: " + e.getMessage());
+            throw new RuntimeException(e);
+        }
+        return 0;
+    }
+
+    public double getCostiFissiSopra500(int trimestre) {
+        String query = "SELECT SUM(Costo) AS TotaleCosto " +
+                "FROM dettaglio_costo " +
+                "WHERE Categoria = 'trasporti' " +
+                "AND Unità_Misura = '€/Month' " +
+                "AND Intervallo_Potenza = '>500KW' " +
+                "AND (Trimestrale = ? OR Annuale IS NOT NULL)";
+
+        try (Connection connection = dataSource.getConnection();
+             PreparedStatement statement = connection.prepareStatement(query)) {
+
+            statement.setInt(1, trimestre);
+
+            try (ResultSet resultSet = statement.executeQuery()) {
+                if (resultSet.next()) {
+                    double costi = resultSet.getDouble("TotaleCosto");
+                    System.out.println("Totale Costo: " + costi);
+                    return costi;
+                } else {
+                    System.out.println("Nessun risultato trovato.");
+                }
+            }
+        } catch (SQLException e) {
+            // Aggiungi un messaggio di log o stampa l'eccezione per debug
+            System.err.println("Errore durante l'esecuzione della query: " + e.getMessage());
+            throw new RuntimeException(e);
+        }
+        return 0;
+    }
+
+    public double getCostiPotenzaSotto100(int trimestre) {
+        String query = "SELECT SUM(Costo) AS TotaleCosto " +
+                "FROM dettaglio_costo " +
+                "WHERE Categoria = 'trasporti' " +
+                "AND Unità_Misura = '€/KW/Month' " +
+                "AND Intervallo_Potenza = '<100KW' " +
+                "AND (Trimestrale = ? OR Annuale IS NOT NULL)";
+
+        try (Connection connection = dataSource.getConnection();
+             PreparedStatement statement = connection.prepareStatement(query)) {
+
+            statement.setInt(1, trimestre);
+
+            try (ResultSet resultSet = statement.executeQuery()) {
+                if (resultSet.next()) {
+                    double costi = resultSet.getDouble("TotaleCosto");
+                    System.out.println("Totale Costo: " + costi);
+                    return costi;
+                } else {
+                    System.out.println("Nessun risultato trovato.");
+                }
+            }
+        } catch (SQLException e) {
+            // Aggiungi un messaggio di log o stampa l'eccezione per debug
+            System.err.println("Errore durante l'esecuzione della query: " + e.getMessage());
+            throw new RuntimeException(e);
+        }
+        return 0;
+    }
+
+    public double getCostiPotenzaSotto500(int trimestre) {
+        String query = "SELECT SUM(Costo) AS TotaleCosto " +
+                "FROM dettaglio_costo " +
+                "WHERE Categoria = 'trasporti' " +
+                "AND Unità_Misura = '€/KW/Month' " +
+                "AND Intervallo_Potenza = '100-500KW' " +
+                "AND (Trimestrale = ? OR Annuale IS NOT NULL)";
+
+        try (Connection connection = dataSource.getConnection();
+             PreparedStatement statement = connection.prepareStatement(query)) {
+
+            statement.setInt(1, trimestre);
+
+            try (ResultSet resultSet = statement.executeQuery()) {
+                if (resultSet.next()) {
+                    double costi = resultSet.getDouble("TotaleCosto");
+                    System.out.println("Totale Costo: " + costi);
+                    return costi;
+                } else {
+                    System.out.println("Nessun risultato trovato.");
+                }
+            }
+        } catch (SQLException e) {
+            // Aggiungi un messaggio di log o stampa l'eccezione per debug
+            System.err.println("Errore durante l'esecuzione della query: " + e.getMessage());
+            throw new RuntimeException(e);
+        }
+        return 0;
+    }
+
+    public double getCostiPotenzaSopra500(int trimestre) {
+        String query = "SELECT SUM(Costo) AS TotaleCosto " +
+                "FROM dettaglio_costo " +
+                "WHERE Categoria = 'trasporti' " +
+                "AND Unità_Misura = '€/KW/Month' " +
+                "AND Intervallo_Potenza = '>500KW' " +
+                "AND (Trimestrale = ? OR Annuale IS NOT NULL)";
+
+        try (Connection connection = dataSource.getConnection();
+             PreparedStatement statement = connection.prepareStatement(query)) {
+
+            statement.setInt(1, trimestre);
+
+            try (ResultSet resultSet = statement.executeQuery()) {
+                if (resultSet.next()) {
+                    double costi = resultSet.getDouble("TotaleCosto");
+                    System.out.println("Totale Costo: " + costi);
+                    return costi;
+                } else {
+                    System.out.println("Nessun risultato trovato.");
+                }
+            }
+        } catch (SQLException e) {
+            // Aggiungi un messaggio di log o stampa l'eccezione per debug
+            System.err.println("Errore durante l'esecuzione della query: " + e.getMessage());
+            throw new RuntimeException(e);
+        }
+        return 0;
+    }
+
+    public double getMaggiorePotenza(String nomeBolletta) {
+        try (Connection connection = dataSource.getConnection()) {
+            try (PreparedStatement statement = connection.prepareStatement("SELECT GREATEST(F1_Potenza, F2_Potenza, F3_Potenza) AS MaxPotenza FROM bolletta_pod WHERE Nome_Bolletta = ?");) {
+                statement.setString(1, nomeBolletta);
+                try (ResultSet resultSet = statement.executeQuery()) {
+                    if (resultSet.next()) {
+                        return resultSet.getDouble(1);
+                    }
+                }
+
+            }
+        } catch (SQLException e) {
+            throw new RuntimeException(e);
+        }
+        return 0;
+    }
+
+    public double getCostiEnergiaOneri100E500(int trimestre, String classeAgevolazione) {
+        try (Connection connection = dataSource.getConnection()) {
+            try (PreparedStatement statement = connection.prepareStatement("SELECT SUM(Costo) AS TotaleCosto FROM dettaglio_costo WHERE Categoria = 'oneri' AND Unità_Misura = '€/KWh' AND Intervallo_Potenza = '100-500KW' AND (Trimestrale = ? OR Annuale IS NOT NULL) AND Classe_Agevolazione = ?")) {
+                statement.setInt(1, trimestre);
+                statement.setString(2, classeAgevolazione);
+                try (ResultSet resultSet = statement.executeQuery()) {
+                    if (resultSet.next()) {
+                        double costi = resultSet.getDouble("TotaleCosto");
+                        System.out.println("Totale Costo: " + costi);
+                        return costi;
+                    }
+                }
+            }
+        } catch (SQLException e) {
+            throw new RuntimeException(e);
+        }
+        return 0;
+    }
+
+    public double getCostiEnergiaOneriSopra500(int trimestre, String classeAgevolazione) {
+        try (Connection connection = dataSource.getConnection()) {
+            try (PreparedStatement statement = connection.prepareStatement("SELECT SUM(Costo) AS TotaleCosto FROM dettaglio_costo WHERE Categoria = 'oneri' AND Unità_Misura = '€/KWh' AND Intervallo_Potenza = '>500KW' AND (Trimestrale = ? OR Annuale IS NOT NULL) AND Classe_Agevolazione = ?")) {
+                statement.setInt(1, trimestre);
+                statement.setString(2, classeAgevolazione);
+                try (ResultSet resultSet = statement.executeQuery()) {
+                    if (resultSet.next()) {
+                        double costi = resultSet.getDouble("TotaleCosto");
+                        System.out.println("Totale Costo: " + costi);
+                        return costi;
+                    }
+                }
+            }
+        } catch (SQLException e) {
+            throw new RuntimeException(e);
+        }
+        return 0;
+    }
+
+    public double getCostiFissiOneri100E500(int trimestre, String classeAgevolazione) {
+        try (Connection connection = dataSource.getConnection()) {
+            try (PreparedStatement statement = connection.prepareStatement("SELECT SUM(Costo) AS TotaleCosto FROM dettaglio_costo WHERE Categoria = 'oneri' AND Unità_Misura = '€/Month' AND Intervallo_Potenza = '100-500KW' AND (Trimestrale = ? OR Annuale IS NOT NULL) AND Classe_Agevolazione = ?")) {
+                statement.setInt(1, trimestre);
+                statement.setString(2, classeAgevolazione);
+                try (ResultSet resultSet = statement.executeQuery()) {
+                    if (resultSet.next()) {
+                        double costi = resultSet.getDouble("TotaleCosto");
+                        System.out.println("Totale Costo: " + costi);
+                        return costi;
+                    }
+                }
+            }
+        } catch (SQLException e) {
+            throw new RuntimeException(e);
+        }
+        return 0;
+    }
+
+    public double getCostiFissiOneriSopra500(int trimestre, String classeAgevolazione) {
+        try (Connection connection = dataSource.getConnection()) {
+            try (PreparedStatement statement = connection.prepareStatement("SELECT SUM(Costo) AS TotaleCosto FROM dettaglio_costo WHERE Categoria = 'oneri' AND Unità_Misura = '€/Month' AND Intervallo_Potenza = '>500KW' AND (Trimestrale = ? OR Annuale IS NOT NULL) AND Classe_Agevolazione = ?")) {
+                statement.setInt(1, trimestre);
+                statement.setString(2, classeAgevolazione);
+                try (ResultSet resultSet = statement.executeQuery()) {
+                    if (resultSet.next()) {
+                        double costi = resultSet.getDouble("TotaleCosto");
+                        System.out.println("Totale Costo: " + costi);
+                        return costi;
+                    }
+                }
+            }
+        } catch (SQLException e) {
+            throw new RuntimeException(e);
+        }
+        return 0;
+    }
+
+    public double getCostiPotenzaOneri100E500(int trimestre, String classeAgevolazione) {
+        try (Connection connection = dataSource.getConnection()) {
+            try (PreparedStatement statement = connection.prepareStatement("SELECT SUM(Costo) AS TotaleCosto FROM dettaglio_costo WHERE Categoria = 'oneri' AND Unità_Misura = '€/KW/Month' AND Intervallo_Potenza = '100-500KW' AND (Trimestrale = ? OR Annuale IS NOT NULL) AND Classe_Agevolazione = ?")) {
+                statement.setInt(1, trimestre);
+                statement.setString(2, classeAgevolazione);
+                try (ResultSet resultSet = statement.executeQuery()) {
+                    if (resultSet.next()) {
+                        double costi = resultSet.getDouble("TotaleCosto");
+                        System.out.println("Totale Costo: " + costi);
+                        return costi;
+                    }
+                }
+            }
+        } catch (SQLException e) {
+            throw new RuntimeException(e);
+        }
+        return 0;
+    }
+
+    public double getCostiPotenzaOneriSopra500(int trimestre, String classeAgevolazione) {
+        try (Connection connection = dataSource.getConnection()) {
+            try (PreparedStatement statement = connection.prepareStatement("SELECT SUM(Costo) AS TotaleCosto FROM dettaglio_costo WHERE Categoria = 'oneri' AND Unità_Misura = '€/KW/Month' AND Intervallo_Potenza = '>500KW' AND (Trimestrale = ? OR Annuale IS NOT NULL) AND Classe_Agevolazione = ?")) {
+                statement.setInt(1, trimestre);
+                statement.setString(2, classeAgevolazione);
+                try (ResultSet resultSet = statement.executeQuery()) {
+                    if (resultSet.next()) {
+                        double costi = resultSet.getDouble("TotaleCosto");
+                        System.out.println("Totale Costo: " + costi);
+                        return costi;
+                    }
+                }
+            }
+        } catch (SQLException e) {
+            throw new RuntimeException(e);
+        }
+        return 0;
+    }
+
+    public void updateVerificaOneri(double costiOneri, String nomeBolletta) {
+        try (Connection connection = dataSource.getConnection()) {
+            try (PreparedStatement statement = connection.prepareStatement("UPDATE bolletta_pod SET Verifica_Oneri = ? WHERE Nome_Bolletta = ?")) {
+                statement.setDouble(1, costiOneri);
+                statement.setString(2, nomeBolletta);
+                statement.executeUpdate();
+            } catch (SQLException e) {
+                throw new RuntimeException("Error updating oneri in database", e);
+            }
+        } catch (SQLException e) {
+            throw new RuntimeException("Error connecting to database", e);
+        }
+    }
+
+    public void updateVerificaImposte(double costiImposte, String nomeBolletta) {
+        try (Connection connection = dataSource.getConnection()) {
+            try (PreparedStatement statement = connection.prepareStatement("UPDATE bolletta_pod SET Verifica_Imposte = ? WHERE Nome_Bolletta = ?")) {
+                statement.setDouble(1, costiImposte);
+                statement.setString(2, nomeBolletta);
+                statement.executeUpdate();
+            } catch (SQLException e) {
+                throw new RuntimeException("Error updating imposte in database", e);
+            }
+        } catch (SQLException e) {
+            throw new RuntimeException("Error connecting to database", e);
+        }
+    }
+
+    public void updateTOTAttiva(Double totAttiva, String nomeBolletta) {
+        try (Connection connection = dataSource.getConnection()) {
+            try (PreparedStatement statement = connection.prepareStatement("UPDATE bolletta_pod SET TOT_Attiva = ? WHERE Nome_Bolletta = ?")) {
+                statement.setDouble(1, totAttiva);
+                statement.setString(2, nomeBolletta);
+                statement.executeUpdate();
+            } catch (SQLException e) {
+                throw new RuntimeException("Error updating totAttiva in database", e);
+            }
+        } catch (SQLException e) {
+            throw new RuntimeException("Error connecting to database", e);
+        }
+    }
+
+    public void updateTOTReattiva(String nomeBolletta) {
+        try (Connection connection = dataSource.getConnection()) {
+            try (PreparedStatement statement = connection.prepareStatement("UPDATE bolletta_pod SET TOT_Reattiva = F1_Reattiva + F2_Reattiva + F3_Reattiva WHERE Nome_Bolletta = ?")) {
+                statement.setString(1, nomeBolletta);
+                statement.executeUpdate();
+            } catch (SQLException e) {
+                throw new RuntimeException("Error updating totReattiva in database", e);
             }
         } catch (SQLException e) {
             throw new RuntimeException("Error connecting to database", e);

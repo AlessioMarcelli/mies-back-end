@@ -22,6 +22,7 @@ public class CostiResource {
     @Produces(MediaType.APPLICATION_JSON)
     public ArrayList<Costi> getCosti() throws SQLException {
         return costiService.getAllCosti();
+
     }
 
     @POST
@@ -29,7 +30,15 @@ public class CostiResource {
     @Consumes(MediaType.APPLICATION_JSON)
     @Produces(MediaType.APPLICATION_JSON)
     public Response createCosto(Costi costo) throws SQLException {
-        costiService.createCosto(costo.getDescrizione(), costo.getCategoria(), costo.getUnitaMisura(), costo.getTrimestre(), costo.getAnno(), costo.getCosto(), costo.getTipoTensione(), costo.getClasseAgevolazione());
+        costiService.createCosto(costo.getDescrizione(), costo.getCategoria(), costo.getUnitaMisura(), costo.getTrimestre(), costo.getAnno(), costo.getCosto(), costo.getIntervalloPotenza(), costo.getClasseAgevolazione());
         return Response.ok().build();
+    }
+
+    @GET
+    @Path("/{IntervalloPotenza}")
+    @Consumes(MediaType.APPLICATION_JSON)
+    @Produces(MediaType.APPLICATION_JSON)
+    public Costi getSum(@PathParam("IntervalloPotenza") String intervalloPotenza) throws SQLException {
+        return costiService.getSum(intervalloPotenza);
     }
 }

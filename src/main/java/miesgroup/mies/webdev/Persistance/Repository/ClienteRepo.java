@@ -3,7 +3,6 @@ package miesgroup.mies.webdev.Persistance.Repository;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.persistence.EntityNotFoundException;
 import miesgroup.mies.webdev.Persistance.Model.Cliente;
-import miesgroup.mies.webdev.Service.HashCalculator;
 
 import javax.sql.DataSource;
 import java.sql.Connection;
@@ -14,17 +13,16 @@ import java.util.Optional;
 
 @ApplicationScoped
 public class ClienteRepo {
-    private final DataSource dataSources;
+    private final DataSource dataSource;
 
     public ClienteRepo(DataSource dataSources) {
-        this.dataSources = dataSources;
+        this.dataSource = dataSources;
     }
 
     public boolean existsByUsername(String username) {
-        try (Connection connection = dataSources.getConnection();
+        try (Connection connection = dataSource.getConnection();
              //Query per controllare se nel database esiste email
-             PreparedStatement statement = connection.prepareStatement(
-                     "SELECT COUNT(*) FROM utente WHERE Username = ?")) {
+             PreparedStatement statement = connection.prepareStatement("SELECT COUNT(*) FROM utente WHERE Username = ?")) {
             statement.setString(1, username);
             ResultSet resultSet = statement.executeQuery();
             if (resultSet.next()) {
@@ -38,10 +36,8 @@ public class ClienteRepo {
     }
 
     public void insert(Cliente nuovoCliente) {
-        try (Connection connection = dataSources.getConnection()) {
-            try (PreparedStatement statement = connection.prepareStatement(
-                    "INSERT INTO utente (Username, Password, Sede_Legale, Piva, Email, Telefono, Stato, Tipologia) VALUES (?, ?, ?, ?, ?, ?, ?, ?)",
-                    PreparedStatement.RETURN_GENERATED_KEYS)) {
+        try (Connection connection = dataSource.getConnection()) {
+            try (PreparedStatement statement = connection.prepareStatement("INSERT INTO utente (Username, Password, Sede_Legale, Piva, Email, Telefono, Stato, Tipologia) VALUES (?, ?, ?, ?, ?, ?, ?, ?)", PreparedStatement.RETURN_GENERATED_KEYS)) {
                 statement.setString(1, nuovoCliente.getUsername());
                 statement.setString(2, nuovoCliente.getPassword());
                 statement.setString(3, nuovoCliente.getSedeLegale());
@@ -63,7 +59,7 @@ public class ClienteRepo {
     }
 
     public Optional<Cliente> findByUsername(String username) {
-        try (Connection conn = dataSources.getConnection()) {
+        try (Connection conn = dataSource.getConnection()) {
             try (PreparedStatement ps = conn.prepareStatement("SELECT * FROM utente WHERE Username = ?")) {
                 ps.setString(1, username);
                 try (ResultSet rs = ps.executeQuery()) {
@@ -90,7 +86,7 @@ public class ClienteRepo {
 
     public Optional<Cliente> findByUsernamelAndPasswordHash(String username, String password) {
         try {
-            try (Connection connection = dataSources.getConnection()) {
+            try (Connection connection = dataSource.getConnection()) {
                 try (PreparedStatement statement = connection.prepareStatement("SELECT Id_Utente, Username FROM utente WHERE Username = ? AND Password = ?")) {
                     statement.setString(1, username);
                     statement.setString(2, password);
@@ -109,20 +105,84 @@ public class ClienteRepo {
         return Optional.empty();
     }
 
-    public int idUtenteDaIdSessione(int sessionId) {
-        try (Connection connection = dataSources.getConnection()) {
-            try (PreparedStatement statement = connection.prepareStatement("SELECT ID_Utente FROM sessione WHERE ID_Sessione = ?")) {
-                statement.setInt(1, sessionId);
-                ResultSet rs = statement.executeQuery();
-                if (rs.next()) {
-                    return rs.getInt("ID_Utente");
-                } else {
-                    throw new EntityNotFoundException("Non è presente alcuna sessione con id " + sessionId);
+    public String getClasseAgevolazioneByPod(String idPod) {
+        String queryIdUtente = "SELECT Id_Utente FROM pod WHERE Id_Pod = ?";
+        String queryClasseAgevolazione = "SELECT Classe_Agevolazione FROM utente WHERE Id_Utente = ?";
+
+        try (Connection connection = dataSource.getConnection()) {
+            // Primo step: ottenere id_utente
+            Integer idUtente = null;
+            try (PreparedStatement statementIdUtente = connection.prepareStatement(queryIdUtente)) {
+                statementIdUtente.setString(1, idPod);
+                try (ResultSet resultSet = statementIdUtente.executeQuery()) {
+                    if (resultSet.next()) {
+                        idUtente = resultSet.getInt("Id_Utente");
+                    }
+                }
+            }
+
+            // Se non si trova l'id_utente, ritorna null
+            if (idUtente == null) {
+                return null;
+            }
+
+            // Secondo step: ottenere classe_agevolazione
+            try (PreparedStatement statementClasseAgevolazione = connection.prepareStatement(queryClasseAgevolazione)) {
+                statementClasseAgevolazione.setInt(1, idUtente);
+                try (ResultSet resultSet = statementClasseAgevolazione.executeQuery()) {
+                    if (resultSet.next()) {
+                        return resultSet.getString("Classe_Agevolazione");
+                    }
+                }
+            }
+        } catch (SQLException e) {
+            throw new RuntimeException("Error querying database", e);
+        }
+
+        return null;
+    }
+
+    public Cliente getCliente(int idUtente) {
+        try (Connection connection = dataSource.getConnection()) {
+            try (PreparedStatement statement = connection.prepareStatement("SELECT * FROM utente WHERE Id_Utente = ?")) {
+                statement.setInt(1, idUtente);
+                try (ResultSet resultSet = statement.executeQuery()) {
+                    if (resultSet.next()) {
+                        Cliente cliente = new Cliente();
+                        cliente.setId(resultSet.getInt("Id_Utente"));
+                        cliente.setUsername(resultSet.getString("Username"));
+                        cliente.setpIva(resultSet.getString("Piva"));
+                        cliente.setEmail(resultSet.getString("Email"));
+                        cliente.setPassword(resultSet.getString("Password"));
+                        cliente.setSedeLegale(resultSet.getString("Sede_Legale"));
+                        cliente.setTelefono(resultSet.getString("Telefono"));
+                        cliente.setStato(resultSet.getString("Stato"));
+                        cliente.setTipologia(resultSet.getString("Tipologia"));
+                        cliente.setLoginEffettuato(resultSet.getInt("Login_Effettuato"));
+                        return cliente;
+                    }
                 }
             }
         } catch (SQLException e) {
             throw new RuntimeException(e);
         }
+        return null;
     }
 
+    public void updateUtente(int idUtente, String sedeLegale, String pIva, String telefono, String email, String stato, String classeAgevolazione) {
+        try (Connection connection = dataSource.getConnection()) {
+            try (PreparedStatement statement = connection.prepareStatement("UPDATE utente SET Sede_Legale = ?, Piva = ?, Telefono = ?, Email = ?, Stato = ?, Classe_Agevolazione = ? WHERE Id_Utente = ?")) {
+                statement.setString(1, sedeLegale);
+                statement.setString(2, pIva);
+                statement.setString(3, telefono);
+                statement.setString(4, email);
+                statement.setString(5, stato);
+                statement.setString(6, classeAgevolazione);
+                statement.setInt(7, idUtente);
+                statement.executeUpdate();
+            }
+        } catch (SQLException e) {
+            throw new RuntimeException(e);
+        }
+    }
 }
