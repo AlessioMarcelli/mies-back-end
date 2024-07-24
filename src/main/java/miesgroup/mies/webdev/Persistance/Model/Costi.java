@@ -10,7 +10,7 @@ public class Costi {
     private String anno;
     private float costo;
     private String categoria;
-    private String tipoTensione;
+    private String intervalloPotenza;
     private String classeAgevolazione;
     private Date dataInserimento;
 
@@ -70,12 +70,12 @@ public class Costi {
         this.categoria = categoria;
     }
 
-    public String getTipoTensione() {
-        return tipoTensione;
+    public String getIntervalloPotenza() {
+        return intervalloPotenza;
     }
 
-    public void setTipoTensione(String tipo_Tensione) {
-        this.tipoTensione = tipo_Tensione;
+    public void setIntervalloPotenza(String intervalloPotenza) {
+        this.intervalloPotenza = intervalloPotenza;
     }
 
     public String getClasseAgevolazione() {

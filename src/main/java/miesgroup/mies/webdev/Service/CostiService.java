@@ -23,7 +23,7 @@ public class CostiService {
         costo.setUnitaMisura(unitaMisura);
         costo.setTrimestre(trimestre);
         costo.setAnno(anno);
-        costo.setTipoTensione(tipoTensione);
+        costo.setIntervalloPotenza(tipoTensione);
         costo.setClasseAgevolazione(classeAgevolazione);
         costiRepo.aggiungiCosto(costo);
     }
@@ -31,5 +31,10 @@ public class CostiService {
 
     public ArrayList<Costi> getAllCosti() {
         return costiRepo.getAllCosti();
+    }
+
+
+    public Costi getSum(String intervalloPotenza) {
+        return costiRepo.getSum(intervalloPotenza);
     }
 }

@@ -205,9 +205,9 @@ public class FileService {
         bolletta.setF2P(extractedValues.get(7));
         bolletta.setF3P(extractedValues.get(8));
         bolletta.setSpese_Energia(extractedValues.get(9));
-        bolletta.setOneri(extractedValues.get(10));
-        bolletta.setImposte(extractedValues.get(11));
-        bolletta.setTrasporti(extractedValues.get(12));
+        bolletta.setTrasporti(extractedValues.get(10));
+        bolletta.setOneri(extractedValues.get(11));
+        bolletta.setImposte(extractedValues.get(12));
         bolletta.setId_pod(idPod);
         bollettaRepo.A2Ainsert(bolletta);
     }
