@@ -34,11 +34,5 @@ public class CostiResource {
         return Response.ok().build();
     }
 
-    @GET
-    @Path("/{IntervalloPotenza}")
-    @Consumes(MediaType.APPLICATION_JSON)
-    @Produces(MediaType.APPLICATION_JSON)
-    public Costi getSum(@PathParam("IntervalloPotenza") String intervalloPotenza) throws SQLException {
-        return costiService.getSum(intervalloPotenza);
-    }
+
 }

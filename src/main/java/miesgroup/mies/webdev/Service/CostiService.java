@@ -33,8 +33,4 @@ public class CostiService {
         return costiRepo.getAllCosti();
     }
 
-
-    public Costi getSum(String intervalloPotenza) {
-        return costiRepo.getSum(intervalloPotenza);
-    }
 }

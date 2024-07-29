@@ -144,16 +144,14 @@ public class ClienteRepo {
 
     public Cliente getCliente(int idUtente) {
         try (Connection connection = dataSource.getConnection()) {
-            try (PreparedStatement statement = connection.prepareStatement("SELECT * FROM utente WHERE Id_Utente = ?")) {
+            try (PreparedStatement statement = connection.prepareStatement("SELECT Username, Piva, Email, Sede_Legale, Telefono, Stato, Tipologia, Login_Effettuato FROM utente WHERE Id_Utente = ?")) {
                 statement.setInt(1, idUtente);
                 try (ResultSet resultSet = statement.executeQuery()) {
                     if (resultSet.next()) {
                         Cliente cliente = new Cliente();
-                        cliente.setId(resultSet.getInt("Id_Utente"));
                         cliente.setUsername(resultSet.getString("Username"));
                         cliente.setpIva(resultSet.getString("Piva"));
                         cliente.setEmail(resultSet.getString("Email"));
-                        cliente.setPassword(resultSet.getString("Password"));
                         cliente.setSedeLegale(resultSet.getString("Sede_Legale"));
                         cliente.setTelefono(resultSet.getString("Telefono"));
                         cliente.setStato(resultSet.getString("Stato"));
@@ -171,7 +169,7 @@ public class ClienteRepo {
 
     public void updateUtente(int idUtente, String sedeLegale, String pIva, String telefono, String email, String stato, String classeAgevolazione) {
         try (Connection connection = dataSource.getConnection()) {
-            try (PreparedStatement statement = connection.prepareStatement("UPDATE utente SET Sede_Legale = ?, Piva = ?, Telefono = ?, Email = ?, Stato = ?, Classe_Agevolazione = ? WHERE Id_Utente = ?")) {
+            try (PreparedStatement statement = connection.prepareStatement("UPDATE utente SET Sede_Legale = ?, Piva = ?, Telefono = ?, Email = ?, Stato = ?, Classe_Agevolazione = ? , Login_Effettuato = 1 WHERE Id_Utente = ?")) {
                 statement.setString(1, sedeLegale);
                 statement.setString(2, pIva);
                 statement.setString(3, telefono);
@@ -185,4 +183,5 @@ public class ClienteRepo {
             throw new RuntimeException(e);
         }
     }
+
 }

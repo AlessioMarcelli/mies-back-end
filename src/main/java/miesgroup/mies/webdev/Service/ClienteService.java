@@ -25,4 +25,5 @@ public class ClienteService {
         clienteRepo.updateUtente(idUtente, sedeLegale, pIva, telefono, email, stato, classeAgevolazione);
 
     }
+
 }

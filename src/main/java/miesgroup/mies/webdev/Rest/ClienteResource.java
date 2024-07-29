@@ -20,7 +20,7 @@ public class ClienteResource {
     @GET
     @Produces(MediaType.APPLICATION_JSON)
     @Consumes(MediaType.APPLICATION_JSON)
-    public Cliente getCliente(@CookieParam("SESSION_COOCKIE") int sessionId) {
+    public Cliente getCliente(@CookieParam("SESSION_COOKIE") int sessionId) {
         return clienteService.getCliente(sessionService.trovaUtentebBySessione(sessionId));
     }
 
@@ -28,9 +28,10 @@ public class ClienteResource {
     @PUT
     @Consumes(MediaType.APPLICATION_JSON)
     @Produces(MediaType.APPLICATION_JSON)
-    public UpdateUtente updateUtente (@CookieParam("SESSION_COOCKIE") int sessionId, UpdateUtente updateUtente) {
+    public UpdateUtente updateUtente (@CookieParam("SESSION_COOKIE") int sessionId, UpdateUtente updateUtente) {
         clienteService.updateUtente(sessionService.trovaUtentebBySessione(sessionId), updateUtente.getSedeLegale(), updateUtente.getpIva(), updateUtente.getTelefono(), updateUtente.getEmail(), updateUtente.getStato(), updateUtente.getClasseAgevolazione());
         return updateUtente;
     }
+
 
 }
