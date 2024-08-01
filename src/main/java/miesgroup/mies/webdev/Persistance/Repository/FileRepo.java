@@ -67,4 +67,23 @@ public class FileRepo {
             throw new RuntimeException("Error connecting to database", e);
         }
     }
+
+    public PDFFile findById(int id) {
+        try (Connection connection = dataSource.getConnection()) {
+            try (PreparedStatement statement = connection.prepareStatement("SELECT Id_File, File_Name, file_Data FROM filepdf WHERE Id_File = ?")) {
+                statement.setInt(1, id);
+                ResultSet resultSet = statement.executeQuery();
+                if (resultSet.next()) {
+                    PDFFile pdfFile = new PDFFile();
+                    pdfFile.setId_File(resultSet.getInt("id_File"));
+                    pdfFile.setFile_Name(resultSet.getString("File_Name"));
+                    pdfFile.setFile_Data(resultSet.getBytes("file_Data"));
+                    return pdfFile;
+                }
+            }
+        } catch (SQLException e) {
+            throw new RuntimeException(e);
+        }
+        return null;
+    }
 }

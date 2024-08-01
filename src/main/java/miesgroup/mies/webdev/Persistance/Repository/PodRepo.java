@@ -1,6 +1,7 @@
 package miesgroup.mies.webdev.Persistance.Repository;
 
 import jakarta.enterprise.context.ApplicationScoped;
+import miesgroup.mies.webdev.Persistance.Model.PDFFile;
 import miesgroup.mies.webdev.Persistance.Model.Pod;
 
 import javax.sql.DataSource;
@@ -119,4 +120,24 @@ public class PodRepo {
             throw new RuntimeException(e);
         }
     }
+
+    public ArrayList<PDFFile> findFile(String id) {
+        ArrayList<PDFFile> elenco = new ArrayList<>();
+        try (Connection connection = dataSources.getConnection()) {
+            try (PreparedStatement statement = connection.prepareStatement("SELECT Id_File ,File_Name FROM filepdf WHERE id_pod = ?")) {
+                statement.setString(1, id);
+                ResultSet resultSet = statement.executeQuery();
+                while (resultSet.next()) {
+                    PDFFile pdfFile = new PDFFile();
+                    pdfFile.setFile_Name(resultSet.getString("File_Name"));
+                    pdfFile.setId_File(resultSet.getInt("Id_File"));
+                    elenco.add(pdfFile);
+                }
+            }
+        } catch (SQLException e) {
+            throw new RuntimeException("Error while retrieving PDF files by POD ID", e);
+        }
+        return elenco;
+    }
+
 }

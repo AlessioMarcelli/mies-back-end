@@ -15,7 +15,6 @@ public class PDFFile {
     public int getId_File() {
         return id_File;
     }
-
     public void setId_File(int id_File) {
         this.id_File = id_File;
     }

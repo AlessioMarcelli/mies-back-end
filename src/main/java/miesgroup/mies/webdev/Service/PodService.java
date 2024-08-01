@@ -1,6 +1,7 @@
 package miesgroup.mies.webdev.Service;
 
 import jakarta.enterprise.context.ApplicationScoped;
+import miesgroup.mies.webdev.Persistance.Model.PDFFile;
 import miesgroup.mies.webdev.Persistance.Model.Pod;
 import miesgroup.mies.webdev.Persistance.Repository.PodRepo;
 import miesgroup.mies.webdev.Persistance.Repository.SessionRepo;
@@ -126,5 +127,9 @@ public class PodService {
 
     public void addSedeNazione(String idPod, String sede, String nazione, int idUtente) {
         podRepo.aggiungiSedeNazione(idPod, sede, nazione, sessionRepo.find(idUtente));
+    }
+
+    public ArrayList<PDFFile> getFile(String id) {
+        return podRepo.findFile(id);
     }
 }

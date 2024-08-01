@@ -62,6 +62,10 @@ public class FileService {
         return fileRepo.insert(pdfFile);
     }
 
+    public PDFFile getFile(int id) {
+        return fileRepo.findById(id);
+    }
+
 
     //CONVERTI FILE IN XML
     public Document convertPdfToXml(byte[] pdfData) throws IOException, ParserConfigurationException {

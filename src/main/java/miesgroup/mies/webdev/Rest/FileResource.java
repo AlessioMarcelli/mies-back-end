@@ -3,6 +3,7 @@ package miesgroup.mies.webdev.Rest;
 import jakarta.ws.rs.*;
 import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
+import miesgroup.mies.webdev.Persistance.Model.PDFFile;
 import miesgroup.mies.webdev.Persistance.Repository.SessionRepo;
 import miesgroup.mies.webdev.Rest.Model.FileUploadForm;
 import miesgroup.mies.webdev.Service.FileService;
@@ -17,7 +18,7 @@ import javax.xml.parsers.ParserConfigurationException;
 import javax.xml.transform.TransformerException;
 import java.io.IOException;
 
-@Path("/upload")
+@Path("/files")
 public class FileResource {
 
     private final FileService fileService;
@@ -28,6 +29,7 @@ public class FileResource {
         this.podService = podService;
     }
 
+    @Path("/upload")
     @POST
     @Consumes(MediaType.MULTIPART_FORM_DATA)
     @Produces(MediaType.APPLICATION_XML)
@@ -54,5 +56,26 @@ public class FileResource {
             return Response.status(Response.Status.INTERNAL_SERVER_ERROR).entity("An unexpected error occurred: " + e.getMessage()).build();
         }
     }
+
+    @GET
+    @Path("/{id}/download")
+    @Produces(MediaType.APPLICATION_OCTET_STREAM)
+    public Response downloadFile(@PathParam("id") int id) {
+        PDFFile pdfFile = fileService.getFile(id); // Fetch the file from the database
+        if (pdfFile == null) {
+            return Response.status(Response.Status.NOT_FOUND).build();
+        }
+
+        // Fetch the file data and the file name
+        byte[] fileData = pdfFile.getFile_Data();
+        String fileName = pdfFile.getFile_Name();
+
+        return Response.ok(fileData, MediaType.APPLICATION_OCTET_STREAM)
+                .header("Content-Disposition", "attachment; filename=\"" + fileName + "\"")
+                .build();
+    }
+
+
+
 }
 
