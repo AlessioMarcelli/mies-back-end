@@ -18,6 +18,7 @@ public class CostiRepo {
         this.dataSource = dataSource;
     }
 
+    //form
     public void aggiungiCosto(Costi costo) {
         try (Connection connection = dataSource.getConnection()) {
             try (PreparedStatement statement = connection.prepareStatement("INSERT INTO dettaglio_costo (Descrizione, Categoria, Unità_Misura, Trimestrale, Costo, Intervallo_Potenza,Classe_Agevolazione) VALUES (?, ?, ?, ?, ?, ?, ?)", PreparedStatement.RETURN_GENERATED_KEYS);) {
@@ -39,6 +40,35 @@ public class CostiRepo {
             throw new RuntimeException(e);
         }
     }
+
+    //from excele
+    public void aggiungiCostoFromExcel(ArrayList<String> costi) {
+        try (Connection connection = dataSource.getConnection()) {
+            String sql = "INSERT INTO dettaglio_costo (Descrizione, Unità_Misura, Trimestrale, Annuale, Costo, Categoria, Intervallo_Potenza, Classe_Agevolazione) VALUES (?, ?, ?, ?, ?, ?, ?, ?)";
+            try (PreparedStatement statement = connection.prepareStatement(sql, PreparedStatement.RETURN_GENERATED_KEYS)) {
+                statement.setString(1, costi.get(0)); // Descrizione
+                statement.setString(2, costi.get(1)); // Unità_Misura
+                statement.setInt(3, Math.round(Float.parseFloat(costi.get(2)))); // Trimestrale
+                statement.setString(4, costi.get(3)); // Annuale
+                statement.setFloat(5, Math.round(Float.parseFloat(costi.get(4)))); // Costo
+                statement.setString(6, costi.get(5)); // Categoria
+                statement.setString(7, costi.get(6)); // Intervallo_Potenza
+                statement.setString(8, costi.get(7)); // Classe_Agevolazione
+
+                statement.executeUpdate();
+
+                try (ResultSet generatedKeys = statement.getGeneratedKeys()) {
+                    if (generatedKeys.next()) {
+                        int id = generatedKeys.getInt(1);
+                        costi.add(String.valueOf(id)); // Aggiungi l'ID generato alla lista costi
+                    }
+                }
+            }
+        } catch (SQLException e) {
+            throw new RuntimeException("Errore durante l'inserimento dei costi nel database", e);
+        }
+    }
+
 
     public ArrayList<Costi> getAllCosti() {
         try (Connection connection = dataSource.getConnection()) {

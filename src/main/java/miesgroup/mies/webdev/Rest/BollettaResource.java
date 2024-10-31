@@ -4,7 +4,6 @@ import jakarta.ws.rs.*;
 import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
 import miesgroup.mies.webdev.Persistance.Model.PDFFile;
-import miesgroup.mies.webdev.Persistance.Repository.SessionRepo;
 import miesgroup.mies.webdev.Rest.Model.FileUploadForm;
 import miesgroup.mies.webdev.Service.FileService;
 import miesgroup.mies.webdev.Service.PodService;
@@ -17,16 +16,18 @@ import org.w3c.dom.Document;
 import javax.xml.parsers.ParserConfigurationException;
 import javax.xml.transform.TransformerException;
 import java.io.IOException;
+import java.util.ArrayList;
 
 @Path("/files")
-public class FileResource {
+public class BollettaResource {
 
     private final FileService fileService;
     private final PodService podService;
 
-    public FileResource(FileService fileService, PodService podService, SessionRepo sessionRepo) {
+    public BollettaResource(FileService fileService, PodService podService) {
         this.fileService = fileService;
         this.podService = podService;
+
     }
 
     @Path("/upload")
@@ -74,8 +75,6 @@ public class FileResource {
                 .header("Content-Disposition", "attachment; filename=\"" + fileName + "\"")
                 .build();
     }
-
-
-
+    
 }
 
