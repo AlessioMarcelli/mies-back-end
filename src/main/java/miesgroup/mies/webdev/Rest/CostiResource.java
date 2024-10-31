@@ -4,11 +4,8 @@ import jakarta.ws.rs.*;
 import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
 import miesgroup.mies.webdev.Persistance.Model.Costi;
-import miesgroup.mies.webdev.Rest.Model.FormData;
 import miesgroup.mies.webdev.Service.CostiService;
-import org.jboss.resteasy.annotations.providers.multipart.MultipartForm;
 
-import java.io.InputStream;
 import java.sql.SQLException;
 import java.util.ArrayList;
 
@@ -28,7 +25,6 @@ public class CostiResource {
 
     }
 
-
     @POST
     @Path("/aggiungi")
     @Consumes(MediaType.APPLICATION_JSON)
@@ -38,14 +34,11 @@ public class CostiResource {
         return Response.ok().build();
     }
 
-
-    @POST
-    @Path("/upload")
-    @Consumes(MediaType.MULTIPART_FORM_DATA)
-    public Response uploadExcelFile(@MultipartForm FormData formData) throws Exception {
-        InputStream excelInputStream = formData.getFile();
-        costiService.readExcelFile(excelInputStream);
-        return Response.ok("File caricato con successo").build();
+    @GET
+    @Path("/{IntervalloPotenza}")
+    @Consumes(MediaType.APPLICATION_JSON)
+    @Produces(MediaType.APPLICATION_JSON)
+    public Costi getSum(@PathParam("IntervalloPotenza") String intervalloPotenza) throws SQLException {
+        return costiService.getSum(intervalloPotenza);
     }
-
 }
