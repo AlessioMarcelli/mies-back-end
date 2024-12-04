@@ -13,6 +13,7 @@ import miesgroup.mies.webdev.Service.AutenticationService;
 import miesgroup.mies.webdev.Service.Exception.ClienteCreationException;
 import miesgroup.mies.webdev.Service.Exception.SessionCreationException;
 import miesgroup.mies.webdev.Service.Exception.WrongUsernameOrPasswordException;
+import miesgroup.mies.webdev.Service.SessionService;
 
 import java.util.Optional;
 
@@ -21,11 +22,13 @@ public class AutenticationResource {
     private final AutenticationService autenticationService;
     private final ClienteRepo clienteRepo;
     private final SessionRepo sessionRepo;
+    private final SessionService sessionService;
 
-    public AutenticationResource(AutenticationService autenticationService, ClienteRepo clienteRepo, SessionRepo sessionRepo) {
+    public AutenticationResource(AutenticationService autenticationService, ClienteRepo clienteRepo, SessionRepo sessionRepo, SessionService sessionService) {
         this.autenticationService = autenticationService;
         this.clienteRepo = clienteRepo;
         this.sessionRepo = sessionRepo;
+        this.sessionService = sessionService;
     }
 
     @POST
@@ -68,6 +71,22 @@ public class AutenticationResource {
         return Response.ok()
                 .cookie(sessionCookie)
                 .build();
+    }
+
+    @GET
+    @Path("/check")
+    @Produces(MediaType.APPLICATION_JSON)
+    public Response check(@CookieParam("SESSION_COOKIE") int sessionId) {
+        sessionService.trovaUtentebBySessione(sessionId);
+        return Response.ok().build();
+    }
+
+    @GET
+    @Path("/checkCategoria")
+    @Produces(MediaType.APPLICATION_JSON)
+    public Response checkCategoria(@CookieParam("SESSION_COOKIE") int sessionId) {
+        Cliente c = sessionService.trovaUtenteCategoryBySessione(sessionId);
+        return Response.ok(c).build();
     }
 
 }

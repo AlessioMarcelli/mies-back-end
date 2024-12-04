@@ -18,6 +18,7 @@ import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.ArrayList;
+import java.util.List;
 
 @ApplicationScoped
 public class PodService {
@@ -129,7 +130,11 @@ public class PodService {
         podRepo.aggiungiSedeNazione(idPod, sede, nazione, sessionRepo.find(idUtente));
     }
 
-    public ArrayList<PDFFile> getFile(String id) {
-        return podRepo.findFile(id);
+    public List<Pod> findPodByIdUser(int idSessione) {
+        return podRepo.findPodByIdUser(sessionRepo.find(idSessione));
+    }
+
+    public ArrayList<PDFFile> getBollette(List<Pod> elencoPod) {
+        return podRepo.getBollette(elencoPod);
     }
 }

@@ -11,7 +11,6 @@ public class Cliente {
     private String email;
     private String telefono;
     private String classeAgevolazione;
-    private int loginEffettuato;
     private int id;
 
 
@@ -88,14 +87,6 @@ public class Cliente {
 
     public void setClasseAgevolazione(String classeAgevolazione) {
         this.classeAgevolazione = classeAgevolazione;
-    }
-
-    public int getLoginEffettuato() {
-        return loginEffettuato;
-    }
-
-    public void setLoginEffettuato(int loginEffettuato) {
-        this.loginEffettuato = loginEffettuato;
     }
 
     public int getId() {

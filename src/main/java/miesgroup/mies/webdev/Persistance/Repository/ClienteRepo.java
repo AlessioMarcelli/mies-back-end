@@ -1,7 +1,6 @@
 package miesgroup.mies.webdev.Persistance.Repository;
 
 import jakarta.enterprise.context.ApplicationScoped;
-import jakarta.persistence.EntityNotFoundException;
 import miesgroup.mies.webdev.Persistance.Model.Cliente;
 
 import javax.sql.DataSource;
@@ -158,7 +157,6 @@ public class ClienteRepo {
                         cliente.setTelefono(resultSet.getString("Telefono"));
                         cliente.setStato(resultSet.getString("Stato"));
                         cliente.setTipologia(resultSet.getString("Tipologia"));
-                        cliente.setLoginEffettuato(resultSet.getInt("Login_Effettuato"));
                         return cliente;
                     }
                 }
