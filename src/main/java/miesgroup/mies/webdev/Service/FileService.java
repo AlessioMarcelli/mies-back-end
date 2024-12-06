@@ -224,6 +224,7 @@ public class FileService {
         bolletta.setOneri(extractedValues.get(11));
         bolletta.setImposte(extractedValues.get(12));
         bolletta.setId_pod(idPod);
+        bolletta.setAnno(String.valueOf(periodoFine.toLocalDate().getYear()));
         bollettaRepo.A2Ainsert(bolletta);
     }
 
