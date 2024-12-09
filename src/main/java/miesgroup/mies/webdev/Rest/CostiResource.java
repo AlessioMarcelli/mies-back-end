@@ -53,11 +53,11 @@ public class CostiResource {
     @DELETE
     @Consumes(MediaType.APPLICATION_JSON)
     @Produces(MediaType.APPLICATION_JSON)
-    public Response deleteCosto(@CookieParam("SESSION_COOKIE") int idSessione,@PathParam("id") int id) throws SQLException {
+    public Response deleteCosto(@CookieParam("SESSION_COOKIE") int idSessione, @PathParam("id") int id) throws SQLException {
         Cliente c = sessionService.trovaUtenteCategoryBySessione(idSessione);
         if (c.getTipologia().equals("Admin")) {
             costiService.deleteCosto(id);
-        }else {
+        } else {
             return Response.status(Response.Status.FORBIDDEN).build();
         }
         return Response.ok().build();
@@ -70,5 +70,14 @@ public class CostiResource {
         InputStream excelInputStream = formData.getFile();
         costiService.readExcelFile(excelInputStream);
         return Response.ok("File caricato con successo").build();
+    }
+
+    @Path("/update")
+    @PUT
+    @Consumes(MediaType.APPLICATION_JSON)
+    @Produces(MediaType.APPLICATION_JSON)
+    public Response uploadCosto(Costi costo) throws SQLException {
+        costiService.updateCosto(costo.getId(), costo.getDescrizione(), costo.getCategoria(), costo.getUnitaMisura(), costo.getTrimestre(), costo.getAnno(), costo.getCosto(), costo.getIntervalloPotenza(), costo.getClasseAgevolazione());
+        return Response.ok().build();
     }
 }

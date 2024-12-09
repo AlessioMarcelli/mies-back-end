@@ -72,4 +72,18 @@ public class CostiService {
         workbook.close();
         costiRepo.aggiungiCostoFromExcel(costiExcle);
     }
+
+    public void updateCosto(int id, String descrizione, String categoria, String unitaMisura, int trimestre, String anno, float costo, String intervalloPotenza, String classeAgevolazione) {
+        Costi c = new Costi();
+        c.setId(id);
+        c.setDescrizione(descrizione);
+        c.setCategoria(categoria);
+        c.setUnitaMisura(unitaMisura);
+        c.setTrimestre(trimestre);
+        c.setAnno(anno);
+        c.setCosto(costo);
+        c.setIntervalloPotenza(intervalloPotenza);
+        c.setClasseAgevolazione(classeAgevolazione);
+        costiRepo.updateCosto(c);
+    }
 }

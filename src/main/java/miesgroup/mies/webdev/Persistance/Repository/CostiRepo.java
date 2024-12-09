@@ -127,4 +127,23 @@ public class CostiRepo {
             throw new RuntimeException(e);
         }
     }
+
+    public void updateCosto(Costi c) {
+        try (Connection connection = dataSource.getConnection()) {
+            try (PreparedStatement statement = connection.prepareStatement("UPDATE dettaglio_costo SET Descrizione = ?, Categoria = ?, Unità_Misura = ?, Trimestrale = ?, Annuale = ?, Costo = ?, Intervallo_Potenza = ?, Classe_Agevolazione = ? WHERE Id_Costo = ?");) {
+                statement.setString(1, c.getDescrizione());
+                statement.setString(2, c.getCategoria());
+                statement.setString(3, c.getUnitaMisura());
+                statement.setInt(4, c.getTrimestre());
+                statement.setString(5, c.getAnno());
+                statement.setFloat(6, c.getCosto());
+                statement.setString(7, c.getIntervalloPotenza());
+                statement.setString(8, c.getClasseAgevolazione());
+                statement.setInt(9, c.getId());
+                statement.executeUpdate();
+            }
+        } catch (SQLException e) {
+            throw new RuntimeException(e);
+        }
+    }
 }
