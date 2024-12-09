@@ -9,6 +9,7 @@ import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.Optional;
+import java.util.Set;
 
 @ApplicationScoped
 public class ClienteRepo {
@@ -141,18 +142,17 @@ public class ClienteRepo {
         return null;
     }
 
-    public Cliente getCliente(int idUtente) {
+
+    public Cliente getCliente(Integer integer) {
         try (Connection connection = dataSource.getConnection()) {
-            try (PreparedStatement statement = connection.prepareStatement("SELECT * FROM utente WHERE Id_Utente = ?")) {
-                statement.setInt(1, idUtente);
+            try (PreparedStatement statement = connection.prepareStatement("SELECT Username,Piva,Email,Sede_Legale,Telefono,Stato,Tipologia FROM utente WHERE Id_Utente = ?")) {
+                statement.setInt(1, integer);
                 try (ResultSet resultSet = statement.executeQuery()) {
                     if (resultSet.next()) {
                         Cliente cliente = new Cliente();
-                        cliente.setId(resultSet.getInt("Id_Utente"));
                         cliente.setUsername(resultSet.getString("Username"));
                         cliente.setpIva(resultSet.getString("Piva"));
                         cliente.setEmail(resultSet.getString("Email"));
-                        cliente.setPassword(resultSet.getString("Password"));
                         cliente.setSedeLegale(resultSet.getString("Sede_Legale"));
                         cliente.setTelefono(resultSet.getString("Telefono"));
                         cliente.setStato(resultSet.getString("Stato"));
@@ -167,20 +167,33 @@ public class ClienteRepo {
         return null;
     }
 
-    public void updateUtente(int idUtente, String sedeLegale, String pIva, String telefono, String email, String stato, String classeAgevolazione) {
-        try (Connection connection = dataSource.getConnection()) {
-            try (PreparedStatement statement = connection.prepareStatement("UPDATE utente SET Sede_Legale = ?, Piva = ?, Telefono = ?, Email = ?, Stato = ?, Classe_Agevolazione = ? WHERE Id_Utente = ?")) {
-                statement.setString(1, sedeLegale);
-                statement.setString(2, pIva);
-                statement.setString(3, telefono);
-                statement.setString(4, email);
-                statement.setString(5, stato);
-                statement.setString(6, classeAgevolazione);
-                statement.setInt(7, idUtente);
-                statement.executeUpdate();
-            }
+    public void updateCliente(int idUtente, String field, String newValue) {
+        // Lista dei campi permessi
+        Set<String> validFields = Set.of(
+                "username",
+                "password",
+                "sedeLegale",
+                "pIva",
+                "stato",
+                "email",
+                "telefono",
+                "classeAgevolazione");
+
+        if (!validFields.contains(field)) {
+            throw new IllegalArgumentException("Campo non valido: " + field);
+        }
+
+        String query = "UPDATE utente SET " + field + " = ? WHERE Id_Utente = ?";
+
+        try (Connection connection = dataSource.getConnection();
+             PreparedStatement statement = connection.prepareStatement(query)) {
+
+            statement.setString(1, newValue);
+            statement.setInt(2, idUtente);
+            statement.executeUpdate();
         } catch (SQLException e) {
             throw new RuntimeException(e);
         }
     }
+
 }

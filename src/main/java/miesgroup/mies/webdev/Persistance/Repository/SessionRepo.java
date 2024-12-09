@@ -88,7 +88,7 @@ public class SessionRepo {
 
     public Cliente findCategory(int sessionId) {
         try (Connection connection = dataSources.getConnection()) {
-            try (PreparedStatement statement = connection.prepareStatement("SELECT * FROM utente WHERE Id_Utente = ?")) {
+            try (PreparedStatement statement = connection.prepareStatement("SELECT Id_Utente,Tipologia FROM utente WHERE Id_Utente = ?")) {
                 statement.setInt(1, sessionId);
                 try (ResultSet resultSet = statement.executeQuery()) {
                     if (resultSet.next()) {

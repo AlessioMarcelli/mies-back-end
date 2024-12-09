@@ -2,10 +2,13 @@ package miesgroup.mies.webdev.Rest;
 
 import jakarta.ws.rs.*;
 import jakarta.ws.rs.core.MediaType;
+import jakarta.ws.rs.core.Response;
 import miesgroup.mies.webdev.Persistance.Model.Cliente;
 import miesgroup.mies.webdev.Rest.Model.UpdateUtente;
 import miesgroup.mies.webdev.Service.ClienteService;
 import miesgroup.mies.webdev.Service.SessionService;
+
+import java.util.Map;
 
 @Path("/cliente")
 public class ClienteResource {
@@ -20,17 +23,19 @@ public class ClienteResource {
     @GET
     @Produces(MediaType.APPLICATION_JSON)
     @Consumes(MediaType.APPLICATION_JSON)
-    public Cliente getCliente(@CookieParam("SESSION_COOCKIE") int sessionId) {
-        return clienteService.getCliente(sessionService.trovaUtentebBySessione(sessionId));
+    public Response getCliente(@CookieParam("SESSION_COOKIE") int sessionId) {
+        Cliente c = clienteService.getCliente(sessionService.trovaUtentebBySessione(sessionId));
+        return Response.ok(c).build();
     }
+
 
     @Path("/update")
     @PUT
     @Consumes(MediaType.APPLICATION_JSON)
     @Produces(MediaType.APPLICATION_JSON)
-    public UpdateUtente updateUtente (@CookieParam("SESSION_COOCKIE") int sessionId, UpdateUtente updateUtente) {
-        clienteService.updateUtente(sessionService.trovaUtentebBySessione(sessionId), updateUtente.getSedeLegale(), updateUtente.getpIva(), updateUtente.getTelefono(), updateUtente.getEmail(), updateUtente.getStato(), updateUtente.getClasseAgevolazione());
-        return updateUtente;
+    public Response updateCliente(@CookieParam("SESSION_COOKIE") int sessionId, Map<String, String> updateData) {
+        int idUtente = sessionService.trovaUtentebBySessione(sessionId);
+        updateData.forEach((field, newValue) -> clienteService.updateCliente(idUtente, field, newValue));
+        return Response.ok().build();
     }
-
 }

@@ -8,9 +8,11 @@ import miesgroup.mies.webdev.Rest.Model.UpdateUtente;
 @ApplicationScoped
 public class ClienteService {
     private final ClienteRepo clienteRepo;
+    private final HashCalculator hashCalculator;
 
-    public ClienteService(ClienteRepo clienteRepo) {
+    public ClienteService(ClienteRepo clienteRepo, HashCalculator hashCalculator) {
         this.clienteRepo = clienteRepo;
+        this.hashCalculator = hashCalculator;
     }
 
     public String getClasseAgevolazione(String idPod) {
@@ -21,8 +23,11 @@ public class ClienteService {
         return clienteRepo.getCliente(idUtente);
     }
 
-    public void updateUtente(int idUtente, String sedeLegale, String pIva, String telefono, String email, String stato, String classeAgevolazione) {
-        clienteRepo.updateUtente(idUtente, sedeLegale, pIva, telefono, email, stato, classeAgevolazione);
 
+    public void updateCliente(int idUtente, String field, String newValue) {
+        if (field.equals("password")) {
+            newValue = hashCalculator.calculateHash(newValue);
+        }
+        clienteRepo.updateCliente(idUtente, field, newValue);
     }
 }
