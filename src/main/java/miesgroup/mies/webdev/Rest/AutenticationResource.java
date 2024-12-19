@@ -36,7 +36,7 @@ public class AutenticationResource {
     @Consumes(MediaType.APPLICATION_JSON)
     @Produces(MediaType.APPLICATION_JSON)
     public Response register(Cliente cliente) throws ClienteCreationException {
-        autenticationService.register(cliente.getUsername(), cliente.getPassword(), cliente.getSedeLegale(), cliente.getpIva(), cliente.getEmail(), cliente.getTelefono(), cliente.getStato(),cliente.getTipologia());
+        autenticationService.register(cliente.getUsername(), cliente.getPassword(), cliente.getSedeLegale(), cliente.getpIva(), cliente.getEmail(), cliente.getTelefono(), cliente.getStato(), cliente.getTipologia());
         return Response.ok("utente registrato").build();
     }
 
@@ -77,8 +77,12 @@ public class AutenticationResource {
     @Path("/check")
     @Produces(MediaType.APPLICATION_JSON)
     public Response check(@CookieParam("SESSION_COOKIE") int sessionId) {
-        sessionService.trovaUtentebBySessione(sessionId);
-        return Response.ok().build();
+        Integer sessione = sessionService.trovaUtentebBySessione(sessionId);
+        if (sessione != null) {
+            return Response.ok().build();
+        } else {
+            return Response.status(Response.Status.UNAUTHORIZED).build();
+        }
     }
 
     @GET
@@ -86,7 +90,12 @@ public class AutenticationResource {
     @Produces(MediaType.APPLICATION_JSON)
     public Response checkCategoria(@CookieParam("SESSION_COOKIE") int sessionId) {
         Cliente c = sessionService.trovaUtenteCategoryBySessione(sessionId);
-        return Response.ok(c).build();
+        if (c == null) {
+            return Response.status(Response.Status.UNAUTHORIZED).build();
+        } else {
+            return Response.ok(c).build();
+
+        }
     }
 
 }
