@@ -1,6 +1,5 @@
 package miesgroup.mies.webdev.Rest;
 
-
 import jakarta.ws.rs.*;
 import jakarta.ws.rs.core.MediaType;
 import miesgroup.mies.webdev.Persistance.Model.PDFFile;
@@ -9,6 +8,7 @@ import miesgroup.mies.webdev.Rest.Model.UpdatePodRequest;
 import miesgroup.mies.webdev.Service.PodService;
 
 import java.util.ArrayList;
+import java.util.List;
 
 @Path("/pod")
 public class PodResource {
@@ -41,10 +41,11 @@ public class PodResource {
     }
 
     @GET
-    @Path("/{id}/bollette")
+    @Path("/bollette")
     @Produces(MediaType.APPLICATION_JSON)
-    public ArrayList<PDFFile> getBollette(@PathParam("id") String id) {
-        return podService.getFile(id);
+    public ArrayList<PDFFile> getBollette(@CookieParam("SESSION_COOKIE") int id_sessione) {
+        List<Pod> elencoPod = podService.findPodByIdUser(id_sessione);
+        return podService.getBollette(elencoPod);
     }
 
 }

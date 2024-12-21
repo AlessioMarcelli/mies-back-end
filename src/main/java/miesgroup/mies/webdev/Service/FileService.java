@@ -135,6 +135,7 @@ public class FileService {
                         NomeBolletta++;
                         nomeBolletta = extractBollettaNumero(lineText);
                     }
+
                     if (lineText.contains("Fascia oraria") && fasciaOrariaCount < 9) {
                         fasciaOrariaCount++;
                         ArrayList<Date> dates = extractDates(lineText);
@@ -146,6 +147,8 @@ public class FileService {
                         Double value = extractValueFromLine(lineText);
                         if (value != null) {
                             extractedValues.add(value);
+                        } else {
+                            extractedValues.add(0.0);
                         }
                     }
 
@@ -155,6 +158,8 @@ public class FileService {
                         if (value != null) {
                             extractedValues.add(value);
                             System.out.println("Extracted value (SPESA PER LA MATERIA ENERGIA): " + value);
+                        } else {
+                            extractedValues.add(0.0);
                         }
                     }
 
@@ -164,6 +169,8 @@ public class FileService {
                         if (value != null) {
                             extractedValues.add(value);
                             System.out.println("Extracted value (SPESA PER IL TRASPORTO E LA GESTIONE DEL CONTATORE): " + value);
+                        } else {
+                            extractedValues.add(0.0);
                         }
                     }
 
@@ -173,6 +180,8 @@ public class FileService {
                         if (value != null) {
                             extractedValues.add(value);
                             System.out.println("Extracted value (SPESA PER ONERI DI SISTEMA): " + value);
+                        } else {
+                            extractedValues.add(0.0);
                         }
                     }
 
@@ -182,12 +191,14 @@ public class FileService {
                         if (value != null) {
                             extractedValues.add(value);
                             System.out.println("Extracted value (TOTALE IMPOSTE): " + value);
+                        } else {
+                            extractedValues.add(0.0);
                         }
                     }
                 }
             }
             insertBolletta(extractedValues, nomeBolletta, periodoInizio, periodoFine, idPod);
-            convertiDatainMese(periodoFine,nomeBolletta);
+            convertiDatainMese(periodoFine, nomeBolletta);
             bollettaService.A2AVerifica(nomeBolletta, idPod, extractedValues.get(9));
         } catch (Exception e) {
             e.printStackTrace();
@@ -213,6 +224,7 @@ public class FileService {
         bolletta.setOneri(extractedValues.get(11));
         bolletta.setImposte(extractedValues.get(12));
         bolletta.setId_pod(idPod);
+        bolletta.setAnno(String.valueOf(periodoFine.toLocalDate().getYear()));
         bollettaRepo.A2Ainsert(bolletta);
     }
 

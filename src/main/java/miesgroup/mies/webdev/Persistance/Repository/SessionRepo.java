@@ -1,6 +1,7 @@
 package miesgroup.mies.webdev.Persistance.Repository;
 
 import jakarta.enterprise.context.ApplicationScoped;
+import miesgroup.mies.webdev.Persistance.Model.Cliente;
 import miesgroup.mies.webdev.Persistance.Model.Sessione;
 
 import javax.sql.DataSource;
@@ -54,7 +55,7 @@ public class SessionRepo {
         return Optional.empty();
     }
 
-    public int delete(int sessionId) {
+    public void delete(int sessionId) {
         try {
             try (Connection connection = dataSources.getConnection()) {
                 try (PreparedStatement statement = connection.prepareStatement("DELETE FROM sessione WHERE Id_Sessione = ?")) {
@@ -65,17 +66,36 @@ public class SessionRepo {
         } catch (SQLException e) {
             throw new RuntimeException(e);
         }
-        return sessionId;
+
     }
 
     public Integer find(int idSessione) {
         try (Connection connsessione = dataSources.getConnection()) {
-            try(PreparedStatement statement = connsessione.prepareStatement("SELECT id_utente FROM sessione WHERE Id_Sessione = ?")) {
+            try (PreparedStatement statement = connsessione.prepareStatement("SELECT id_utente FROM sessione WHERE Id_Sessione = ?")) {
                 statement.setInt(1, idSessione);
                 try (ResultSet resultSet = statement.executeQuery()) {
                     if (resultSet.next()) {
                         int idUtente = resultSet.getInt("id_utente");
                         return idUtente;
+                    }
+                }
+            }
+        } catch (SQLException e) {
+            throw new RuntimeException(e);
+        }
+        return null;
+    }
+
+    public Cliente findCategory(int sessionId) {
+        try (Connection connection = dataSources.getConnection()) {
+            try (PreparedStatement statement = connection.prepareStatement("SELECT Id_Utente,Tipologia FROM utente WHERE Id_Utente = ?")) {
+                statement.setInt(1, sessionId);
+                try (ResultSet resultSet = statement.executeQuery()) {
+                    if (resultSet.next()) {
+                        Cliente cliente = new Cliente();
+                        cliente.setId(resultSet.getInt("Id_Utente"));
+                        cliente.setTipologia(resultSet.getString("Tipologia"));
+                        return cliente;
                     }
                 }
             }

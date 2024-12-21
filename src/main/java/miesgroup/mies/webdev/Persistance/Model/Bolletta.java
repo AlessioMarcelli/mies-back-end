@@ -27,6 +27,15 @@ public class Bolletta {
     private double altro;
     private Date PeriodoInizio;
     private Date PeriodoFine;
+    private String anno;
+
+    public String getAnno() {
+        return anno;
+    }
+
+    public void setAnno(String anno) {
+        this.anno = anno;
+    }
 
     public int getId() {
         return id;
