@@ -24,10 +24,10 @@ public class ClienteService {
     }
 
 
-    public void updateCliente(int idUtente, String field, String newValue) {
+    public boolean updateCliente(int idUtente, String field, String newValue) {
         if (field.equals("password")) {
             newValue = hashCalculator.calculateHash(newValue);
         }
-        clienteRepo.updateCliente(idUtente, field, newValue);
+        return clienteRepo.updateCliente(idUtente, field, newValue);
     }
 }

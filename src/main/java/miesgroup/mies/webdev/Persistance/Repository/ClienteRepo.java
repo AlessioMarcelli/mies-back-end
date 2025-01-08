@@ -167,7 +167,7 @@ public class ClienteRepo {
         return null;
     }
 
-    public void updateCliente(int idUtente, String field, String newValue) {
+    public boolean updateCliente(int idUtente, String field, String newValue) {
         // Lista dei campi permessi
         Set<String> validFields = Set.of(
                 "username",
@@ -184,16 +184,21 @@ public class ClienteRepo {
         }
 
         String query = "UPDATE utente SET " + field + " = ? WHERE Id_Utente = ?";
+        int rowsAffected = 0;
 
         try (Connection connection = dataSource.getConnection();
              PreparedStatement statement = connection.prepareStatement(query)) {
 
             statement.setString(1, newValue);
             statement.setInt(2, idUtente);
-            statement.executeUpdate();
+
+            rowsAffected = statement.executeUpdate();
         } catch (SQLException e) {
-            throw new RuntimeException(e);
+            e.printStackTrace();
+            return false; // Ritorna false in caso di eccezione
         }
+        return rowsAffected > 0; // Ritorna true se almeno una riga è stata aggiornata
     }
+
 
 }

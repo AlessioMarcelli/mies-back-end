@@ -73,6 +73,12 @@
             <version>5.2.3</version>
         </dependency>
 
+        <!-- Mailer -->
+        <dependency>
+            <groupId>io.quarkus</groupId>
+            <artifactId>quarkus-mailer</artifactId>
+        </dependency>
+
         <!-- PDFBox for PDF manipulation -->
         <dependency>
             <groupId>org.apache.pdfbox</groupId>

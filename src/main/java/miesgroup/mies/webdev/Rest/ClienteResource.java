@@ -4,7 +4,6 @@ import jakarta.ws.rs.*;
 import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
 import miesgroup.mies.webdev.Persistance.Model.Cliente;
-import miesgroup.mies.webdev.Rest.Model.UpdateUtente;
 import miesgroup.mies.webdev.Service.ClienteService;
 import miesgroup.mies.webdev.Service.SessionService;
 
@@ -35,7 +34,19 @@ public class ClienteResource {
     @Produces(MediaType.APPLICATION_JSON)
     public Response updateCliente(@CookieParam("SESSION_COOKIE") int sessionId, Map<String, String> updateData) {
         int idUtente = sessionService.trovaUtentebBySessione(sessionId);
-        updateData.forEach((field, newValue) -> clienteService.updateCliente(idUtente, field, newValue));
+
+        for (Map.Entry<String, String> entry : updateData.entrySet()) {
+            String field = entry.getKey();
+            String newValue = entry.getValue();
+
+            boolean isUpdated = clienteService.updateCliente(idUtente, field, newValue);
+            if (!isUpdated) {
+                return Response.status(Response.Status.BAD_REQUEST)
+                        .entity("Aggiornamento fallito per il campo: " + field)
+                        .build();
+            }
+        }
         return Response.ok().build();
     }
+
 }

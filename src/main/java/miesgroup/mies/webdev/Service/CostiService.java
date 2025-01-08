@@ -17,7 +17,7 @@ public class CostiService {
         this.costiRepo = costiRepo;
     }
 
-    public void createCosto(String descrizione, String categoria, String unitaMisura, Integer trimestre, String anno, float valore, String tipoTensione, String classeAgevolazione) throws SQLException {
+    public boolean createCosto(String descrizione, String categoria, String unitaMisura, Integer trimestre, String anno, float valore, String tipoTensione, String classeAgevolazione) throws SQLException {
         Costi costo = new Costi();
         costo.setDescrizione(descrizione);
         costo.setCategoria(categoria);
@@ -27,7 +27,7 @@ public class CostiService {
         costo.setAnno(anno);
         costo.setIntervalloPotenza(tipoTensione);
         costo.setClasseAgevolazione(classeAgevolazione);
-        costiRepo.aggiungiCosto(costo);
+        return costiRepo.aggiungiCosto(costo);
     }
 
 
@@ -45,7 +45,7 @@ public class CostiService {
         costiRepo.deleteCosto(id);
     }
 
-    public void readExcelFile(InputStream inputStream) throws Exception {
+    public boolean readExcelFile(InputStream inputStream) throws Exception {
         Workbook workbook = WorkbookFactory.create(inputStream);
         Sheet sheet = workbook.getSheetAt(0); // Prendi il primo foglio
         ArrayList<String> costiExcle = new ArrayList<>();
@@ -70,10 +70,10 @@ public class CostiService {
             i = 1;
         }
         workbook.close();
-        costiRepo.aggiungiCostoFromExcel(costiExcle);
+        return costiRepo.aggiungiCostoFromExcel(costiExcle);
     }
 
-    public void updateCosto(int id, String descrizione, String categoria, String unitaMisura, int trimestre, String anno, float costo, String intervalloPotenza, String classeAgevolazione) {
+    public boolean updateCosto(int id, String descrizione, String categoria, String unitaMisura, int trimestre, String anno, float costo, String intervalloPotenza, String classeAgevolazione) {
         Costi c = new Costi();
         c.setId(id);
         c.setDescrizione(descrizione);
@@ -84,6 +84,6 @@ public class CostiService {
         c.setCosto(costo);
         c.setIntervalloPotenza(intervalloPotenza);
         c.setClasseAgevolazione(classeAgevolazione);
-        costiRepo.updateCosto(c);
+        return costiRepo.updateCosto(c);
     }
 }

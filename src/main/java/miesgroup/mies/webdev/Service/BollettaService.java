@@ -161,4 +161,8 @@ public class BollettaService {
         bd = bd.setScale(8, RoundingMode.HALF_UP);
         return bd.doubleValue();
     }
+
+    public String A2AisPresent(String nomeBolletta, String idPod) {
+        return bollettaRepo.A2AisPresent(nomeBolletta, idPod);
+    }
 }

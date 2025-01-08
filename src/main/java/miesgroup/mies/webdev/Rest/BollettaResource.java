@@ -16,7 +16,6 @@ import org.w3c.dom.Document;
 import javax.xml.parsers.ParserConfigurationException;
 import javax.xml.transform.TransformerException;
 import java.io.IOException;
-import java.util.ArrayList;
 
 @Path("/files")
 public class BollettaResource {
@@ -30,33 +29,77 @@ public class BollettaResource {
 
     }
 
+    @Path("/xml/{id}")
+    @GET
+    @Produces(MediaType.APPLICATION_XML)
+    public Response getXml(@PathParam("id") int id) throws IOException, ParserConfigurationException {
+        byte[] xmlData = fileService.getXmlData(id);
+        Document xmlDoc = fileService.convertPdfToXml(xmlData);
+        return Response.ok(xmlDoc, MediaType.APPLICATION_XML).build();
+    }
+
+
     @Path("/upload")
     @POST
     @Consumes(MediaType.MULTIPART_FORM_DATA)
-    @Produces(MediaType.APPLICATION_XML)
-    public Response uploadAndProcessFile(@MultipartForm FileUploadForm form, @CookieParam("SESSION_COOKIE") int id_sessione) {
+    @Produces(MediaType.TEXT_PLAIN)
+    public Response uploadAndProcessFileA2A(@MultipartForm FileUploadForm form, @CookieParam("SESSION_COOKIE") int id_sessione) {
         try {
-            // Salva il file caricato
+            // 1. Salva il file caricato e ottieni l'ID associato
             int idFile = fileService.saveFile(form.getFileName(), form.getFileData());
-            // Converti il PDF in XML
+
+            // 2. Converte il file PDF caricato in un documento XML
             Document xmlDocument = fileService.convertPdfToXml(form.getFileData());
-            // Converti il documento XML in una stringa
+
+            // 3. Converte il documento XML in una stringa
             String xmlString = fileService.convertDocumentToString(xmlDocument);
-            // Estrai i valori dal documento XML
             byte[] xmlData = xmlString.getBytes();
-            String idPod = podService.extractValuesFromXml(xmlData, id_sessione); // inserisce pod
-            fileService.extractValuesFromXml(xmlData, idPod); // Inserisce bolletta
+
+            // 4. Estrae l'ID del POD dal documento XML usando i dati della sessione
+            String idPod = podService.extractValuesFromXml(xmlData, id_sessione);
+
+            // Verifica che l'ID del POD sia stato estratto correttamente
+            if (idPod == null || idPod.isEmpty()) {
+                return Response.status(Response.Status.BAD_REQUEST)
+                        .entity("Impossibile estrarre l'ID del POD dal documento XML.")
+                        .build();
+            }
+
+            // 5. Estrai i dati della bolletta dal documento XML e inseriscili nel database
+            boolean result = fileService.extractValuesFromXmlA2A(xmlData, idPod);
+
+            // Verifica se i dati della bolletta sono stati inseriti correttamente
+            if (!result) {
+                return Response.status(Response.Status.BAD_REQUEST)
+                        .entity("Impossibile inserire i dati della bolletta nel database.")
+                        .build();
+            }
+
+            // 6. Associa l'ID del POD con l'ID del file caricato
             fileService.abbinaPod(idFile, idPod);
-            // Restituisci i valori estratti
-            return Response.ok("File caricato e dati salvati correttamente").build();
+
+            // 7. Restituisci una risposta di successo
+            return Response.status(Response.Status.OK)
+                    .entity("<message>File caricato e processato con successo.</message>")
+                    .build();
         } catch (IOException | ParserConfigurationException | TransformerException | SQLException e) {
-            return Response.status(Response.Status.INTERNAL_SERVER_ERROR).entity(e.getMessage()).build();
+            // Gestione di errori specifici relativi al salvataggio, alla conversione o al database
+            return Response.status(Response.Status.INTERNAL_SERVER_ERROR)
+                    .entity("<error>" + e.getMessage() + "</error>")
+                    .build();
         } catch (IllegalArgumentException e) {
-            return Response.status(Response.Status.BAD_REQUEST).entity("Invalid input: " + e.getMessage()).build();
+            // Gestione di input non validi
+            return Response.status(Response.Status.BAD_REQUEST)
+                    .entity("<error>Input non valido: " + e.getMessage() + "</error>")
+                    .build();
         } catch (Exception e) {
-            return Response.status(Response.Status.INTERNAL_SERVER_ERROR).entity("An unexpected error occurred: " + e.getMessage()).build();
+            // Gestione di errori generici o imprevisti
+            return Response.status(Response.Status.INTERNAL_SERVER_ERROR)
+                    .entity("<error>Si è verificato un errore inaspettato: " + e.getMessage() + "</error>")
+                    .build();
         }
     }
+
 
     @GET
     @Path("/{id}/download")
@@ -75,6 +118,6 @@ public class BollettaResource {
                 .header("Content-Disposition", "attachment; filename=\"" + fileName + "\"")
                 .build();
     }
-    
+
 }
 

@@ -40,7 +40,7 @@ public class BollettaRepo {
                 statement.setDate(15, bolletta.getPeriodoInizio());
                 statement.setDate(16, bolletta.getPeriodoFine());
                 statement.setString(17, bolletta.getId_pod());
-                statement.setString(18,bolletta.getAnno());
+                statement.setString(18, bolletta.getAnno());
                 statement.executeUpdate();
                 try (var generatedKeys = statement.getGeneratedKeys()) {
                     if (generatedKeys.next()) {
@@ -791,4 +791,32 @@ public class BollettaRepo {
             throw new RuntimeException("Error connecting to database", e);
         }
     }
+
+    public String A2AisPresent(String nomeBolletta, String idPod) {
+        String query = "SELECT Nome_Bolletta FROM bolletta_pod WHERE Nome_Bolletta = ? AND id_pod = ?";
+
+        try (Connection connection = dataSource.getConnection();
+             PreparedStatement statement = connection.prepareStatement(query)) {
+
+            // Imposta i parametri della query
+            statement.setString(1, nomeBolletta);
+            statement.setString(2, idPod);
+
+            // Esegui la query
+            try (ResultSet resultSet = statement.executeQuery()) {
+                if (resultSet.next()) {
+                    // Ritorna il nome della bolletta trovata
+                    return resultSet.getString("Nome_Bolletta");
+                } else {
+                    // Se non ci sono risultati, ritorna null o una stringa indicativa
+                    return null;
+                }
+            }
+
+        } catch (SQLException e) {
+            // Gestione dell'errore
+            throw new RuntimeException("Errore durante la verifica della presenza della bolletta nel database.", e);
+        }
+    }
+
 }

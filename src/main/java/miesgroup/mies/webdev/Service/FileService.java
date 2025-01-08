@@ -1,8 +1,8 @@
 package miesgroup.mies.webdev.Service;//package miesgroup.mies.webdev.Service;
 
 import jakarta.enterprise.context.ApplicationScoped;
-import miesgroup.mies.webdev.Persistance.Model.Bolletta;
 import miesgroup.mies.webdev.Persistance.Model.PDFFile;
+import miesgroup.mies.webdev.Persistance.Model.Periodo;
 import miesgroup.mies.webdev.Persistance.Repository.BollettaRepo;
 import miesgroup.mies.webdev.Persistance.Repository.FileRepo;
 import org.apache.pdfbox.pdmodel.PDDocument;
@@ -13,7 +13,7 @@ import javax.xml.parsers.DocumentBuilderFactory;
 import javax.xml.parsers.ParserConfigurationException;
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
-import java.sql.Date;
+import java.util.Date;
 import java.sql.SQLException;
 import javax.xml.transform.OutputKeys;
 import javax.xml.transform.Transformer;
@@ -27,15 +27,18 @@ import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 import org.w3c.dom.Node;
 import org.w3c.dom.NodeList;
+import org.xml.sax.SAXException;
 
-import java.io.InputStream;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.time.LocalDate;
+import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 
+import java.util.HashMap;
 import java.util.Locale;
+import java.util.Map;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -101,131 +104,231 @@ public class FileService {
     }
 
 
-    //ESTRAI VALORI DA XML
-    public void extractValuesFromXml(byte[] xmlData, String idPod) throws SQLException {
-        ArrayList<Double> extractedValues = new ArrayList<>();
-        String nomeBolletta = "";
-        Date periodoInizio = null;
-        Date periodoFine = null;
-
-        int fasciaOrariaCount = 0; // Contatore per "Fascia oraria"
-        int spesaMateriaEnergiaCount = 0; // Contatore per "SPESA PER LA MATERIA ENERGIA"
-        int spesaTrasportoGestioneContatoreCount = 0; // Contatore per "SPESA PER IL TRASPORTO E LA GESTIONE DEL CONTATORE"
-        int spesaOneriSistemaCount = 0; // Contatore per "SPESA PER ONERI DI SISTEMA"
-        int totaleImposteCount = 0; // Contatore per "TOTALE IMPOSTE"
-        int NomeBolletta = 0; // Contatore per "Nome Bolletta"
-        int estrazioneDate = 0; // Contatore per "Data"
-
+    public boolean extractValuesFromXmlA2A(byte[] xmlData, String idPod) {
         try {
+            // Parsing del documento XML
             DocumentBuilderFactory factory = DocumentBuilderFactory.newInstance();
             DocumentBuilder builder = factory.newDocumentBuilder();
+            Document document = builder.parse(new ByteArrayInputStream(xmlData));
 
-            InputStream is = new ByteArrayInputStream(xmlData);
-            Document document = builder.parse(is);
-
-            NodeList lineNodes = document.getElementsByTagName("Line");
-
-            for (int i = 0; i < lineNodes.getLength(); i++) {
-                Node lineNode = lineNodes.item(i);
-                if (lineNode.getNodeType() == Node.ELEMENT_NODE) {
-                    Element lineElement = (Element) lineNode;
-                    String lineText = lineElement.getTextContent();
-
-                    if (lineText.contains("Bolletta") && NomeBolletta < 1) {
-                        NomeBolletta++;
-                        nomeBolletta = extractBollettaNumero(lineText);
-                    }
-
-                    if (lineText.contains("Fascia oraria") && fasciaOrariaCount < 9) {
-                        fasciaOrariaCount++;
-                        ArrayList<Date> dates = extractDates(lineText);
-                        if (dates.size() == 2 && estrazioneDate < 1) {
-                            estrazioneDate++;
-                            periodoInizio = dates.get(0);
-                            periodoFine = dates.get(1);
-                        }
-                        Double value = extractValueFromLine(lineText);
-                        if (value != null) {
-                            extractedValues.add(value);
-                        } else {
-                            extractedValues.add(0.0);
-                        }
-                    }
-
-                    if (lineText.contains("SPESA PER LA MATERIA ENERGIA") && spesaMateriaEnergiaCount < 2) {
-                        spesaMateriaEnergiaCount++;
-                        Double value = extractValueFromLine(lineText);
-                        if (value != null) {
-                            extractedValues.add(value);
-                            System.out.println("Extracted value (SPESA PER LA MATERIA ENERGIA): " + value);
-                        } else {
-                            extractedValues.add(0.0);
-                        }
-                    }
-
-                    if (lineText.contains("SPESA PER IL TRASPORTO E LA GESTIONE DEL CONTATORE") && spesaTrasportoGestioneContatoreCount < 2) {
-                        spesaTrasportoGestioneContatoreCount++;
-                        Double value = extractValueFromLine(lineText);
-                        if (value != null) {
-                            extractedValues.add(value);
-                            System.out.println("Extracted value (SPESA PER IL TRASPORTO E LA GESTIONE DEL CONTATORE): " + value);
-                        } else {
-                            extractedValues.add(0.0);
-                        }
-                    }
-
-                    if (lineText.contains("SPESA PER ONERI DI SISTEMA") && spesaOneriSistemaCount < 2) {
-                        spesaOneriSistemaCount++;
-                        Double value = extractValueFromLine(lineText);
-                        if (value != null) {
-                            extractedValues.add(value);
-                            System.out.println("Extracted value (SPESA PER ONERI DI SISTEMA): " + value);
-                        } else {
-                            extractedValues.add(0.0);
-                        }
-                    }
-
-                    if (lineText.contains("TOTALE IMPOSTE") && totaleImposteCount < 2) {
-                        totaleImposteCount++;
-                        Double value = extractValueFromLine(lineText);
-                        if (value != null) {
-                            extractedValues.add(value);
-                            System.out.println("Extracted value (TOTALE IMPOSTE): " + value);
-                        } else {
-                            extractedValues.add(0.0);
-                        }
-                    }
-                }
+            // Verifica se la bolletta esiste
+            String nomeBolletta = extractBollettaNome(document);
+            if (nomeBolletta == null || nomeBolletta.equals(bollettaService.A2AisPresent(nomeBolletta, idPod))) {
+                return false;
             }
-            insertBolletta(extractedValues, nomeBolletta, periodoInizio, periodoFine, idPod);
-            convertiDatainMese(periodoFine, nomeBolletta);
-            bollettaService.A2AVerifica(nomeBolletta, idPod, extractedValues.get(9));
-        } catch (Exception e) {
+
+            // Estrazione delle letture
+            Map<String, Map<String, Map<String, Integer>>> lettureMese = extractLetture(document);
+
+            // Estrazione delle spese
+            Map<String, Double> spese = extractSpese(document);
+
+            //Estrazione dataInizio, daaFine e anno
+            Periodo periodo = extractPeriodo(document);
+            System.out.println("Data inizio: " + periodo.getInizio());
+            System.out.println("Data fine: " + periodo.getFine());
+            System.out.println("Anno: " + periodo.getAnno());
+
+            if (lettureMese.isEmpty()) {
+                System.err.println("Nessuna lettura valida trovata.");
+                return false;
+            }
+
+            fileRepo.saveDataToDatabase(lettureMese, spese, idPod, nomeBolletta, periodo);
+
+            Double spesaMateriaEnergia = spese.getOrDefault("Materia Energia", 0.0);
+            bollettaService.A2AVerifica(nomeBolletta, idPod, spesaMateriaEnergia);
+            return true;
+
+        } catch (ParserConfigurationException | IOException | SAXException e) {
             e.printStackTrace();
+            return false;
+        } catch (SQLException e) {
+            throw new RuntimeException(e);
         }
     }
 
-    public void insertBolletta(ArrayList<Double> extractedValues, String nomeBolletta, Date periodoInizio, Date periodoFine, String idPod) throws SQLException {
-        Bolletta bolletta = new Bolletta();
-        bolletta.setNomeBolletta(nomeBolletta);
-        bolletta.setPeriodoInizio(periodoInizio);
-        bolletta.setPeriodoFine(periodoFine);
-        bolletta.setF1A(extractedValues.get(0));
-        bolletta.setF2A(extractedValues.get(1));
-        bolletta.setF3A(extractedValues.get(2));
-        bolletta.setF1R(extractedValues.get(3));
-        bolletta.setF2R(extractedValues.get(4));
-        bolletta.setF3R(extractedValues.get(5));
-        bolletta.setF1P(extractedValues.get(6));
-        bolletta.setF2P(extractedValues.get(7));
-        bolletta.setF3P(extractedValues.get(8));
-        bolletta.setSpese_Energia(extractedValues.get(9));
-        bolletta.setTrasporti(extractedValues.get(10));
-        bolletta.setOneri(extractedValues.get(11));
-        bolletta.setImposte(extractedValues.get(12));
-        bolletta.setId_pod(idPod);
-        bolletta.setAnno(String.valueOf(periodoFine.toLocalDate().getYear()));
-        bollettaRepo.A2Ainsert(bolletta);
+    private Periodo extractPeriodo(Document document) {
+        NodeList lineNodes = document.getElementsByTagName("Line");
+
+        Date dataInizio = null;
+        Date dataFine = null;
+
+        for (int i = 0; i < lineNodes.getLength(); i++) {
+            Node lineNode = lineNodes.item(i);
+            if (lineNode.getNodeType() == Node.ELEMENT_NODE) {
+                String lineText = lineNode.getTextContent();
+
+                if (lineText.contains("Fascia oraria")) {
+                    // Cerca date in formato DD.MM.YYYY
+                    ArrayList<Date> dates = extractDates(lineText);
+
+                    if (dates.size() == 2) {
+                        dataInizio = dates.get(0);
+                        dataFine = dates.get(1);
+                        break; // Troviamo la prima riga valida con entrambe le date
+                    }
+                }
+            }
+        }
+
+        if (dataInizio != null && dataFine != null) {
+            // Estrai l'anno dalla data di fine
+            String anno = String.valueOf(dataFine.toInstant().atZone(ZoneId.systemDefault()).toLocalDate().getYear());
+            return new Periodo(dataInizio, dataFine, anno);
+        } else {
+            throw new IllegalStateException("Impossibile estrarre il periodo: date mancanti.");
+        }
+    }
+
+
+    private Map<String, Double> extractSpese(Document document) {
+        Map<String, Double> spese = new HashMap<>();
+
+        NodeList lineNodes = document.getElementsByTagName("Line");
+        boolean foundSpesaMateriaEnergia = false;
+        boolean foundSpesaOneriSistema = false;
+        boolean foundSpesaTrasporto = false;
+        boolean foundSpesaImposte = false;
+
+        for (int i = 0; i < lineNodes.getLength(); i++) {
+            Node lineNode = lineNodes.item(i);
+            if (lineNode.getNodeType() == Node.ELEMENT_NODE) {
+                String lineText = lineNode.getTextContent();
+
+                if (lineText.contains("SPESA PER LA MATERIA ENERGIA") && !foundSpesaMateriaEnergia) {
+                    Double spesaMateriaEnergia = extractEuroValue(lineText);
+                    if (spesaMateriaEnergia != null) {
+                        spese.put("Materia Energia", spesaMateriaEnergia);
+                    }
+                    foundSpesaMateriaEnergia = true;
+                }
+
+                if (lineText.contains("SPESA PER ONERI DI SISTEMA") && !foundSpesaOneriSistema) {
+                    Double spesaOneri = extractEuroValue(lineText);
+                    if (spesaOneri != null) {
+                        spese.put("Oneri di Sistema", spesaOneri);
+                    }
+                    foundSpesaOneriSistema = true;
+                }
+
+                if (lineText.contains("SPESA PER IL TRASPORTO E LA GESTIONE DEL CONTATORE") && !foundSpesaTrasporto) {
+                    Double spesaTrasporto = extractEuroValue(lineText);
+                    if (spesaTrasporto != null) {
+                        spese.put("Trasporto e Gestione Contatore", spesaTrasporto);
+                    }
+                    foundSpesaTrasporto = true;
+                }
+
+                if (lineText.contains("TOTALE IMPOSTE") && !foundSpesaImposte) {
+                    Double spesaImposte = extractEuroValue(lineText);
+                    if (spesaImposte != null) {
+                        spese.put("Totale Imposte", spesaImposte);
+                    }
+                    foundSpesaImposte = true;
+                }
+            }
+        }
+        return spese;
+    }
+
+
+    private Map<String, Map<String, Map<String, Integer>>> extractLetture(Document document) {
+        Map<String, Map<String, Map<String, Integer>>> lettureMese = new HashMap<>();
+        String categoriaCorrente = null;
+
+        NodeList lineNodes = document.getElementsByTagName("Line");
+        for (int i = 0; i < lineNodes.getLength(); i++) {
+            Node lineNode = lineNodes.item(i);
+            if (lineNode.getNodeType() == Node.ELEMENT_NODE) {
+                String lineText = lineNode.getTextContent();
+
+                // Gestione delle categorie
+                if (lineText.contains("ENERGIA ATTIVA")) {
+                    categoriaCorrente = "Energia Attiva";
+                    continue;
+                }
+                if (lineText.contains("ENERGIA REATTIVA")) {
+                    categoriaCorrente = "Energia Reattiva";
+                    continue;
+                }
+                if (lineText.contains("POTENZA")) {
+                    categoriaCorrente = "Potenza";
+                    continue;
+                }
+
+                // Estrarre i dati solo se siamo in una categoria valida
+                if (lineText.contains("Fascia oraria") && categoriaCorrente != null) {
+                    ArrayList<Date> dates = extractDates(lineText);
+                    Double value = extractValueFromLine(lineText);
+                    String fascia = extractFasciaOraria(lineText);
+
+                    if (dates.size() == 2 && value != null && fascia != null) {
+                        String mese = DateUtils.getMonthFromDateLocalized(dates.get(1));
+                        // Ora puoi usare "mese" come necessario
+                        System.out.println("Mese: " + mese);
+
+                        lettureMese.putIfAbsent(mese, new HashMap<>());
+                        Map<String, Map<String, Integer>> categorie = lettureMese.get(mese);
+                        categorie.putIfAbsent(categoriaCorrente, new HashMap<>());
+
+                        Map<String, Integer> letture = categorie.get(categoriaCorrente);
+                        letture.put(fascia, letture.getOrDefault(fascia, 0) + value.intValue());
+                    }
+                }
+            }
+        }
+        return lettureMese;
+    }
+
+    private static Double extractEuroValue(String lineText) {
+        try {
+            // Regex per catturare il valore in euro
+            String regex = "€\\s*([\\d.,]+)";
+            Pattern pattern = Pattern.compile(regex);
+            Matcher matcher = pattern.matcher(lineText);
+
+            if (matcher.find()) {
+                // Ottieni il valore corrispondente
+                String valueString = matcher.group(1);
+
+                // Rimuove i punti come separatori di migliaia e sostituisce le virgole con punti
+                valueString = valueString.replace(".", "").replace(",", ".");
+
+                // Converte il valore in Double
+                return Double.parseDouble(valueString);
+            }
+        } catch (NumberFormatException e) {
+            System.err.println("Errore durante il parsing del valore in euro: " + lineText);
+        }
+        return null; // Nessun valore trovato
+    }
+
+
+    private String extractBollettaNome(Document document) {
+        NodeList lineNodes = document.getElementsByTagName("Line");
+        for (int i = 0; i < lineNodes.getLength(); i++) {
+            Node lineNode = lineNodes.item(i);
+            if (lineNode.getNodeType() == Node.ELEMENT_NODE) {
+                String lineText = lineNode.getTextContent();
+                if (lineText.contains("Bolletta")) {
+                    return extractBollettaNumero(lineText);
+                }
+            }
+        }
+        return null;
+    }
+
+
+    private static String extractFasciaOraria(String lineText) {
+        String regex = "F\\d"; // Cerca "F1", "F2", "F3"
+        Pattern pattern = Pattern.compile(regex);
+        Matcher matcher = pattern.matcher(lineText);
+
+        if (matcher.find()) {
+            return matcher.group(); // Restituisce "F1", "F2" o "F3"
+        }
+        return null; // Nessuna fascia trovata
     }
 
     public static String extractBollettaNumero(String lineText) {
@@ -254,39 +357,28 @@ public class FileService {
                 e.printStackTrace();
             }
         }
-
         return dates;
     }
 
     private static Double extractValueFromLine(String lineText) {
         try {
-            int contatoreF = 0;
-            // Aggiungi log per il debug
+            // Log per il debug
             System.out.println("Extracting value from line: " + lineText);
 
-            // Rimuovi i valori in formato data
+            // Rimuove i valori in formato data (se presenti all'inizio della riga)
             String regexDateAtStart = "^(\\d{1,2}\\.\\d{1,2}\\.\\d{2,4}\\s+){1,2}";
-            String lineTextWithoutDate1 = lineText.replaceAll(regexDateAtStart, "");
+            String lineTextWithoutDate = lineText.replaceAll(regexDateAtStart, "");
 
-            String valueString;
-            if (contatoreF < 9) {
-                contatoreF++;
-                // Rimuove la prima cifra numerica dopo la lettera "F"
-                String remuveAfterF = lineTextWithoutDate1.replaceFirst("F\\d", "F");
+            // Rimuove la prima cifra numerica dopo la lettera "F", se presente
+            String lineTextWithoutF = lineTextWithoutDate.replaceFirst("F\\d", "F");
 
-                // Rimuove tutto tranne numeri, virgole, punti e segni meno
-                valueString = remuveAfterF.replaceAll("[^\\d.,-]", "").replace("€", "");
-            } else {
-                // Rimuove tutto tranne numeri, virgole, punti e segni meno
-                valueString = lineTextWithoutDate1.replaceAll("[^\\d.,-]", "").replace("€", "");
-            }
-
+            // Rimuove tutto tranne numeri, virgole, punti e segni meno
+            String valueString = lineTextWithoutF.replaceAll("[^\\d.,-]", "").replace("€", "");
 
             // Sostituisce le virgole con punti per la conversione
-            valueString = valueString.replace(".", "");
-            valueString = valueString.replace(",", ".");
+            valueString = valueString.replace(".", "").replace(",", ".");
 
-
+            // Converte il valore in Double
             return Double.parseDouble(valueString);
         } catch (NumberFormatException e) {
             // Gestisce il caso in cui la stringa non possa essere convertita in numero
@@ -295,19 +387,12 @@ public class FileService {
         }
     }
 
+
     public void abbinaPod(int idFile, String idPod) {
         fileRepo.abbinaPod(idFile, idPod);
     }
 
-    public void convertiDatainMese(Date dataFine, String nomeBolletta) throws SQLException {
-        // Converte java.util.Date in java.time.LocalDate
-        LocalDate localDate = dataFine.toLocalDate();
-
-        // Definisci il formato del mese in italiano
-        DateTimeFormatter formatter = DateTimeFormatter.ofPattern("MMMM", Locale.ITALIAN);
-
-        // Estrai il nome del mese
-        String nomeMese = localDate.format(formatter);
-        bollettaRepo.updateMeseBolletta(nomeMese, nomeBolletta);
+    public byte[] getXmlData(int id) {
+        return fileRepo.getFile(id);
     }
 }

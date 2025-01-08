@@ -37,7 +37,10 @@ public class CostiResource {
     @Consumes(MediaType.APPLICATION_JSON)
     @Produces(MediaType.APPLICATION_JSON)
     public Response createCosto(Costi costo) throws SQLException {
-        costiService.createCosto(costo.getDescrizione(), costo.getCategoria(), costo.getUnitaMisura(), costo.getTrimestre(), costo.getAnno(), costo.getCosto(), costo.getIntervalloPotenza(), costo.getClasseAgevolazione());
+        boolean verifica = costiService.createCosto(costo.getDescrizione(), costo.getCategoria(), costo.getUnitaMisura(), costo.getTrimestre(), costo.getAnno(), costo.getCosto(), costo.getIntervalloPotenza(), costo.getClasseAgevolazione());
+        if (!verifica) {
+            return Response.status(Response.Status.BAD_REQUEST).build();
+        }
         return Response.ok().build();
     }
 
@@ -68,7 +71,10 @@ public class CostiResource {
     @Consumes(MediaType.MULTIPART_FORM_DATA)
     public Response uploadExcelFile(@MultipartForm FormData formData) throws Exception {
         InputStream excelInputStream = formData.getFile();
-        costiService.readExcelFile(excelInputStream);
+        boolean verifica = costiService.readExcelFile(excelInputStream);
+        if (!verifica) {
+            return Response.status(Response.Status.BAD_REQUEST).build();
+        }
         return Response.ok("File caricato con successo").build();
     }
 
@@ -77,7 +83,10 @@ public class CostiResource {
     @Consumes(MediaType.APPLICATION_JSON)
     @Produces(MediaType.APPLICATION_JSON)
     public Response uploadCosto(Costi costo) throws SQLException {
-        costiService.updateCosto(costo.getId(), costo.getDescrizione(), costo.getCategoria(), costo.getUnitaMisura(), costo.getTrimestre(), costo.getAnno(), costo.getCosto(), costo.getIntervalloPotenza(), costo.getClasseAgevolazione());
-        return Response.ok().build();
+        boolean verifica = costiService.updateCosto(costo.getId(), costo.getDescrizione(), costo.getCategoria(), costo.getUnitaMisura(), costo.getTrimestre(), costo.getAnno(), costo.getCosto(), costo.getIntervalloPotenza(), costo.getClasseAgevolazione());
+        if (!verifica) {
+            return Response.status(Response.Status.BAD_REQUEST).build();
+        }
+        return Response.ok("Update avvenuto con successo").build();
     }
 }

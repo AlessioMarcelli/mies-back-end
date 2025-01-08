@@ -18,7 +18,7 @@ public class CostiRepo {
         this.dataSource = dataSource;
     }
 
-    public void aggiungiCosto(Costi costo) {
+    public boolean aggiungiCosto(Costi costo) throws SQLException {
         try (Connection connection = dataSource.getConnection()) {
             try (PreparedStatement statement = connection.prepareStatement(
                     "INSERT INTO dettaglio_costo (Descrizione, Categoria, Unità_Misura, Trimestrale, Costo, Intervallo_Potenza,Classe_Agevolazione) VALUES (?, ?, ?, ?, ?, ?, ?)", PreparedStatement.RETURN_GENERATED_KEYS);) {
@@ -29,20 +29,28 @@ public class CostiRepo {
                 statement.setFloat(5, costo.getCosto());
                 statement.setString(6, costo.getIntervalloPotenza());
                 statement.setString(7, costo.getClasseAgevolazione());
-                statement.executeUpdate();
-                ResultSet generatedKeys = statement.getGeneratedKeys();
-                if (generatedKeys.next()) {
-                    int id = generatedKeys.getInt(1);
-                    costo.setId(id);
+                int rowsAffected = statement.executeUpdate();
+                // Recupera la chiave generata
+                if (rowsAffected > 0) {
+                    try (ResultSet generatedKeys = statement.getGeneratedKeys()) {
+                        if (generatedKeys.next()) {
+                            int id = generatedKeys.getInt(1);
+                            costo.setId(id); // Imposta l'ID nel modello
+                            return true;
+                        }
+                    }
                 }
+                return false; // Nessuna riga inserita o nessuna chiave generata
+            } catch (SQLException e) {
+                // Log dell'errore (facoltativo, per debug)
+                e.printStackTrace();
+                throw new RuntimeException("Errore durante l'aggiunta del costo", e);
             }
-        } catch (SQLException e) {
-            throw new RuntimeException(e);
         }
     }
 
     //from excele
-    public void aggiungiCostoFromExcel(ArrayList<String> costi) {
+    public boolean aggiungiCostoFromExcel(ArrayList<String> costi) {
         try (Connection connection = dataSource.getConnection()) {
             String sql = "INSERT INTO dettaglio_costo (Descrizione, Unità_Misura, Trimestrale, Annuale, Costo, Categoria, Intervallo_Potenza, Classe_Agevolazione) VALUES (?, ?, ?, ?, ?, ?, ?, ?)";
             try (PreparedStatement statement = connection.prepareStatement(sql, PreparedStatement.RETURN_GENERATED_KEYS)) {
@@ -55,14 +63,17 @@ public class CostiRepo {
                 statement.setString(7, costi.get(6)); // Intervallo_Potenza
                 statement.setString(8, costi.get(7)); // Classe_Agevolazione
 
-                statement.executeUpdate();
-
-                try (ResultSet generatedKeys = statement.getGeneratedKeys()) {
-                    if (generatedKeys.next()) {
-                        int id = generatedKeys.getInt(1);
-                        costi.add(String.valueOf(id)); // Aggiungi l'ID generato alla lista costi
+                int rowAffected = statement.executeUpdate();
+                if (rowAffected > 0) {
+                    try (ResultSet generatedKeys = statement.getGeneratedKeys()) {
+                        if (generatedKeys.next()) {
+                            int id = generatedKeys.getInt(1);
+                            costi.add(String.valueOf(id)); // Aggiungi l'ID generato alla lista costi
+                            return true;
+                        }
                     }
                 }
+                return false;
             }
         } catch (SQLException e) {
             throw new RuntimeException("Errore durante l'inserimento dei costi nel database", e);
@@ -128,7 +139,7 @@ public class CostiRepo {
         }
     }
 
-    public void updateCosto(Costi c) {
+    public boolean updateCosto(Costi c) {
         try (Connection connection = dataSource.getConnection()) {
             try (PreparedStatement statement = connection.prepareStatement("UPDATE dettaglio_costo SET Descrizione = ?, Categoria = ?, Unità_Misura = ?, Trimestrale = ?, Annuale = ?, Costo = ?, Intervallo_Potenza = ?, Classe_Agevolazione = ? WHERE Id_Costo = ?");) {
                 statement.setString(1, c.getDescrizione());
@@ -140,7 +151,9 @@ public class CostiRepo {
                 statement.setString(7, c.getIntervalloPotenza());
                 statement.setString(8, c.getClasseAgevolazione());
                 statement.setInt(9, c.getId());
-                statement.executeUpdate();
+                int rowAffect = statement.executeUpdate();
+
+                return rowAffect > 0;
             }
         } catch (SQLException e) {
             throw new RuntimeException(e);
