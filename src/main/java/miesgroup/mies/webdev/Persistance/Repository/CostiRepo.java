@@ -4,6 +4,8 @@ import jakarta.enterprise.context.ApplicationScoped;
 import miesgroup.mies.webdev.Persistance.Model.Costi;
 
 import javax.sql.DataSource;
+import java.math.BigDecimal;
+import java.math.RoundingMode;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
@@ -46,37 +48,6 @@ public class CostiRepo {
                 e.printStackTrace();
                 throw new RuntimeException("Errore durante l'aggiunta del costo", e);
             }
-        }
-    }
-
-    //from excele
-    public boolean aggiungiCostoFromExcel(ArrayList<String> costi) {
-        try (Connection connection = dataSource.getConnection()) {
-            String sql = "INSERT INTO dettaglio_costo (Descrizione, Unità_Misura, Trimestrale, Annuale, Costo, Categoria, Intervallo_Potenza, Classe_Agevolazione) VALUES (?, ?, ?, ?, ?, ?, ?, ?)";
-            try (PreparedStatement statement = connection.prepareStatement(sql, PreparedStatement.RETURN_GENERATED_KEYS)) {
-                statement.setString(1, costi.get(0)); // Descrizione
-                statement.setString(2, costi.get(1)); // Unità_Misura
-                statement.setInt(3, Math.round(Float.parseFloat(costi.get(2)))); // Trimestrale
-                statement.setString(4, costi.get(3)); // Annuale
-                statement.setFloat(5, Math.round(Float.parseFloat(costi.get(4)))); // Costo
-                statement.setString(6, costi.get(5)); // Categoria
-                statement.setString(7, costi.get(6)); // Intervallo_Potenza
-                statement.setString(8, costi.get(7)); // Classe_Agevolazione
-
-                int rowAffected = statement.executeUpdate();
-                if (rowAffected > 0) {
-                    try (ResultSet generatedKeys = statement.getGeneratedKeys()) {
-                        if (generatedKeys.next()) {
-                            int id = generatedKeys.getInt(1);
-                            costi.add(String.valueOf(id)); // Aggiungi l'ID generato alla lista costi
-                            return true;
-                        }
-                    }
-                }
-                return false;
-            }
-        } catch (SQLException e) {
-            throw new RuntimeException("Errore durante l'inserimento dei costi nel database", e);
         }
     }
 
@@ -157,6 +128,31 @@ public class CostiRepo {
             }
         } catch (SQLException e) {
             throw new RuntimeException(e);
+        }
+    }
+
+    public void save(Costi dettaglioCosto) throws SQLException {
+        String query = "INSERT INTO dettaglio_costo (Descrizione, Categoria, Unità_Misura, Trimestrale, Annuale, Costo, Intervallo_Potenza, Classe_Agevolazione) VALUES (?, ?, ?, ?, ?, ?, ?, ?)";
+        try (Connection connection = dataSource.getConnection();
+             PreparedStatement statement = connection.prepareStatement(query, PreparedStatement.RETURN_GENERATED_KEYS)) {
+            statement.setString(1, dettaglioCosto.getDescrizione());
+            statement.setString(2, dettaglioCosto.getCategoria());
+            statement.setString(3, dettaglioCosto.getUnitaMisura());
+            statement.setInt(4, dettaglioCosto.getTrimestre());
+            statement.setString(5, dettaglioCosto.getAnno());
+            statement.setFloat(6, dettaglioCosto.getCosto());
+            statement.setString(7, dettaglioCosto.getIntervalloPotenza());
+            statement.setString(8, dettaglioCosto.getClasseAgevolazione());
+
+            int rowsAffected = statement.executeUpdate();
+
+            if (rowsAffected > 0) {
+                try (ResultSet generatedKeys = statement.getGeneratedKeys()) {
+                    if (generatedKeys.next()) {
+                        dettaglioCosto.setId(generatedKeys.getInt(1));
+                    }
+                }
+            }
         }
     }
 }

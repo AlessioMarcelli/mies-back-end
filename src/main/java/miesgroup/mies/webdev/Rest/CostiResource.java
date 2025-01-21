@@ -10,6 +10,7 @@ import miesgroup.mies.webdev.Service.CostiService;
 import miesgroup.mies.webdev.Service.SessionService;
 import org.jboss.resteasy.annotations.providers.multipart.MultipartForm;
 
+import java.io.ByteArrayOutputStream;
 import java.io.InputStream;
 import java.sql.SQLException;
 import java.util.ArrayList;
@@ -68,25 +69,44 @@ public class CostiResource {
 
     @POST
     @Path("/upload")
-    @Consumes(MediaType.MULTIPART_FORM_DATA)
-    public Response uploadExcelFile(@MultipartForm FormData formData) throws Exception {
-        InputStream excelInputStream = formData.getFile();
-        boolean verifica = costiService.readExcelFile(excelInputStream);
-        if (!verifica) {
-            return Response.status(Response.Status.BAD_REQUEST).build();
+    public Response uploadExcelFile(@MultipartForm FormData formData) {
+        try {
+            InputStream excelInputStream = formData.getFile();
+            costiService.processExcelFile(excelInputStream);
+            return Response.ok("File elaborato con successo").build();
+        } catch (Exception e) {
+            return Response.serverError().entity("Errore: " + e.getMessage()).build();
         }
-        return Response.ok("File caricato con successo").build();
     }
+
 
     @Path("/update")
     @PUT
     @Consumes(MediaType.APPLICATION_JSON)
     @Produces(MediaType.APPLICATION_JSON)
-    public Response uploadCosto(Costi costo) throws SQLException {
+    public Response uploadCosto(Costi costo) {
         boolean verifica = costiService.updateCosto(costo.getId(), costo.getDescrizione(), costo.getCategoria(), costo.getUnitaMisura(), costo.getTrimestre(), costo.getAnno(), costo.getCosto(), costo.getIntervalloPotenza(), costo.getClasseAgevolazione());
         if (!verifica) {
             return Response.status(Response.Status.BAD_REQUEST).build();
         }
         return Response.ok("Update avvenuto con successo").build();
     }
+
+    @Path("/downloadExcel")
+    @GET
+    @Consumes(MediaType.APPLICATION_JSON)
+    @Produces("application/vnd.openxmlformats-officedocument.spreadsheetml.sheet")
+    public Response downloadExcel() {
+        try {
+            ByteArrayOutputStream out = costiService.generateExcelFile();
+            byte[] excelData = out.toByteArray(); // Salva i dati prima di chiudere il flusso
+            return Response.ok(excelData)
+                    .header("Content-Disposition", "attachment; filename=costi.xlsx")
+                    .build();
+        } catch (Exception e) {
+            return Response.serverError().entity("Errore nella generazione del file Excel: " + e.getMessage()).build();
+        }
+    }
 }
+
+

@@ -13,7 +13,7 @@ import javax.xml.parsers.DocumentBuilderFactory;
 import javax.xml.parsers.ParserConfigurationException;
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
-import java.util.Date;
+import java.util.*;
 import java.sql.SQLException;
 import javax.xml.transform.OutputKeys;
 import javax.xml.transform.Transformer;
@@ -34,11 +34,7 @@ import java.text.SimpleDateFormat;
 import java.time.LocalDate;
 import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
-import java.util.ArrayList;
 
-import java.util.HashMap;
-import java.util.Locale;
-import java.util.Map;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -125,9 +121,10 @@ public class FileService {
 
             //Estrazione dataInizio, daaFine e anno
             Periodo periodo = extractPeriodo(document);
-            System.out.println("Data inizio: " + periodo.getInizio());
-            System.out.println("Data fine: " + periodo.getFine());
-            System.out.println("Anno: " + periodo.getAnno());
+
+            //TODO:Estrazione ricalcoli bolletta
+
+
 
             if (lettureMese.isEmpty()) {
                 System.err.println("Nessuna lettura valida trovata.");
@@ -147,6 +144,8 @@ public class FileService {
             throw new RuntimeException(e);
         }
     }
+
+
 
     private Periodo extractPeriodo(Document document) {
         NodeList lineNodes = document.getElementsByTagName("Line");
@@ -230,6 +229,40 @@ public class FileService {
             }
         }
         return spese;
+    }
+
+
+    private Double extractEuroValueFromLines(NodeList lineNodes, int startIndex) {
+        StringBuilder combinedText = new StringBuilder();
+
+        // Combina le righe successive
+        for (int i = startIndex; i < lineNodes.getLength(); i++) {
+            Node lineNode = lineNodes.item(i);
+            if (lineNode.getNodeType() == Node.ELEMENT_NODE) {
+                combinedText.append(lineNode.getTextContent()).append(" ");
+            }
+            // Interrompi se trovi un valore in euro
+            if (lineNode.getTextContent().contains("€")) {
+                break;
+            }
+        }
+
+        // Regex per estrarre il valore in euro
+        String regex = "€\\s*([\\d.,]+)";
+        Pattern pattern = Pattern.compile(regex);
+        Matcher matcher = pattern.matcher(combinedText.toString().trim());
+
+        if (matcher.find()) {
+            try {
+                // Ottieni il valore e convertilo in Double
+                String valueString = matcher.group(1).replace(".", "").replace(",", ".");
+                return Double.parseDouble(valueString);
+            } catch (NumberFormatException e) {
+                System.err.println("Errore nel parsing del valore in euro: " + matcher.group(1));
+            }
+        }
+
+        return null; // Nessun valore trovato
     }
 
 
