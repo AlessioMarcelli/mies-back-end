@@ -1,6 +1,7 @@
 package miesgroup.mies.webdev.Service;
 
 import jakarta.enterprise.context.ApplicationScoped;
+import jakarta.transaction.Transactional;
 import miesgroup.mies.webdev.Persistance.Repository.BollettaRepo;
 
 import java.math.BigDecimal;
@@ -19,7 +20,8 @@ public class BollettaService {
         this.clienteService = clienteService;
     }
 
-    public void  A2AVerifica(String nomeBolletta, String idPod, Double spesaMaeriaEnergia) throws SQLException {
+    @Transactional
+    public void A2AVerifica(String nomeBolletta, String idPod, Double spesaMaeriaEnergia) throws SQLException {
 
         //Calcolo Dispacciamento e Generation
         bollettaRepo.updateTOTReattiva(nomeBolletta);
@@ -62,17 +64,17 @@ public class BollettaService {
         double QuotaPotenza = 0;
         double maggiorePotenza = bollettaRepo.getMaggiorePotenza(nomeBolletta);
         if (potenzaImpegnata <= 100) {
-            QuotaVariabile = bollettaRepo.getCostiSotto100(trimestre);
-            QuotaFissa = bollettaRepo.getCostiFissiSotto100(trimestre);
-            QuotaPotenza = bollettaRepo.getCostiPotenzaSotto100(trimestre) * maggiorePotenza;
+            QuotaVariabile = bollettaRepo.getCostiTrasporto(trimestre, "<100KW", "€/KWh");
+            QuotaFissa = bollettaRepo.getCostiTrasporto(trimestre, "<100KW", "€/Month");
+            QuotaPotenza = bollettaRepo.getCostiTrasporto(trimestre, "<100KW", "€/KW/Month") * maggiorePotenza;
         } else if (potenzaImpegnata >= 100 && potenzaImpegnata <= 500) {
-            QuotaVariabile = bollettaRepo.getCostiSotto500(trimestre);
-            QuotaFissa = bollettaRepo.getCostiFissiSotto500(trimestre);
-            QuotaPotenza = bollettaRepo.getCostiPotenzaSotto500(trimestre) * maggiorePotenza;
+            QuotaVariabile = bollettaRepo.getCostiTrasporto(trimestre, "100-500KW", "€/KWh");
+            QuotaFissa = bollettaRepo.getCostiTrasporto(trimestre, "100-500KW", "€/Month");
+            QuotaPotenza = bollettaRepo.getCostiTrasporto(trimestre, "100-500KW", "€/KW/Month") * maggiorePotenza;
         } else if (potenzaImpegnata > 500) {
-            QuotaVariabile = bollettaRepo.getCostiSopra500(trimestre);
-            QuotaFissa = bollettaRepo.getCostiFissiSopra500(trimestre);
-            QuotaPotenza = bollettaRepo.getCostiPotenzaSopra500(trimestre) * maggiorePotenza;
+            QuotaVariabile = bollettaRepo.getCostiTrasporto(trimestre, ">500KW", "€/KWh");
+            QuotaFissa = bollettaRepo.getCostiTrasporto(trimestre, ">500KW", "€/Month");
+            QuotaPotenza = bollettaRepo.getCostiTrasporto(trimestre, ">500KW", "€/KW/Month") * maggiorePotenza;
         }
 
         costi = ((QuotaVariabile * totAttiva) + QuotaFissa) + QuotaPotenza;
@@ -125,13 +127,13 @@ public class BollettaService {
         if (potenzaImpegnata <= 100) {
             //TODO
         } else if (potenzaImpegnata > 100 && potenzaImpegnata <= 500) {
-            quotaEnergiaOneri = bollettaRepo.getCostiEnergiaOneri100E500(trimestre, classeAgevolazione);
-            quotaFissaOneri = bollettaRepo.getCostiFissiOneri100E500(trimestre, classeAgevolazione);
-            quotaPotenzaOneri = bollettaRepo.getCostiPotenzaOneri100E500(trimestre, classeAgevolazione) * maggiorePotenza;
+            quotaEnergiaOneri = bollettaRepo.getCostiOneri(trimestre, "100-500KW", "€/KWh", classeAgevolazione);
+            quotaFissaOneri = bollettaRepo.getCostiOneri(trimestre, "100-500KW", "€/Month", classeAgevolazione);
+            quotaPotenzaOneri = bollettaRepo.getCostiOneri(trimestre, "100-500KW", "€/KW/Month", classeAgevolazione) * maggiorePotenza;
         } else if (potenzaImpegnata > 500) {
-            quotaEnergiaOneri = bollettaRepo.getCostiEnergiaOneriSopra500(trimestre, classeAgevolazione);
-            quotaFissaOneri = bollettaRepo.getCostiFissiOneriSopra500(trimestre, classeAgevolazione);
-            quotaPotenzaOneri = bollettaRepo.getCostiPotenzaOneriSopra500(trimestre, classeAgevolazione) * maggiorePotenza;
+            quotaEnergiaOneri = bollettaRepo.getCostiOneri(trimestre, ">500KW", "€/KWh", classeAgevolazione);
+            quotaFissaOneri = bollettaRepo.getCostiOneri(trimestre, ">500KW", "€/Month", classeAgevolazione);
+            quotaPotenzaOneri = bollettaRepo.getCostiOneri(trimestre, ">500KW", "€/KW/Month", classeAgevolazione) * maggiorePotenza;
         }
 
         costiOneri = ((quotaEnergiaOneri * totAttiva) + quotaFissaOneri) + quotaPotenzaOneri;
@@ -162,7 +164,8 @@ public class BollettaService {
         return bd.doubleValue();
     }
 
-    public String A2AisPresent(String nomeBolletta, String idPod) {
+    @Transactional
+    public boolean A2AisPresent(String nomeBolletta, String idPod) {
         return bollettaRepo.A2AisPresent(nomeBolletta, idPod);
     }
 }

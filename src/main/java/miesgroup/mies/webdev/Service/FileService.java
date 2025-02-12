@@ -1,6 +1,7 @@
 package miesgroup.mies.webdev.Service;//package miesgroup.mies.webdev.Service;
 
 import jakarta.enterprise.context.ApplicationScoped;
+import jakarta.transaction.Transactional;
 import miesgroup.mies.webdev.Persistance.Model.PDFFile;
 import miesgroup.mies.webdev.Persistance.Model.Periodo;
 import miesgroup.mies.webdev.Persistance.Repository.BollettaRepo;
@@ -51,22 +52,25 @@ public class FileService {
         this.bollettaService = bollettaService;
     }
 
+    @Transactional
     public int saveFile(String fileName, byte[] fileData) throws SQLException {
         if (fileName == null || fileData == null || fileData.length == 0) {
             throw new IllegalArgumentException("File name and data must not be null or empty");
         }
         PDFFile pdfFile = new PDFFile();
-        pdfFile.setFile_Name(fileName);
-        pdfFile.setFile_Data(fileData);
+        pdfFile.setFileName(fileName);
+        pdfFile.setFileData(fileData);
         return fileRepo.insert(pdfFile);
     }
 
+    @Transactional
     public PDFFile getFile(int id) {
         return fileRepo.findById(id);
     }
 
 
     //CONVERTI FILE IN XML
+    @Transactional
     public Document convertPdfToXml(byte[] pdfData) throws IOException, ParserConfigurationException {
         try (PDDocument document = PDDocument.load(new ByteArrayInputStream(pdfData))) {
             PDFTextStripper stripper = new PDFTextStripper();
@@ -89,6 +93,7 @@ public class FileService {
         }
     }
 
+    @Transactional
     public String convertDocumentToString(Document doc) throws TransformerException {
         TransformerFactory tf = TransformerFactory.newInstance();
         Transformer transformer = tf.newTransformer();
@@ -100,6 +105,7 @@ public class FileService {
     }
 
 
+    @Transactional
     public boolean extractValuesFromXmlA2A(byte[] xmlData, String idPod) {
         try {
             // Parsing del documento XML
@@ -109,8 +115,10 @@ public class FileService {
 
             // Verifica se la bolletta esiste
             String nomeBolletta = extractBollettaNome(document);
-            if (nomeBolletta == null || nomeBolletta.equals(bollettaService.A2AisPresent(nomeBolletta, idPod))) {
+            if (nomeBolletta == null) {
                 return false;
+            } else {
+                bollettaService.A2AisPresent(nomeBolletta, idPod);
             }
 
             // Estrazione delle letture
@@ -121,9 +129,6 @@ public class FileService {
 
             //Estrazione dataInizio, daaFine e anno
             Periodo periodo = extractPeriodo(document);
-
-            //TODO:Estrazione ricalcoli bolletta
-
 
 
             if (lettureMese.isEmpty()) {
@@ -144,7 +149,6 @@ public class FileService {
             throw new RuntimeException(e);
         }
     }
-
 
 
     private Periodo extractPeriodo(Document document) {
@@ -344,7 +348,7 @@ public class FileService {
             Node lineNode = lineNodes.item(i);
             if (lineNode.getNodeType() == Node.ELEMENT_NODE) {
                 String lineText = lineNode.getTextContent();
-                if (lineText.contains("Bolletta")) {
+                if (lineText.contains("Bolletta_pod")) {
                     return extractBollettaNumero(lineText);
                 }
             }
@@ -421,10 +425,12 @@ public class FileService {
     }
 
 
+    @Transactional
     public void abbinaPod(int idFile, String idPod) {
         fileRepo.abbinaPod(idFile, idPod);
     }
 
+    @Transactional
     public byte[] getXmlData(int id) {
         return fileRepo.getFile(id);
     }

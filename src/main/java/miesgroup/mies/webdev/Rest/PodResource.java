@@ -21,7 +21,7 @@ public class PodResource {
     @GET
     @Path("/all")
     @Produces(MediaType.APPLICATION_JSON)
-    public ArrayList<Pod> allPod(@CookieParam("SESSION_COOKIE") int id_sessione) {
+    public List<Pod> allPod(@CookieParam("SESSION_COOKIE") int id_sessione) {
         return podService.tutti(id_sessione);
     }
 
@@ -43,7 +43,7 @@ public class PodResource {
     @GET
     @Path("/bollette")
     @Produces(MediaType.APPLICATION_JSON)
-    public ArrayList<PDFFile> getBollette(@CookieParam("SESSION_COOKIE") int id_sessione) {
+    public List<PDFFile> getBollette(@CookieParam("SESSION_COOKIE") int id_sessione) {
         List<Pod> elencoPod = podService.findPodByIdUser(id_sessione);
         return podService.getBollette(elencoPod);
     }

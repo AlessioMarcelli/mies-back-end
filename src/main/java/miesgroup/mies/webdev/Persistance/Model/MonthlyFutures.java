@@ -1,22 +1,10 @@
 package miesgroup.mies.webdev.Persistance.Model;
 
-import jakarta.persistence.*;
-
-@Entity
-@Table(name = "monthly_futures")
 public class MonthlyFutures {
 
-    @Id
     private int id;
-
-    @Column(name = "year")
     private int year;
-
-    @Column(name = "month")
     private int month;
-
-    @ManyToOne
-    @JoinColumn(name = "id", referencedColumnName = "id", insertable = false, updatable = false)
     private FuturesEEX futuresEex;  // Associazione alla tabella futures_eex
 
     // Getters and setters

@@ -14,6 +14,7 @@ import java.io.ByteArrayOutputStream;
 import java.io.InputStream;
 import java.sql.SQLException;
 import java.util.ArrayList;
+import java.util.List;
 
 @Path("/costi")
 public class CostiResource {
@@ -28,7 +29,7 @@ public class CostiResource {
     @GET
     @Consumes(MediaType.APPLICATION_JSON)
     @Produces(MediaType.APPLICATION_JSON)
-    public ArrayList<Costi> getCosti() throws SQLException {
+    public List<Costi> getCosti() throws SQLException {
         return costiService.getAllCosti();
 
     }

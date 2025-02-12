@@ -1,14 +1,39 @@
 package miesgroup.mies.webdev.Persistance.Model;
 
-public class Pod {
+import io.quarkus.hibernate.orm.panache.PanacheEntityBase;
+import jakarta.persistence.*;
+
+@Entity
+@Table(name = "pod") // Nome corretto della tabella nel database
+public class Pod extends PanacheEntityBase {
+
+    @Id
+    @Column(name = "Id_Pod", length = 14) // Nome corretto della colonna
     private String id;
-    private double Tensione_Alimentazione;
-    private double potenza_Impegnata;
-    private double Potenza_Disponibile;
-    private int id_utente;//fk
+
+    @Column(name = "Tensione_Alimentazione", nullable = false)
+    private double tensioneAlimentazione;
+
+    @Column(name = "Potenza_Impegnata", nullable = false)
+    private double potenzaImpegnata;
+
+    @Column(name = "Potenza_Disponibile", nullable = false)
+    private double potenzaDisponibile;
+
+    @ManyToOne
+    @JoinColumn(name = "id_utente", nullable = false) // Foreign key verso `utente`
+    private Cliente utente;
+
+    @Column(name = "Sede")
     private String sede;
+
+    @Column(name = "Nazione")
     private String nazione;
-    private String tipo_tensione;
+
+    @Column(name = "Tipo_Tensione", nullable = false)
+    private String tipoTensione;
+
+    // GETTER e SETTER
 
     public String getId() {
         return id;
@@ -18,36 +43,36 @@ public class Pod {
         this.id = id;
     }
 
-    public double getTensione_Alimentazione() {
-        return Tensione_Alimentazione;
+    public double getTensioneAlimentazione() {
+        return tensioneAlimentazione;
     }
 
-    public void setTensione_Alimentazione(double tensione_Alimentazione) {
-        Tensione_Alimentazione = tensione_Alimentazione;
+    public void setTensioneAlimentazione(double tensioneAlimentazione) {
+        this.tensioneAlimentazione = tensioneAlimentazione;
     }
 
-    public double getPotenza_Impegnata() {
-        return potenza_Impegnata;
+    public double getPotenzaImpegnata() {
+        return potenzaImpegnata;
     }
 
-    public void setPotenza_Impegnata(double potenza_Impegnata) {
-        this.potenza_Impegnata = potenza_Impegnata;
+    public void setPotenzaImpegnata(double potenzaImpegnata) {
+        this.potenzaImpegnata = potenzaImpegnata;
     }
 
-    public double getPotenza_Disponibile() {
-        return Potenza_Disponibile;
+    public double getPotenzaDisponibile() {
+        return potenzaDisponibile;
     }
 
-    public void setPotenza_Disponibile(double potenza_Disponibile) {
-        Potenza_Disponibile = potenza_Disponibile;
+    public void setPotenzaDisponibile(double potenzaDisponibile) {
+        this.potenzaDisponibile = potenzaDisponibile;
     }
 
-    public int getId_utente() {
-        return id_utente;
+    public Cliente getUtente() {
+        return utente;
     }
 
-    public void setId_utente(int id_utente) {
-        this.id_utente = id_utente;
+    public void setUtente(Cliente utente) {
+        this.utente = utente;
     }
 
     public String getSede() {
@@ -66,11 +91,11 @@ public class Pod {
         this.nazione = nazione;
     }
 
-    public String getTipo_tensione() {
-        return tipo_tensione;
+    public String getTipoTensione() {
+        return tipoTensione;
     }
 
-    public void setTipo_tensione(String tipo_tensione) {
-        this.tipo_tensione = tipo_tensione;
+    public void setTipoTensione(String tipoTensione) {
+        this.tipoTensione = tipoTensione;
     }
 }

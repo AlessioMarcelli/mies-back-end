@@ -1,18 +1,10 @@
 package miesgroup.mies.webdev.Persistance.Model;
 
-import jakarta.persistence.*;
 
-@Entity
-@Table(name = "futures_eex")
+
 public class FuturesEEX {
-    @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
     private int id;
-
-    @Column(name = "date")
     private java.sql.Date date;
-
-    @Column(name = "settlementPrice")
     private double settlementPrice;
 
     // Getters and setters

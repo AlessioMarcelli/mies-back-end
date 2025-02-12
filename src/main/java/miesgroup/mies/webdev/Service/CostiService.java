@@ -1,6 +1,7 @@
 package miesgroup.mies.webdev.Service;
 
 import jakarta.enterprise.context.ApplicationScoped;
+import jakarta.transaction.Transactional;
 import miesgroup.mies.webdev.Persistance.Model.Costi;
 import miesgroup.mies.webdev.Persistance.Repository.CostiRepo;
 import org.apache.poi.ss.usermodel.*;
@@ -24,6 +25,7 @@ public class CostiService {
         this.costiRepo = costiRepo;
     }
 
+    @Transactional
     public boolean createCosto(String descrizione, String categoria, String unitaMisura, Integer trimestre, String anno, float valore, String tipoTensione, String classeAgevolazione) throws SQLException {
         Costi costo = new Costi();
         costo.setDescrizione(descrizione);
@@ -38,21 +40,23 @@ public class CostiService {
     }
 
 
-    public ArrayList<Costi> getAllCosti() {
+    @Transactional
+    public List<Costi> getAllCosti() {
         return costiRepo.getAllCosti();
     }
 
 
+    @Transactional
     public Costi getSum(String intervalloPotenza) {
         return costiRepo.getSum(intervalloPotenza);
     }
 
-
+    @Transactional
     public void deleteCosto(int id) {
         costiRepo.deleteCosto(id);
     }
 
-
+    @Transactional
     public boolean updateCosto(int id, String descrizione, String categoria, String unitaMisura, int trimestre, String anno, float costo, String intervalloPotenza, String classeAgevolazione) {
         Costi c = new Costi();
         c.setId(id);
@@ -68,6 +72,7 @@ public class CostiService {
     }
 
     // Metodo che genera il file Excel
+    @Transactional
     public ByteArrayOutputStream generateExcelFile() throws Exception {
         List<Costi> costiList = getAllCosti();
 
@@ -109,6 +114,7 @@ public class CostiService {
         }
     }
 
+    @Transactional
     private CellStyle createHeaderCellStyle(Workbook workbook) {
         CellStyle style = workbook.createCellStyle();
         Font font = workbook.createFont();
@@ -117,6 +123,7 @@ public class CostiService {
         return style;
     }
 
+    @Transactional
     public void processExcelFile(InputStream excelInputStream) {
         try (Workbook workbook = WorkbookFactory.create(excelInputStream)) {
             Sheet sheet = workbook.getSheet("Costi");
@@ -125,7 +132,7 @@ public class CostiService {
             }
 
             // Recupera tutti i costi già presenti nel database
-            ArrayList<Costi> existingCosti = getAllCosti();
+            List<Costi> existingCosti = getAllCosti();
 
             for (Row row : sheet) {
                 if (row.getRowNum() == 0) {
@@ -167,7 +174,8 @@ public class CostiService {
         }
     }
 
-    private boolean existsInList(ArrayList<Costi> existingCosti, String descrizione, String unitaMisura, int trimestre, String anno, float costo, String categoria, String intervalloPotenza, String classeAgevolazione) {
+    @Transactional
+    private boolean existsInList(List<Costi> existingCosti, String descrizione, String unitaMisura, int trimestre, String anno, float costo, String categoria, String intervalloPotenza, String classeAgevolazione) {
         for (Costi costoEsistente : existingCosti) {
             if (areEqual(costoEsistente.getDescrizione(), descrizione) &&
                     areEqual(costoEsistente.getUnitaMisura(), unitaMisura) &&

@@ -111,8 +111,8 @@ public class BollettaResource {
         }
 
         // Fetch the file data and the file name
-        byte[] fileData = pdfFile.getFile_Data();
-        String fileName = pdfFile.getFile_Name();
+        byte[] fileData = pdfFile.getFileData();
+        String fileName = pdfFile.getFileName();
 
         return Response.ok(fileData, MediaType.APPLICATION_OCTET_STREAM)
                 .header("Content-Disposition", "attachment; filename=\"" + fileName + "\"")

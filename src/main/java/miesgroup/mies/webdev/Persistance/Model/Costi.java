@@ -1,24 +1,51 @@
 package miesgroup.mies.webdev.Persistance.Model;
 
+import io.quarkus.hibernate.orm.panache.PanacheEntityBase;
+import jakarta.persistence.*;
 import java.sql.Date;
 
-public class Costi {
-    private int id;
+@Entity
+@Table(name = "dettaglio_costo") // Nome corretto della tabella
+public class Costi extends PanacheEntityBase {
+
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY) // Auto-increment su MySQL
+    @Column(name = "Id_Costo") // Nome corretto della colonna ID
+    private Integer id;
+
+    @Column(name = "Descrizione", nullable = false)
     private String descrizione;
+
+    @Column(name = "Unità_Misura", nullable = false)
     private String unitaMisura;
-    private int trimestre;
+
+    @Column(name = "Trimestrale")
+    private Integer trimestre;
+
+    @Column(name = "Annuale")
     private String anno;
-    private float costo;
+
+    @Column(name = "Costo")
+    private Float costo;
+
+    @Column(name = "Categoria", nullable = false)
     private String categoria;
+
+    @Column(name = "Intervallo_Potenza")
     private String intervalloPotenza;
+
+    @Column(name = "Classe_Agevolazione")
     private String classeAgevolazione;
+
+    @Column(name = "Data_Inserimento", columnDefinition = "DATE DEFAULT CURRENT_DATE")
     private Date dataInserimento;
 
-    public int getId() {
+    // GETTER e SETTER
+    public Integer getId() {
         return id;
     }
 
-    public void setId(int id) {
+    public void setId(Integer id) {
         this.id = id;
     }
 
@@ -38,11 +65,11 @@ public class Costi {
         this.unitaMisura = unitaMisura;
     }
 
-    public int getTrimestre() {
+    public Integer getTrimestre() {
         return trimestre;
     }
 
-    public void setTrimestre(int trimestre) {
+    public void setTrimestre(Integer trimestre) {
         this.trimestre = trimestre;
     }
 
@@ -54,11 +81,11 @@ public class Costi {
         this.anno = anno;
     }
 
-    public float getCosto() {
+    public Float getCosto() {
         return costo;
     }
 
-    public void setCosto(float costo) {
+    public void setCosto(Float costo) {
         this.costo = costo;
     }
 

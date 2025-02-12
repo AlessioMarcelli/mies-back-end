@@ -50,6 +50,7 @@ public class AutenticationResource {
             Optional<Sessione> maybeSessione = sessionRepo.getSessionByUserId(maybeUtente.get().getId());
             //Se l'utente ha già una sessione attiva
             if (maybeSessione.isPresent()) {
+                //TODO: fare in modo che la vecchia sessione si elimini e se ne crei una nuova
                 throw new SessionCreationException("L'utente ha già una sessione attiva.");
             }
         }

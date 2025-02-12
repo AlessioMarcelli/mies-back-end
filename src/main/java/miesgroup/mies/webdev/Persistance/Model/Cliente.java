@@ -1,20 +1,70 @@
 package miesgroup.mies.webdev.Persistance.Model;
 
-public class Cliente {
+import io.quarkus.hibernate.orm.panache.PanacheEntityBase;
+import jakarta.persistence.*;
 
+
+@Entity
+@Table(name = "utente")
+public class Cliente extends PanacheEntityBase {
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    @Column(name = "Id_Utente")
+    private Integer id;
+
+    @Column(name = "Username", nullable = false, unique = true)
     private String username;
+
+    @Column(name = "Password", nullable = false)
     private String password;
+
+    @Column(name = "Sede_Legale")
     private String sedeLegale;
+
+    @Column(name = "Piva", length = 11)
     private String pIva;
-    private String stato;
-    private String tipologia;
+
+    @Column(name = "Email")
     private String email;
+
+    @Column(name = "Telefono")
     private String telefono;
+
+    @Column(name = "Stato")
+    private String stato;
+
+    @Column(name = "Tipologia", nullable = false)
+    private String tipologia = "Cliente"; // Default impostato nel DB
+
+    @Column(name = "Classe_Agevolazione")
     private String classeAgevolazione;
-    private int id;
+
+    @Column(name = "codice_ateco")
+    private String codiceAteco;
+
+    @Column(name = "energivori")
+    private Boolean energivori = false; // Default impostato nel DB
+
+    @Column(name = "gassivori")
+    private Boolean gassivori = false; // Default impostato nel DB
+
+    @Column(name = "consumo_annuo")
+    private Float consumoAnnuoEnergia;
+
+    @Column(name = "fatturato_annuo")
+    private Float fatturatoAnnuo;
 
 
     public Cliente() {
+    }
+
+
+    public int getId() {
+        return id;
+    }
+
+    public void setId(int id) {
+        this.id = id;
     }
 
     public String getUsername() {
@@ -89,11 +139,43 @@ public class Cliente {
         this.classeAgevolazione = classeAgevolazione;
     }
 
-    public int getId() {
-        return id;
+    public String getCodiceAteco() {
+        return codiceAteco;
     }
 
-    public void setId(int id) {
-        this.id = id;
+    public void setCodiceAteco(String codiceAteco) {
+        this.codiceAteco = codiceAteco;
+    }
+
+    public Boolean isEnergivori() {
+        return energivori;
+    }
+
+    public void setEnergivori(Boolean energivori) {
+        this.energivori = energivori;
+    }
+
+    public Boolean isGassivori() {
+        return gassivori;
+    }
+
+    public void setGassivori(Boolean gassivori) {
+        this.gassivori = gassivori;
+    }
+
+    public Float getConsumoAnnuoEnergia() {
+        return consumoAnnuoEnergia;
+    }
+
+    public void setConsumoAnnuoEnergia(Float consumoAnnuoEnergia) {
+        this.consumoAnnuoEnergia = consumoAnnuoEnergia;
+    }
+
+    public Float getFatturatoAnnuo() {
+        return fatturatoAnnuo;
+    }
+
+    public void setFatturatoAnnuo(Float fatturatoAnnuo) {
+        this.fatturatoAnnuo = fatturatoAnnuo;
     }
 }
