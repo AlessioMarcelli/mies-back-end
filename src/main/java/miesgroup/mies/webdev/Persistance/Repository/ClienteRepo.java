@@ -1,6 +1,5 @@
 package miesgroup.mies.webdev.Persistance.Repository;
 
-import io.quarkus.hibernate.orm.panache.PanacheRepository;
 import io.quarkus.hibernate.orm.panache.PanacheRepositoryBase;
 import jakarta.enterprise.context.ApplicationScoped;
 import miesgroup.mies.webdev.Persistance.Model.Cliente;
@@ -8,10 +7,6 @@ import miesgroup.mies.webdev.Persistance.Model.Pod;
 import miesgroup.mies.webdev.Service.LoggerService;
 
 import javax.sql.DataSource;
-import java.sql.Connection;
-import java.sql.PreparedStatement;
-import java.sql.ResultSet;
-import java.sql.SQLException;
 import java.util.Optional;
 
 
@@ -43,14 +38,15 @@ public class ClienteRepo implements PanacheRepositoryBase<Cliente, Integer> {
     }
 
     public String getClasseAgevolazioneByPod(String idPod) {
-        return Pod.find("id", idPod)
-                .project(Pod.class)
-                .firstResultOptional()
-                .flatMap(pod -> Cliente.find("id", pod.getUtente().getId())
-                        .project(Cliente.class)
-                        .firstResultOptional()
-                        .map(Cliente::getClasseAgevolazione))
-                .orElse(null);
+        Pod p = Pod.find("id", idPod).firstResult();
+        if (p == null) {
+            return null;
+        }
+        Cliente c = p.getUtente();
+        if (c == null) {
+            return null;
+        }
+        return c.getClasseAgevolazione();
     }
 
 
@@ -58,8 +54,6 @@ public class ClienteRepo implements PanacheRepositoryBase<Cliente, Integer> {
         return findById(idUtente);
     }
 
-
-    //TODO: Cambiare il metodo in un mero update generico
     public boolean updateCliente(int idUtente, String field, String newValue) {
         Cliente cliente = findById(idUtente);
         if (cliente == null) {

@@ -7,10 +7,6 @@ import miesgroup.mies.webdev.Persistance.Model.PDFFile;
 import miesgroup.mies.webdev.Persistance.Model.Pod;
 
 import javax.sql.DataSource;
-import java.sql.Connection;
-import java.sql.PreparedStatement;
-import java.sql.ResultSet;
-import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -19,14 +15,12 @@ public class PodRepo implements PanacheRepositoryBase<Pod, String> {
 
     private final DataSource dataSources;
     private final ClienteRepo clienteRepo;
+    private final FileRepo fileRepo;
 
-    public PodRepo(DataSource dataSources, ClienteRepo clienteRepo) {
+    public PodRepo(DataSource dataSources, ClienteRepo clienteRepo, FileRepo fileRepo) {
         this.dataSources = dataSources;
         this.clienteRepo = clienteRepo;
-    }
-
-    public void insert(Pod newPod) {
-        persist(newPod);
+        this.fileRepo = fileRepo;
     }
 
     public List<Pod> findAll(int id_utente) {
@@ -59,7 +53,7 @@ public class PodRepo implements PanacheRepositoryBase<Pod, String> {
 
 
     public List<Pod> findPodByIdUser(Integer idUser) {
-        return Pod.list("utente.id", idUser);
+        return list("utente.id", idUser);
     }
 
 
@@ -69,7 +63,7 @@ public class PodRepo implements PanacheRepositoryBase<Pod, String> {
         }
 
         List<String> podIds = elencoPod.stream().map(Pod::getId).toList();
-        return PDFFile.list("idPod IN ?1", podIds);
+        return fileRepo.list("idPod IN ?1", podIds);
     }
 
 }

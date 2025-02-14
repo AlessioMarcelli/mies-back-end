@@ -7,6 +7,7 @@ import jakarta.persistence.*;
 @Entity
 @Table(name = "utente")
 public class Cliente extends PanacheEntityBase {
+
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name = "Id_Utente")

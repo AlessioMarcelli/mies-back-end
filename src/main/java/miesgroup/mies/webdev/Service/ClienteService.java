@@ -4,6 +4,7 @@ import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.transaction.Transactional;
 import miesgroup.mies.webdev.Persistance.Model.Cliente;
 import miesgroup.mies.webdev.Persistance.Repository.ClienteRepo;
+import miesgroup.mies.webdev.Rest.Model.ClienteResponse;
 import miesgroup.mies.webdev.Rest.Model.UpdateUtente;
 
 @ApplicationScoped
@@ -32,5 +33,9 @@ public class ClienteService {
             newValue = hashCalculator.calculateHash(newValue);
         }
         return clienteRepo.updateCliente(idUtente, field, newValue);
+    }
+
+    public ClienteResponse parseResponse(Cliente c) {
+        return new ClienteResponse(c.getUsername(), c.getEmail(), c.getpIva(), c.getSedeLegale(), c.getTelefono(), c.getStato(), c.getTipologia());
     }
 }

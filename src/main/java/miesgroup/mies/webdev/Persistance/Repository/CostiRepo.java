@@ -1,18 +1,11 @@
 package miesgroup.mies.webdev.Persistance.Repository;
 
-import io.quarkus.hibernate.orm.panache.PanacheQuery;
+
 import io.quarkus.hibernate.orm.panache.PanacheRepositoryBase;
 import jakarta.enterprise.context.ApplicationScoped;
 import miesgroup.mies.webdev.Persistance.Model.Costi;
 
 import javax.sql.DataSource;
-import java.math.BigDecimal;
-import java.math.RoundingMode;
-import java.sql.Connection;
-import java.sql.PreparedStatement;
-import java.sql.ResultSet;
-import java.sql.SQLException;
-import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 
@@ -38,7 +31,7 @@ public class CostiRepo implements PanacheRepositoryBase<Costi, Integer> {
 
     public Costi getSum(String intervalloPotenza) {
         Optional<Double> sommaCosto = find("intervalloPotenza = ?1 AND categoria = 'trasporti' " +
-                "AND (trimestrale = 2 OR annuale IS NOT NULL) " +
+                "AND (trimestre = 2 OR anno IS NOT NULL) " +
                 "AND unitaMisura = '€/KWh'", intervalloPotenza)
                 .project(Double.class)
                 .firstResultOptional();
@@ -60,7 +53,7 @@ public class CostiRepo implements PanacheRepositoryBase<Costi, Integer> {
 
     public boolean updateCosto(Costi c) {
         return update("descrizione = ?1, categoria = ?2, unitaMisura = ?3, " +
-                        "trimestrale = ?4, annuale = ?5, costo = ?6, " +
+                        "trimestre = ?4, anno = ?5, costo = ?6, " +
                         "intervalloPotenza = ?7, classeAgevolazione = ?8 " +
                         "WHERE id = ?9",
                 c.getDescrizione(), c.getCategoria(), c.getUnitaMisura(),
@@ -75,9 +68,18 @@ public class CostiRepo implements PanacheRepositoryBase<Costi, Integer> {
 
 
     public Optional<Double> findByCategoriaUnitaTrimestre(String categoria, String unitaMisura, String intervalloPotenza, int trimestre) {
-        return find("unitàMisura = ?1 AND categoria = ?2 AND intervalloPotenza = ?3 AND (trimestrale = ?4 OR annuale IS NOT NULL)",
-                unitaMisura, categoria, intervalloPotenza, trimestre)
-                .project(Double.class)
-                .firstResultOptional();
+        List<Costi> costi = find("categoria = ?1 AND unitaMisura = ?2 AND intervalloPotenza = ?3 AND (trimestre = ?4 OR anno IS NOT NULL)",
+                categoria, unitaMisura, intervalloPotenza, trimestre).list();
+
+        if (costi.isEmpty()) {
+            return Optional.empty();
+        } else {
+            double somma = 0;
+            for (Costi c : costi) {
+                somma += c.getCosto();
+            }
+            return Optional.of(somma);
+        }
+
     }
 }

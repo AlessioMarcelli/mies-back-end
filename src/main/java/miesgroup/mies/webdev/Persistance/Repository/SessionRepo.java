@@ -6,20 +6,25 @@ import miesgroup.mies.webdev.Persistance.Model.Cliente;
 import miesgroup.mies.webdev.Persistance.Model.Sessione;
 
 import javax.sql.DataSource;
+import java.io.File;
 import java.sql.*;
 import java.util.Optional;
 
 @ApplicationScoped
 public class SessionRepo implements PanacheRepositoryBase<Sessione, Integer> {
     private final DataSource dataSources;
+    private final ClienteRepo clienteRepo;
+    private final SessionRepo sessionRepo;
 
-    public SessionRepo(DataSource dataSources) {
+    public SessionRepo(DataSource dataSources, ClienteRepo clienteRepo, SessionRepo sessionRepo) {
         this.dataSources = dataSources;
+        this.clienteRepo = clienteRepo;
+        this.sessionRepo = sessionRepo;
     }
 
 
     public int insertSession(int idUtente) {
-        Cliente cliente = Cliente.findById(idUtente);
+        Cliente cliente = clienteRepo.findById(idUtente);
         if (cliente == null) {
             throw new IllegalArgumentException("Cliente con ID " + idUtente + " non trovato.");
         }
@@ -34,7 +39,7 @@ public class SessionRepo implements PanacheRepositoryBase<Sessione, Integer> {
 
 
     public Optional<Sessione> getSessionByUserId(int userId) {
-        return Sessione.find("utente.id", userId).firstResultOptional();
+        return find("utente.id", userId).firstResultOptional();
     }
 
 
@@ -43,13 +48,13 @@ public class SessionRepo implements PanacheRepositoryBase<Sessione, Integer> {
     }
 
     public Integer find(int idSessione) {
-        Sessione sessione = Sessione.findById(idSessione);
+        Sessione sessione = sessionRepo.findById(idSessione);
         return (sessione != null) ? sessione.getUtente().getId() : null;
     }
 
 
-    public Cliente findCategory(int sessionId) {
-        return Cliente.find("id", sessionId).project(Cliente.class).firstResult();
+    public Cliente findCategory(int idUtente) {
+        return clienteRepo.findById(idUtente);
     }
 
 }

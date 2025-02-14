@@ -124,11 +124,15 @@ public class FileService {
             // Estrazione delle letture
             Map<String, Map<String, Map<String, Integer>>> lettureMese = extractLetture(document);
 
+            Map<String, Map<String, Double>> misurePicco = extractPiccoFuoriPicco(document);
+
             // Estrazione delle spese
             Map<String, Double> spese = extractSpese(document);
 
             //Estrazione dataInizio, daaFine e anno
             Periodo periodo = extractPeriodo(document);
+
+            //TODO:estrazione possibili ricalcoli
 
 
             if (lettureMese.isEmpty()) {
@@ -136,7 +140,8 @@ public class FileService {
                 return false;
             }
 
-            fileRepo.saveDataToDatabase(lettureMese, spese, idPod, nomeBolletta, periodo);
+            fileRepo.saveDataToDatabase(lettureMese, spese, idPod, nomeBolletta, misurePicco, periodo);
+
 
             Double spesaMateriaEnergia = spese.getOrDefault("Materia Energia", 0.0);
             bollettaService.A2AVerifica(nomeBolletta, idPod, spesaMateriaEnergia);
@@ -148,6 +153,45 @@ public class FileService {
         } catch (SQLException e) {
             throw new RuntimeException(e);
         }
+    }
+
+    private Map<String, Map<String, Double>> extractPiccoFuoriPicco(Document document) {
+        Map<String, Map<String, Double>> consumiPicco = new HashMap<>();
+        String categoriaCorrente = null;
+
+        NodeList lineNodes = document.getElementsByTagName("Line");
+        for (int i = 0; i < lineNodes.getLength(); i++) {
+            Node lineNode = lineNodes.item(i);
+            if (lineNode.getNodeType() == Node.ELEMENT_NODE) {
+                String lineText = lineNode.getTextContent().trim();
+
+                // Identifica la categoria di consumo
+                if (lineText.contains("Corrispettivo mercato capacità ore picco")) {
+                    categoriaCorrente = "Picco";
+                    continue;
+                }
+                if (lineText.contains("Corrispettivo mercato capacità ore fuori")) {
+                    categoriaCorrente = "Fuori Picco";
+                    continue;
+                }
+
+                // Estrazione valori se siamo in una categoria valida
+                if (categoriaCorrente != null && lineText.contains("€/kWh")) {
+                    ArrayList<Date> dates = extractDates(lineText);
+                    Double valueKWh = extractKWhFromLine(lineText);
+                    String mese = dates.isEmpty() ? null : DateUtils.getMonthFromDateLocalized(dates.get(1));
+
+                    if (mese != null && valueKWh != null) {
+                        consumiPicco.putIfAbsent(mese, new HashMap<>());
+                        Map<String, Double> categorie = consumiPicco.get(mese);
+
+                        // Aggiunge o aggiorna il valore esistente
+                        categorie.put(categoriaCorrente, categorie.getOrDefault(categoriaCorrente, 0.0) + valueKWh);
+                    }
+                }
+            }
+        }
+        return consumiPicco;
     }
 
 
@@ -348,7 +392,7 @@ public class FileService {
             Node lineNode = lineNodes.item(i);
             if (lineNode.getNodeType() == Node.ELEMENT_NODE) {
                 String lineText = lineNode.getTextContent();
-                if (lineText.contains("Bolletta_pod")) {
+                if (lineText.contains("Bolletta n")) {
                     return extractBollettaNumero(lineText);
                 }
             }
@@ -422,6 +466,16 @@ public class FileService {
             System.err.println("Error parsing value: " + lineText);
             return null;
         }
+    }
+
+    private Double extractKWhFromLine(String lineText) {
+        Pattern pattern = Pattern.compile("(\\d{1,3}(?:[.,]\\d{3})*(?:[.,]\\d+)?)\\s*kWh", Pattern.CASE_INSENSITIVE);
+        Matcher matcher = pattern.matcher(lineText);
+        if (matcher.find()) {
+            String value = matcher.group(1).replace(".", "").replace(",", "."); // Normalizza i separatori
+            return Double.parseDouble(value);
+        }
+        return null;
     }
 
 

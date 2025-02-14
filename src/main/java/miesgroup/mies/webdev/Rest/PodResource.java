@@ -7,7 +7,6 @@ import miesgroup.mies.webdev.Persistance.Model.Pod;
 import miesgroup.mies.webdev.Rest.Model.UpdatePodRequest;
 import miesgroup.mies.webdev.Service.PodService;
 
-import java.util.ArrayList;
 import java.util.List;
 
 @Path("/pod")
@@ -19,7 +18,6 @@ public class PodResource {
     }
 
     @GET
-    @Path("/all")
     @Produces(MediaType.APPLICATION_JSON)
     public List<Pod> allPod(@CookieParam("SESSION_COOKIE") int id_sessione) {
         return podService.tutti(id_sessione);

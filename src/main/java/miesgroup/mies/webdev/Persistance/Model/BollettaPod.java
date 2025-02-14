@@ -21,64 +21,64 @@ public class BollettaPod extends PanacheEntityBase {
     private String nomeBolletta;
 
     @Column(name = "F1_Attiva")
-    private double f1A;
+    private Double f1A;
 
     @Column(name = "F2_Attiva")
-    private double f2A;
+    private Double f2A;
 
     @Column(name = "F3_Attiva")
-    private double f3A;
+    private Double f3A;
 
     @Column(name = "F1_Reattiva")
-    private double f1R;
+    private Double f1R;
 
     @Column(name = "F2_Reattiva")
-    private double f2R;
+    private Double f2R;
 
     @Column(name = "F3_Reattiva")
-    private double f3R;
+    private Double f3R;
 
     @Column(name = "F1_Potenza")
-    private double f1P;
+    private Double f1P;
 
     @Column(name = "F2_Potenza")
-    private double f2P;
+    private Double f2P;
 
     @Column(name = "F3_Potenza")
-    private double f3P;
+    private Double f3P;
 
     @Column(name = "TOT_Attiva")
-    private double totAttiva;
+    private Double totAttiva;
 
     @Column(name = "TOT_Reattiva")
-    private double totReattiva;
+    private Double totReattiva;
 
     @Column(name = "Spese_Energia")
-    private double speseEnergia;
+    private Double speseEnergia;
 
     @Column(name = "Spese_Trasporto")
-    private double trasporti;
+    private Double trasporti;
 
     @Column(name = "Oneri")
-    private double oneri;
+    private Double oneri;
 
     @Column(name = "Imposte")
-    private double imposte;
+    private Double imposte;
 
     @Column(name = "Generation")
-    private double generation;
+    private Double generation;
 
     @Column(name = "Dispacciamento")
-    private double grandezzeTrasporti;
+    private Double dispacciamento;
 
     @Column(name = "Penali33")
-    private double penali33;
+    private Double penali33;
 
     @Column(name = "Penali75")
-    private double penali75;
+    private Double penali75;
 
     @Column(name = "Altro")
-    private double altro;
+    private Double altro;
 
     @Column(name = "Periodo_Inizio", nullable = false)
     private Date periodoInizio;
@@ -91,6 +91,21 @@ public class BollettaPod extends PanacheEntityBase {
 
     @Column(name = "Mese")
     private String mese;
+
+    @Column(name = "Verifica_Oneri")
+    private Double verificaOnneri;
+
+    @Column(name = "Verifica_Trasporti")
+    private Double verificaTrasporti;
+
+    @Column(name = "Verifica_Imposte")
+    private Double verificaImposte;
+
+    @Column(name = "picco")
+    private Double picco;
+
+    @Column(name = "fuori_picco")
+    private Double fuoriPicco;
 
     // GETTER e SETTER
 
@@ -118,163 +133,163 @@ public class BollettaPod extends PanacheEntityBase {
         this.nomeBolletta = nomeBolletta;
     }
 
-    public double getF1A() {
+    public Double getF1A() {
         return f1A;
     }
 
-    public void setF1A(double f1A) {
+    public void setF1A(Double f1A) {
         this.f1A = f1A;
     }
 
-    public double getF2A() {
+    public Double getF2A() {
         return f2A;
     }
 
-    public void setF2A(double f2A) {
+    public void setF2A(Double f2A) {
         this.f2A = f2A;
     }
 
-    public double getF3A() {
+    public Double getF3A() {
         return f3A;
     }
 
-    public void setF3A(double f3A) {
+    public void setF3A(Double f3A) {
         this.f3A = f3A;
     }
 
-    public double getF1R() {
+    public Double getF1R() {
         return f1R;
     }
 
-    public void setF1R(double f1R) {
+    public void setF1R(Double f1R) {
         this.f1R = f1R;
     }
 
-    public double getF2R() {
+    public Double getF2R() {
         return f2R;
     }
 
-    public void setF2R(double f2R) {
+    public void setF2R(Double f2R) {
         this.f2R = f2R;
     }
 
-    public double getF3R() {
+    public Double getF3R() {
         return f3R;
     }
 
-    public void setF3R(double f3R) {
+    public void setF3R(Double f3R) {
         this.f3R = f3R;
     }
 
-    public double getF1P() {
+    public Double getF1P() {
         return f1P;
     }
 
-    public void setF1P(double f1P) {
+    public void setF1P(Double f1P) {
         this.f1P = f1P;
     }
 
-    public double getF2P() {
+    public Double getF2P() {
         return f2P;
     }
 
-    public void setF2P(double f2P) {
+    public void setF2P(Double f2P) {
         this.f2P = f2P;
     }
 
-    public double getF3P() {
+    public Double getF3P() {
         return f3P;
     }
 
-    public void setF3P(double f3P) {
+    public void setF3P(Double f3P) {
         this.f3P = f3P;
     }
 
-    public double getTotAttiva() {
+    public Double getTotAttiva() {
         return totAttiva;
     }
 
-    public void setTotAttiva(double totAttiva) {
+    public void setTotAttiva(Double totAttiva) {
         this.totAttiva = totAttiva;
     }
 
-    public double getTotReattiva() {
+    public Double getTotReattiva() {
         return totReattiva;
     }
 
-    public void setTotReattiva(double totReattiva) {
+    public void setTotReattiva(Double totReattiva) {
         this.totReattiva = totReattiva;
     }
 
-    public double getSpeseEnergia() {
+    public Double getSpeseEnergia() {
         return speseEnergia;
     }
 
-    public void setSpeseEnergia(double speseEnergia) {
+    public void setSpeseEnergia(Double speseEnergia) {
         this.speseEnergia = speseEnergia;
     }
 
-    public double getTrasporti() {
+    public Double getTrasporti() {
         return trasporti;
     }
 
-    public void setTrasporti(double trasporti) {
+    public void setTrasporti(Double trasporti) {
         this.trasporti = trasporti;
     }
 
-    public double getOneri() {
+    public Double getOneri() {
         return oneri;
     }
 
-    public void setOneri(double oneri) {
+    public void setOneri(Double oneri) {
         this.oneri = oneri;
     }
 
-    public double getImposte() {
+    public Double getImposte() {
         return imposte;
     }
 
-    public void setImposte(double imposte) {
+    public void setImposte(Double imposte) {
         this.imposte = imposte;
     }
 
-    public double getGeneration() {
+    public Double getGeneration() {
         return generation;
     }
 
-    public void setGeneration(double generation) {
+    public void setGeneration(Double generation) {
         this.generation = generation;
     }
 
-    public double getGrandezzeTrasporti() {
-        return grandezzeTrasporti;
+    public Double getDispacciamento() {
+        return dispacciamento;
     }
 
-    public void setGrandezzeTrasporti(double grandezzeTrasporti) {
-        this.grandezzeTrasporti = grandezzeTrasporti;
+    public void setDispacciamento(Double dispacciamento) {
+        this.dispacciamento = dispacciamento;
     }
 
-    public double getPenali33() {
+    public Double getPenali33() {
         return penali33;
     }
 
-    public void setPenali33(double penali33) {
+    public void setPenali33(Double penali33) {
         this.penali33 = penali33;
     }
 
-    public double getPenali75() {
+    public Double getPenali75() {
         return penali75;
     }
 
-    public void setPenali75(double penali75) {
+    public void setPenali75(Double penali75) {
         this.penali75 = penali75;
     }
 
-    public double getAltro() {
+    public Double getAltro() {
         return altro;
     }
 
-    public void setAltro(double altro) {
+    public void setAltro(Double altro) {
         this.altro = altro;
     }
 
@@ -308,5 +323,45 @@ public class BollettaPod extends PanacheEntityBase {
 
     public void setMese(String mese) {
         this.mese = mese;
+    }
+
+    public Double getVerificaOnneri() {
+        return verificaOnneri;
+    }
+
+    public void setVerificaOnneri(Double verificaOnneri) {
+        this.verificaOnneri = verificaOnneri;
+    }
+
+    public Double getVerificaTrasporti() {
+        return verificaTrasporti;
+    }
+
+    public void setVerificaTrasporti(Double verificaTrasporti) {
+        this.verificaTrasporti = verificaTrasporti;
+    }
+
+    public Double getVerificaImposte() {
+        return verificaImposte;
+    }
+
+    public void setVerificaImposte(Double verificaImposte) {
+        this.verificaImposte = verificaImposte;
+    }
+
+    public Double getPicco() {
+        return picco;
+    }
+
+    public void setPicco(Double picco) {
+        this.picco = picco;
+    }
+
+    public Double getFuoriPicco() {
+        return fuoriPicco;
+    }
+
+    public void setFuoriPicco(Double fuoriPicco) {
+        this.fuoriPicco = fuoriPicco;
     }
 }

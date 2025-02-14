@@ -8,8 +8,10 @@ import miesgroup.mies.webdev.Persistance.Model.Cliente;
 import miesgroup.mies.webdev.Persistance.Model.Sessione;
 import miesgroup.mies.webdev.Persistance.Repository.ClienteRepo;
 import miesgroup.mies.webdev.Persistance.Repository.SessionRepo;
+import miesgroup.mies.webdev.Rest.Model.ClienteResponse;
 import miesgroup.mies.webdev.Rest.Model.LoginRequest;
 import miesgroup.mies.webdev.Service.AutenticationService;
+import miesgroup.mies.webdev.Service.ClienteService;
 import miesgroup.mies.webdev.Service.Exception.ClienteCreationException;
 import miesgroup.mies.webdev.Service.Exception.SessionCreationException;
 import miesgroup.mies.webdev.Service.Exception.WrongUsernameOrPasswordException;
@@ -20,12 +22,14 @@ import java.util.Optional;
 @Path("/Autentication")
 public class AutenticationResource {
     private final AutenticationService autenticationService;
+    private final ClienteService clienteSevice;
     private final ClienteRepo clienteRepo;
     private final SessionRepo sessionRepo;
     private final SessionService sessionService;
 
-    public AutenticationResource(AutenticationService autenticationService, ClienteRepo clienteRepo, SessionRepo sessionRepo, SessionService sessionService) {
+    public AutenticationResource(AutenticationService autenticationService, ClienteService clienteSevice, ClienteRepo clienteRepo, SessionRepo sessionRepo, SessionService sessionService) {
         this.autenticationService = autenticationService;
+        this.clienteSevice = clienteSevice;
         this.clienteRepo = clienteRepo;
         this.sessionRepo = sessionRepo;
         this.sessionService = sessionService;
@@ -50,8 +54,8 @@ public class AutenticationResource {
             Optional<Sessione> maybeSessione = sessionRepo.getSessionByUserId(maybeUtente.get().getId());
             //Se l'utente ha già una sessione attiva
             if (maybeSessione.isPresent()) {
-                //TODO: fare in modo che la vecchia sessione si elimini e se ne crei una nuova
-                throw new SessionCreationException("L'utente ha già una sessione attiva.");
+                autenticationService.logout(maybeSessione.get().getId());
+                NewCookie sessionCookie = new NewCookie.Builder("SESSION_COOKIE").path("/").build();
             }
         }
         int sessione = autenticationService.login(request.getUsername(), request.getPassword());
@@ -91,11 +95,11 @@ public class AutenticationResource {
     @Produces(MediaType.APPLICATION_JSON)
     public Response checkCategoria(@CookieParam("SESSION_COOKIE") int sessionId) {
         Cliente c = sessionService.trovaUtenteCategoryBySessione(sessionId);
+        ClienteResponse response = clienteSevice.parseResponse(c);
         if (c == null) {
             return Response.status(Response.Status.UNAUTHORIZED).build();
         } else {
-            return Response.ok(c).build();
-
+            return Response.ok(response).build();
         }
     }
 

@@ -2,14 +2,14 @@ package miesgroup.mies.webdev.Persistance.Repository;
 
 import io.quarkus.hibernate.orm.panache.PanacheRepositoryBase;
 import jakarta.enterprise.context.ApplicationScoped;
+import jakarta.transaction.Transactional;
 import miesgroup.mies.webdev.Persistance.Model.BollettaPod;
 import miesgroup.mies.webdev.Persistance.Model.PDFFile;
 import miesgroup.mies.webdev.Persistance.Model.Periodo;
 
 import javax.sql.DataSource;
-import java.math.BigDecimal;
-import java.sql.*;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.Map;
 import java.util.Optional;
 
@@ -17,14 +17,16 @@ import java.util.Optional;
 public class FileRepo implements PanacheRepositoryBase<PDFFile, Integer> {
 
     private final DataSource dataSource;
+    private final BollettaRepo bollettaRepo;
 
-    public FileRepo(DataSource dataSources) {
+    public FileRepo(DataSource dataSources, BollettaRepo bollettaRepo) {
         this.dataSource = dataSources;
+        this.bollettaRepo = bollettaRepo;
     }
 
     public int insert(PDFFile pdfFile) {
         // Check if the file name already exists
-        Optional<PDFFile> existingFile = PDFFile.find("fileName", pdfFile.getFileName()).firstResultOptional();
+        Optional<PDFFile> existingFile = find("fileName", pdfFile.getFileName()).firstResultOptional();
         if (existingFile.isPresent()) {
             throw new RuntimeException("File name already exists in the database");
         }
@@ -46,18 +48,17 @@ public class FileRepo implements PanacheRepositoryBase<PDFFile, Integer> {
 
 
     public byte[] getFile(int id) {
-        return PDFFile.find("idFile", id)
-                .project(byte[].class)
-                .firstResultOptional()
-                .orElse(null);
+        PDFFile f = findById(id);
+        return f.getFileData();
     }
 
-
+    @Transactional
     public void saveDataToDatabase(
             Map<String, Map<String, Map<String, Integer>>> lettureMese,
             Map<String, Double> spese,
             String idPod,
             String nomeBolletta,
+            Map<String, Map<String, Double>> piccoEFuoriPicco,
             Periodo periodo
     ) {
         for (Map.Entry<String, Map<String, Map<String, Integer>>> meseEntry : lettureMese.entrySet()) {
@@ -74,6 +75,11 @@ public class FileRepo implements PanacheRepositoryBase<PDFFile, Integer> {
             Double f1Potenza = getCategoriaConsumo(categorie, "Potenza", "F1");
             Double f2Potenza = getCategoriaConsumo(categorie, "Potenza", "F2");
             Double f3Potenza = getCategoriaConsumo(categorie, "Potenza", "F3");
+
+            // Extract "Picco" and "Fuori Picco" data for the given month
+            Double valorePicco = piccoEFuoriPicco.getOrDefault(mese, new HashMap<>()).getOrDefault("Picco", 0.0);
+            Double valoreFuoriPicco = piccoEFuoriPicco.getOrDefault(mese, new HashMap<>()).getOrDefault("Fuori Picco", 0.0);
+
 
             // Extract expenses
             Double spesaEnergia = spese.getOrDefault("Materia Energia", 0.0);
@@ -108,8 +114,10 @@ public class FileRepo implements PanacheRepositoryBase<PDFFile, Integer> {
             bolletta.setTotAttiva(totAttiva);
             bolletta.setTotReattiva(totReattiva);
             bolletta.setAnno(periodo.getAnno());
+            bolletta.setPicco(valorePicco);
+            bolletta.setFuoriPicco(valoreFuoriPicco);
 
-            bolletta.persist();
+            bollettaRepo.persist(bolletta);
         }
     }
 

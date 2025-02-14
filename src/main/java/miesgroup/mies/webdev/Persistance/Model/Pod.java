@@ -33,6 +33,9 @@ public class Pod extends PanacheEntityBase {
     @Column(name = "Tipo_Tensione", nullable = false)
     private String tipoTensione;
 
+    @Column(name = "fornitore")
+    private String fornitore;
+
     // GETTER e SETTER
 
     public String getId() {
@@ -97,5 +100,13 @@ public class Pod extends PanacheEntityBase {
 
     public void setTipoTensione(String tipoTensione) {
         this.tipoTensione = tipoTensione;
+    }
+
+    public String getFornitore() {
+        return fornitore;
+    }
+
+    public void setFornitore(String fornitore) {
+        this.fornitore = fornitore;
     }
 }

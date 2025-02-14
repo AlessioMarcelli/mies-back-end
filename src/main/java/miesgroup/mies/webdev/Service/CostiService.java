@@ -97,14 +97,14 @@ public class CostiService {
             int rowIndex = 1;
             for (Costi costo : costiList) {
                 Row row = sheet.createRow(rowIndex++);
-                row.createCell(1).setCellValue(costo.getDescrizione());
-                row.createCell(2).setCellValue(costo.getUnitaMisura());
-                row.createCell(3).setCellValue(costo.getTrimestre());
-                row.createCell(4).setCellValue(costo.getAnno());
-                row.createCell(5).setCellValue(costo.getCosto());
-                row.createCell(6).setCellValue(costo.getCategoria());
-                row.createCell(7).setCellValue(costo.getIntervalloPotenza());
-                row.createCell(8).setCellValue(costo.getClasseAgevolazione());
+                row.createCell(0).setCellValue(costo.getDescrizione());
+                row.createCell(1).setCellValue(costo.getUnitaMisura());
+                row.createCell(2).setCellValue(costo.getTrimestre());
+                row.createCell(3).setCellValue(costo.getAnno());
+                row.createCell(4).setCellValue(costo.getCosto());
+                row.createCell(5).setCellValue(costo.getCategoria());
+                row.createCell(6).setCellValue(costo.getIntervalloPotenza());
+                row.createCell(7).setCellValue(costo.getClasseAgevolazione());
             }
 
             // Scrivi il workbook nel flusso di output
@@ -114,7 +114,7 @@ public class CostiService {
         }
     }
 
-    @Transactional
+
     private CellStyle createHeaderCellStyle(Workbook workbook) {
         CellStyle style = workbook.createCellStyle();
         Font font = workbook.createFont();
@@ -174,7 +174,7 @@ public class CostiService {
         }
     }
 
-    @Transactional
+
     private boolean existsInList(List<Costi> existingCosti, String descrizione, String unitaMisura, int trimestre, String anno, float costo, String categoria, String intervalloPotenza, String classeAgevolazione) {
         for (Costi costoEsistente : existingCosti) {
             if (areEqual(costoEsistente.getDescrizione(), descrizione) &&

@@ -44,6 +44,7 @@ public class PodService {
         ArrayList<Double> extractedValues = new ArrayList<>();
         String id_pod = "";
         int id_utente = sessionService.trovaUtentebBySessione(sessione);
+        String fornitore = "";
         boolean esiste = false;
         try {
             DocumentBuilderFactory factory = DocumentBuilderFactory.newInstance();
@@ -64,7 +65,13 @@ public class PodService {
                         Element LineElement = (Element) LineNode;
                         id_pod = LineElement.getTextContent();
                     }
+
                     if (podRepo.verificaSePodEsiste(id_pod, id_utente) == null) {
+                        if (lineText.contains("SEGNALAZIONE GUASTI ELETTRICITA")) {
+                            Node LineNode = lineNodes.item(i + 2);
+                            Element LineElement = (Element) LineNode;
+                            fornitore = LineElement.getTextContent();
+                        }
                         if (lineText.contains("Tensione di alimentazione") || lineText.contains("Potenza impegnata") || lineText.contains("Potenza disponibile") && estrai < 3) {
                             estrai++;
                             if (i + 1 < lineNodes.getLength()) {
@@ -100,7 +107,7 @@ public class PodService {
                     }
                 }
             }
-            creaPod(extractedValues, id_utente, id_pod);
+            creaPod(extractedValues, id_utente, id_pod, fornitore);
         } catch (SAXException | IOException | ParserConfigurationException e) {
             e.printStackTrace();
         }
@@ -109,11 +116,12 @@ public class PodService {
 
 
     @Transactional
-    public void creaPod(ArrayList<Double> extractedValues, int id_utente, String id_pod) {
+    public void creaPod(ArrayList<Double> extractedValues, int id_utente, String id_pod, String fornitore) {
         Cliente c = clienteRepo.findById(id_utente);
         Pod pod = new Pod();
         pod.setUtente(c);
         pod.setId(id_pod);
+        pod.setFornitore(fornitore);
         pod.setTensioneAlimentazione(extractedValues.get(0));
         pod.setPotenzaImpegnata(extractedValues.get(1));
         pod.setPotenzaDisponibile(extractedValues.get(2));
@@ -124,7 +132,7 @@ public class PodService {
         } else {
             pod.setTipoTensione("Alta");
         }
-        podRepo.insert(pod);
+        podRepo.persist(pod);
     }
 
     @Transactional

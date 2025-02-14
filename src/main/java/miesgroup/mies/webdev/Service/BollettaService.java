@@ -58,11 +58,11 @@ public class BollettaService {
 
         //Calcolo Trasporti
         Double potenzaImpegnata = bollettaRepo.getPotenzaImpegnata(idPod);
-        double costi;
-        double QuotaVariabile = 0;
-        double QuotaFissa = 0;
-        double QuotaPotenza = 0;
-        double maggiorePotenza = bollettaRepo.getMaggiorePotenza(nomeBolletta);
+        Double costi = 0.0;
+        Double QuotaVariabile = 0.0;
+        Double QuotaFissa = 0.0;
+        Double QuotaPotenza = 0.0;
+        Double maggiorePotenza = bollettaRepo.getMaggiorePotenza(nomeBolletta);
         if (potenzaImpegnata <= 100) {
             QuotaVariabile = bollettaRepo.getCostiTrasporto(trimestre, "<100KW", "€/KWh");
             QuotaFissa = bollettaRepo.getCostiTrasporto(trimestre, "<100KW", "€/Month");
@@ -78,25 +78,25 @@ public class BollettaService {
         }
 
         costi = ((QuotaVariabile * totAttiva) + QuotaFissa) + QuotaPotenza;
-        double f1Attiva = bollettaRepo.getF1(nomeBolletta);
-        double f2Attiva = bollettaRepo.getF2(nomeBolletta);
-        double sommaAttiva = f1Attiva + f2Attiva;
-        double f1Reattiva = bollettaRepo.getF1Reattiva(nomeBolletta);
-        double f2Reattiva = bollettaRepo.getF2Reattiva(nomeBolletta);
-        double sommaReattiva = f1Reattiva + f2Reattiva;
+        Double f1Attiva = bollettaRepo.getF1(nomeBolletta);
+        Double f2Attiva = bollettaRepo.getF2(nomeBolletta);
+        Double sommaAttiva = f1Attiva + f2Attiva;
+        Double f1Reattiva = bollettaRepo.getF1R(nomeBolletta);
+        Double f2Reattiva = bollettaRepo.getF2R(nomeBolletta);
+        Double sommaReattiva = f1Reattiva + f2Reattiva;
 
-        double percentualeDelleAR = (sommaReattiva / sommaAttiva) * 100;
+        Double percentualeDelleAR = (sommaReattiva / sommaAttiva) * 100;
 
-        double noPenali = 0;
-        double costo3375 = 0;
-        double costo75 = 0;
-        double penali33 = 0;
-        double penali75 = 0;
-        double percentualeDelleAR3375 = 0;
-        double percentualeDelleAR75 = 0;
-        double trasporti = 0;
+        Double noPenali = 0.0;
+        Double costo3375 = 0.0;
+        Double costo75 = 0.0;
+        Double penali33 = 0.0;
+        Double penali75 = 0.0;
+        Double percentualeDelleAR3375 = 0.0;
+        Double percentualeDelleAR75 = 0.0;
+        Double trasporti = 0.0;
         if (percentualeDelleAR < 33) {
-            noPenali = 0;
+            noPenali = 0.0;
             trasporti = costi + noPenali;
         } else if (percentualeDelleAR > 33 || percentualeDelleAR < 75) {
             percentualeDelleAR3375 = (percentualeDelleAR - 33) - (percentualeDelleAR - 75);
@@ -119,13 +119,15 @@ public class BollettaService {
         bollettaRepo.updateTrasportiA2A(trasporti, nomeBolletta);
 
         //Calcolo Oneri
-        double costiOneri;
-        double quotaEnergiaOneri = 0;
-        double quotaFissaOneri = 0;
-        double quotaPotenzaOneri = 0;
+        Double costiOneri = 0.0;
+        Double quotaEnergiaOneri = 0.0;
+        Double quotaFissaOneri = 0.0;
+        Double quotaPotenzaOneri = 0.0;
         String classeAgevolazione = clienteService.getClasseAgevolazione(idPod);
         if (potenzaImpegnata <= 100) {
-            //TODO
+            quotaEnergiaOneri = bollettaRepo.getCostiOneri(trimestre, "<100KW", "€/KWh", classeAgevolazione);
+            quotaFissaOneri = bollettaRepo.getCostiOneri(trimestre, "<100KW", "€/Month", classeAgevolazione);
+            quotaPotenzaOneri = bollettaRepo.getCostiOneri(trimestre, "<100KW", "€/KW/Month", classeAgevolazione) * maggiorePotenza;
         } else if (potenzaImpegnata > 100 && potenzaImpegnata <= 500) {
             quotaEnergiaOneri = bollettaRepo.getCostiOneri(trimestre, "100-500KW", "€/KWh", classeAgevolazione);
             quotaFissaOneri = bollettaRepo.getCostiOneri(trimestre, "100-500KW", "€/Month", classeAgevolazione);
@@ -141,7 +143,7 @@ public class BollettaService {
         bollettaRepo.updateVerificaOneri(costiOneri, nomeBolletta);
 
         // Calcolo Imposte
-        double costiImposte = 0;
+        Double costiImposte = 0.0;
 
         if (totAttiva >= 0 && totAttiva <= 200000) {
             costiImposte = totAttiva * 0.0125;

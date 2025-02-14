@@ -7,64 +7,56 @@ import miesgroup.mies.webdev.Persistance.Model.BollettaPod;
 import miesgroup.mies.webdev.Persistance.Model.Costi;
 import miesgroup.mies.webdev.Persistance.Model.Pod;
 
+import java.util.List;
+
 @ApplicationScoped
 public class BollettaRepo implements PanacheRepositoryBase<BollettaPod, Integer> {
 
-    private final BollettaRepo bollettaRepo;
     private final CostiRepo costiRepo;
     private final PodRepo podRepo;
 
-    public BollettaRepo(BollettaRepo bollettaRepo, CostiRepo costiRepo, PodRepo podRepo) {
-        this.bollettaRepo = bollettaRepo;
+    public BollettaRepo(CostiRepo costiRepo, PodRepo podRepo) {
         this.costiRepo = costiRepo;
         this.podRepo = podRepo;
     }
 
-
     public Double getCorrispettiviDispacciamentoA2A(int trimestre) {
-        return Costi.find("unitàMisura = ?1 AND categoria = 'dispacciamento' AND (trimestrale = ?2 OR annuale IS NOT NULL)", "€/KWh", trimestre)
-                .project(Double.class)
-                .firstResultOptional()
-                .orElse(null);
+        List<Costi> lista = costiRepo.find("unitaMisura = ?1 AND categoria = 'dispacciamento' AND (trimestre = ?2 OR anno IS NOT NULL)", "€/KWh", trimestre).list();
+        double somma = 0;
+        for (Costi c : lista) {
+            somma += c.getCosto();
+        }
+        return somma;
     }
 
     public Double getConsumoA2A(String nome) {
-        return BollettaPod.find("nomeBolletta", nome)
-                .project(Double.class)
-                .firstResultOptional()
-                .orElse(null);
+        BollettaPod b = find("nomeBolletta", nome).firstResult();
+        return b.getF1P() + b.getF2P() + b.getF3P();
     }
 
     public String getTipoTensione(String idPod) {
-        return Pod.find("id", idPod)
-                .project(String.class)
-                .firstResultOptional()
-                .orElse(null);
+        Pod pod = podRepo.find("id", idPod).firstResult();
+        return pod.getTipoTensione();
     }
 
     public void updateDispacciamentoA2A(double dispacciamento, String nomeBolletta) {
-        update("dispacciamento = ?1 WHERE nomeBolletta = ?2", dispacciamento, nomeBolletta);
+        BollettaPod b = find("nomeBolletta", nomeBolletta).firstResult();
+        b.setDispacciamento(dispacciamento);
     }
 
     public void updateGenerationA2A(Double generation, String nomeBolletta) {
-        update("generation = ?1 WHERE nomeBolletta = ?2", generation, nomeBolletta);
-    }
-
-    public void updateMeseBolletta(String mese, String nomeBolletta) {
-        update("mese = ?1 WHERE nomeBolletta = ?2", mese, nomeBolletta);
+        BollettaPod b = find("nomeBolletta", nomeBolletta).firstResult();
+        b.setGeneration(generation);
     }
 
     public String getMese(String nomeBolletta) {
-        return find("nomeBolletta", nomeBolletta)
-                .project(String.class)
-                .firstResult();
+        BollettaPod bollettaPod = find("nomeBolletta", nomeBolletta).firstResult();
+        return bollettaPod.getMese();
     }
 
     public Double getPotenzaImpegnata(String idPod) {
-        return Pod.find("id", idPod)
-                .project(Double.class)
-                .firstResultOptional()
-                .orElse(null);
+        Pod pod = podRepo.find("id", idPod).firstResult();
+        return pod.getPotenzaImpegnata();
     }
 
     public Double getCostiTrasporto(int trimestre, String intervalloPotenza, String unitaMisura) {
@@ -73,35 +65,44 @@ public class BollettaRepo implements PanacheRepositoryBase<BollettaPod, Integer>
     }
 
     public Double getCostiOneri(int trimestre, String intervalloPotenza, String unitaMisura, String classeAgevolazione) {
-        return Costi.find("categoria = 'oneri' AND unitàMisura = ?1 AND intervalloPotenza = ?2 AND (trimestrale = ?3 OR annuale IS NOT NULL) AND classeAgevolazione = ?4",
+        List<Costi> lista = costiRepo.find("categoria = 'oneri' AND unitaMisura = ?1 AND intervalloPotenza = ?2 AND (trimestre = ?3 OR anno IS NOT NULL) AND classeAgevolazione = ?4",
                         unitaMisura, intervalloPotenza, trimestre, classeAgevolazione)
-                .project(Double.class)
-                .firstResultOptional()
-                .orElse(0.0);
-    }
+                .list();
+        if (lista.isEmpty()) {
+            return 0.0;
+        }
 
-
-    public Double getPenali(String descrizione) {
-        return Costi.find("categoria = 'penali' AND descrizione = ?1", descrizione)
-                .project(Double.class)
-                .firstResultOptional()
-                .orElse(0.0);
+        Double somma = 0.0;
+        for (Costi c : lista) {
+            somma += c.getCosto();
+        }
+        return somma;
     }
 
     public void updateTrasportiA2A(double trasporti, String nomeBolletta) {
-        update("verificaTrasporti = ?1 WHERE nomeBolletta = ?2", trasporti, nomeBolletta);
+        BollettaPod bollettaPod = find("nomeBolletta", nomeBolletta).firstResult();
+        bollettaPod.setVerificaTrasporti(trasporti);
     }
 
-    public void updatePenali(double penali, String nomeBolletta, boolean sopra75) {
-        String column = sopra75 ? "penali75" : "penali33";
-        update(column + " = ?1 WHERE nomeBolletta = ?2", penali, nomeBolletta);
+    public void updatePenali33(double penali33, String nomeBolletta) {
+        BollettaPod bollettaPod = find("nomeBolletta", nomeBolletta).firstResult();
+        bollettaPod.setPenali33(penali33);
+    }
+
+    public void updatePenali75(double penali75, String nomeBolletta) {
+        BollettaPod bollettaPod = find("nomeBolletta", nomeBolletta).firstResult();
+        bollettaPod.setPenali75(penali75);
+    }
+
+    public void updateVerificaOneri(Double costiOneri, String nomeBolletta) {
+        BollettaPod bollettaPod = find("nomeBolletta", nomeBolletta).firstResult();
+        bollettaPod.setVerificaOnneri(costiOneri);
     }
 
     public Double getMaggiorePotenza(String nomeBolletta) {
-        return find("SELECT GREATEST(f1Potenza, f2Potenza, f3Potenza) FROM BollettaPod WHERE nomeBolletta = ?1", nomeBolletta)
-                .project(Double.class)
-                .firstResultOptional()
-                .orElse(0.0);
+        BollettaPod bolletta = find("nomeBolletta", nomeBolletta).firstResult();
+        Double maggiore = Math.max(bolletta.getF1P(), Math.max(bolletta.getF2P(), bolletta.getF3P()));
+        return maggiore;
     }
 
     public boolean A2AisPresent(String nomeBolletta, String idPod) {
@@ -109,72 +110,73 @@ public class BollettaRepo implements PanacheRepositoryBase<BollettaPod, Integer>
     }
 
     public void updateTOTReattiva(String nomeBolletta) {
-        update("totReattiva = reattiva1 + reattiva2 + reattiva3 WHERE nomeBolletta = ?1", nomeBolletta);
+        BollettaPod b = find("nomeBolletta", nomeBolletta).firstResult();
+        Double totReattiva = b.getF1R() + b.getF2R() + b.getF3R();
+        b.setTotReattiva(totReattiva);
     }
 
     public void updateTOTAttiva(Double totAttiva, String nomeBolletta) {
-        update("totAttiva = ?1 WHERE nomeBolletta = ?2", totAttiva, nomeBolletta);
+        BollettaPod b = find("nomeBolletta", nomeBolletta).firstResult();
+        b.setTotAttiva(totAttiva);
     }
 
+    public Double getF1(String nomeBolletta) {
+        BollettaPod b = find("nomeBolletta", nomeBolletta).firstResult();
 
-    public double getF1(String nomeBolletta) {
-        return find("SELECT f1Potenza FROM BollettaPod WHERE nomeBolletta = ?1", nomeBolletta)
-                .project(Double.class)
-                .firstResultOptional()
-                .orElse(0.0);
+        Double f1 = b.getF1P();
+        return f1;
     }
 
+    public Double getF2(String nomeBolletta) {
+        BollettaPod b = find("nomeBolletta", nomeBolletta).firstResult();
+        Double f2 = b.getF2P();
+        return f2;
 
-    public double getF2(String nomeBolletta) {
-        return find("SELECT f2Potenza FROM BollettaPod WHERE nomeBolletta = ?1", nomeBolletta)
-                .project(Double.class)
-                .firstResultOptional()
-                .orElse(0.0);
     }
 
-    public double getF1Reattiva(String nomeBolletta) {
-        return find("SELECT f1Reattiva FROM BollettaPod WHERE nomeBolletta = ?1", nomeBolletta)
-                .project(Double.class)
-                .firstResultOptional()
-                .orElse(0.0);
+    public Double getPenaliSotto75() {
+        List<Costi> costi = costiRepo.find("categoria = 'penali' AND descrizione = '>33%&75%<'").list();
+        Double somma = 0.0;
+        for (Costi c : costi) {
+            somma += c.getCosto();
+        }
+        return somma;
     }
 
-    public double getF2Reattiva(String nomeBolletta) {
-        return find("SELECT f2Reattiva FROM BollettaPod WHERE nomeBolletta = ?1", nomeBolletta)
-                .project(Double.class)
-                .firstResultOptional()
-                .orElse(0.0);
-    }
-
-    public double getPenaliSotto75() {
-        return Costi.find("categoria = 'penali' AND descrizione = '>33%&75%<'")
-                .project(Double.class)
-                .firstResultOptional()
-                .orElse(0.0);
-    }
-
-    public double getPenaliSopra75() {
-        return Costi.find("categoria = 'penali' AND descrizione = '>75%'")
-                .project(Double.class)
-                .firstResultOptional()
-                .orElse(0.0);
-    }
-
-    public void updatePenali33(double penali33, String nomeBolletta) {
-        update("penali33 = ?1 WHERE nomeBolletta = ?2", penali33, nomeBolletta);
-    }
-
-    public void updatePenali75(double penali75, String nomeBolletta) {
-        update("penali75 = ?1 WHERE nomeBolletta = ?2", penali75, nomeBolletta);
-    }
-
-    public void updateVerificaOneri(double costiOneri, String nomeBolletta) {
-        update("verificaOneri = ?1 WHERE nomeBolletta = ?2", costiOneri, nomeBolletta);
+    public Double getPenaliSopra75() {
+        List<Costi> c = costiRepo.find("categoria = 'penali' AND descrizione = '>75%'")
+                .list();
+        Double somma = 0.0;
+        for (Costi costi : c) {
+            somma += costi.getCosto();
+        }
+        return somma;
     }
 
     public void updateVerificaImposte(double costiImposte, String nomeBolletta) {
-        update("verificaImposte = ?1 WHERE nomeBolletta = ?2", costiImposte, nomeBolletta);
+        BollettaPod bollettaPod = find("nomeBolletta", nomeBolletta).firstResult();
+        bollettaPod.setVerificaImposte(costiImposte);
     }
 
+    public Double getF1R(String nomeBolletta) {
+        BollettaPod b = find("nomeBolletta", nomeBolletta)
+                .firstResult();
+        Double f1 = b.getF1R();
+        return f1;
+    }
 
+    public Double getF2R(String nomeBolletta) {
+        BollettaPod b = find("nomeBolletta", nomeBolletta)
+                .firstResult();
+        Double f2 = b.getF2R();
+        return f2;
+    }
+
+    public String verificaInserimento(String nomeBolletta) {
+        BollettaPod b = find("nomeBolletta", nomeBolletta).firstResult();
+        if (b == null) {
+            return "Bolletta non presente";
+        }
+        return "Bolletta presente";
+    }
 }
