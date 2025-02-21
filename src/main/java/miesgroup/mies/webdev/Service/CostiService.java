@@ -131,43 +131,61 @@ public class CostiService {
                 throw new IllegalArgumentException("Il foglio 'Costi' non esiste nel file Excel.");
             }
 
-            // Recupera tutti i costi già presenti nel database
             List<Costi> existingCosti = getAllCosti();
+            int emptyRowCount = 0; // Contatore di righe vuote consecutive
 
             for (Row row : sheet) {
                 if (row.getRowNum() == 0) {
-                    // Saltiamo l'intestazione
-                    continue;
+                    continue; // Salta l'intestazione
                 }
 
+                // Controlla se la riga è completamente vuota
+                boolean isEmptyRow = true;
+                for (int i = 0; i <= 7; i++) {
+                    if (!getCellValue(row.getCell(i)).isEmpty()) {
+                        isEmptyRow = false;
+                        break;
+                    }
+                }
+
+                if (isEmptyRow) {
+                    emptyRowCount++;
+                    if (emptyRowCount >= 3) { // Se trova 3 righe vuote consecutive, interrompe il ciclo
+                        System.out.println("Rilevate 3 righe vuote consecutive. Interruzione del parsing.");
+                        break;
+                    }
+                    continue; // Salta la riga vuota
+                } else {
+                    emptyRowCount = 0; // Reset del contatore se la riga non è vuota
+                }
+
+                // Estrai i valori con gestione degli errori
                 String descrizione = getCellValue(row.getCell(0));
                 String unitaMisura = getCellValue(row.getCell(1));
-                int trimestre = Integer.parseInt(getCellValue(row.getCell(2)));
-                String anno = getCellValue(row.getCell(3));
-                float costo = Float.parseFloat(getCellValue(row.getCell(4)));
+                String trimestreStr = getCellValue(row.getCell(2));
+                String annoStr = getCellValue(row.getCell(3));
+                String costoStr = getCellValue(row.getCell(4));
                 String categoria = getCellValue(row.getCell(5));
                 String intervalloPotenza = getCellValue(row.getCell(6));
                 String classeAgevolazione = getCellValue(row.getCell(7));
 
-                // Controlla se il costo esiste già
-                if (!existsInList(existingCosti, descrizione, unitaMisura, trimestre, anno, costo, categoria, intervalloPotenza, classeAgevolazione)) {
-                    // Inserisce una nuova riga nel database
+                int trimestre = trimestreStr.isEmpty() ? 0 : (int) Double.parseDouble(trimestreStr);
+                float costo = costoStr.isEmpty() ? 0.0f : Float.parseFloat(costoStr);
+
+                if (!existsInList(existingCosti, descrizione, unitaMisura, trimestre, annoStr, costo, categoria, intervalloPotenza, classeAgevolazione)) {
                     Costi dettaglioCosto = new Costi();
                     dettaglioCosto.setDescrizione(descrizione);
                     dettaglioCosto.setUnitaMisura(unitaMisura);
                     dettaglioCosto.setTrimestre(trimestre);
-                    dettaglioCosto.setAnno(anno);
+                    dettaglioCosto.setAnno(annoStr.replaceAll("\\.0+$", ""));
                     dettaglioCosto.setCosto(costo);
                     dettaglioCosto.setCategoria(categoria);
                     dettaglioCosto.setIntervalloPotenza(intervalloPotenza);
                     dettaglioCosto.setClasseAgevolazione(classeAgevolazione);
 
                     costiRepo.save(dettaglioCosto);
-
-                    // Aggiunge il nuovo costo alla lista per evitare duplicati
                     existingCosti.add(dettaglioCosto);
                 }
-
             }
         } catch (Exception e) {
             throw new RuntimeException("Errore durante l'elaborazione del file Excel", e);
@@ -203,20 +221,27 @@ public class CostiService {
 
 
     private String getCellValue(Cell cell) {
-        if (cell == null) return null;
+        if (cell == null) {
+            return ""; // Restituisce stringa vuota se la cella è null
+        }
         switch (cell.getCellType()) {
             case STRING:
-                return cell.getStringCellValue();
+                return cell.getStringCellValue().trim();
             case NUMERIC:
-                if ((cell.getNumericCellValue() % 1) == 0) {
-                    return String.valueOf((int) cell.getNumericCellValue());
+                if (DateUtil.isCellDateFormatted(cell)) {
+                    return cell.getDateCellValue().toString();
                 } else {
                     return String.valueOf(cell.getNumericCellValue());
                 }
             case BOOLEAN:
                 return String.valueOf(cell.getBooleanCellValue());
+            case FORMULA:
+                return cell.getCellFormula();
+            case BLANK:
+                return ""; // Restituisce stringa vuota se la cella è vuota
             default:
-                return null;
+                return "";
         }
     }
+
 }

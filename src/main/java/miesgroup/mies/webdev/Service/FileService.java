@@ -124,6 +124,7 @@ public class FileService {
             // Estrazione delle letture
             Map<String, Map<String, Map<String, Integer>>> lettureMese = extractLetture(document);
 
+            // Estrazione delle misure di picco e fuori picco
             Map<String, Map<String, Double>> misurePicco = extractPiccoFuoriPicco(document);
 
             // Estrazione delle spese
@@ -176,7 +177,7 @@ public class FileService {
                 }
 
                 // Estrazione valori se siamo in una categoria valida
-                if (categoriaCorrente != null && lineText.contains("€/kWh")) {
+                if (categoriaCorrente != null && (categoriaCorrente.equals("Fuori Picco") || categoriaCorrente.equals("Picco")) && lineText.contains("€/kWh")) {
                     ArrayList<Date> dates = extractDates(lineText);
                     Double valueKWh = extractKWhFromLine(lineText);
                     String mese = dates.isEmpty() ? null : DateUtils.getMonthFromDateLocalized(dates.get(1));
@@ -187,6 +188,7 @@ public class FileService {
 
                         // Aggiunge o aggiorna il valore esistente
                         categorie.put(categoriaCorrente, categorie.getOrDefault(categoriaCorrente, 0.0) + valueKWh);
+                        categoriaCorrente = null; // Resetta la categoria corrente
                     }
                 }
             }
@@ -473,7 +475,8 @@ public class FileService {
         Matcher matcher = pattern.matcher(lineText);
         if (matcher.find()) {
             String value = matcher.group(1).replace(".", "").replace(",", "."); // Normalizza i separatori
-            return Double.parseDouble(value);
+            Double numero = Double.parseDouble(value);
+            return numero;
         }
         return null;
     }

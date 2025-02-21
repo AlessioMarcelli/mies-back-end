@@ -28,7 +28,7 @@ public class Costi extends PanacheEntityBase {
     @Column(name = "Costo")
     private Float costo;
 
-    @Column(name = "Categoria", nullable = false)
+    @Column(name = "Categoria")
     private String categoria;
 
     @Column(name = "Intervallo_Potenza")
