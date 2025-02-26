@@ -48,28 +48,38 @@ public class AutenticationResource {
     @Path("/login")
     @Consumes(MediaType.APPLICATION_JSON)
     @Produces(MediaType.APPLICATION_JSON)
-    public Response login(LoginRequest request) throws SessionCreationException, WrongUsernameOrPasswordException {
-        Optional<Cliente> maybeUtente = clienteRepo.findByUsername(request.getUsername());
-        if (maybeUtente.isPresent()) {
-            Optional<Sessione> maybeSessione = sessionRepo.getSessionByUserId(maybeUtente.get().getId());
-            //Se l'utente ha già una sessione attiva
-            if (maybeSessione.isPresent()) {
-                autenticationService.logout(maybeSessione.get().getId());
-                NewCookie sessionCookie = new NewCookie.Builder("SESSION_COOKIE")
-                        .path("/")
-                        .sameSite(NewCookie.SameSite.NONE)
-                        .build();
+    public Response login(LoginRequest request) {
+        try {
+            Optional<Cliente> maybeUtente = clienteRepo.findByUsername(request.getUsername());
+            if (maybeUtente.isPresent()) {
+                Optional<Sessione> maybeSessione = sessionRepo.getSessionByUserId(maybeUtente.get().getId());
+                // Se l'utente ha già una sessione attiva
+                if (maybeSessione.isPresent()) {
+                    autenticationService.logout(maybeSessione.get().getId());
+                    NewCookie sessionCookie = new NewCookie.Builder("SESSION_COOKIE")
+                            .path("/")
+                            .sameSite(NewCookie.SameSite.NONE)
+                            .build();
+                }
             }
+            int sessione = autenticationService.login(request.getUsername(), request.getPassword());
+            NewCookie sessionCookie = new NewCookie.Builder("SESSION_COOKIE")
+                    .value(String.valueOf(sessione))
+                    .path("/")
+                    .sameSite(NewCookie.SameSite.NONE)
+                    .build();
+            return Response.ok()
+                    .cookie(sessionCookie)
+                    .build();
+        } catch (SessionCreationException | WrongUsernameOrPasswordException e) {
+            return Response.status(Response.Status.UNAUTHORIZED)
+                    .entity("Login failed: " + e.getMessage())
+                    .build();
+        } catch (Exception e) {
+            return Response.status(Response.Status.INTERNAL_SERVER_ERROR)
+                    .entity("An unexpected error occurred: " + e.getMessage())
+                    .build();
         }
-        int sessione = autenticationService.login(request.getUsername(), request.getPassword());
-        NewCookie sessionCookie = new NewCookie.Builder("SESSION_COOKIE")
-                .value(String.valueOf(sessione))
-                .path("/")
-                .sameSite(NewCookie.SameSite.NONE)
-                .build();
-        return Response.ok()
-                .cookie(sessionCookie)
-                .build();
     }
 
     @DELETE
@@ -101,7 +111,7 @@ public class AutenticationResource {
         Cliente c = sessionService.trovaUtenteCategoryBySessione(sessionId);
         ClienteResponse response = clienteSevice.parseResponse(c);
         if (c == null) {
-            return Response.status(Response.Status.UNAUTHORIZED).build();
+            return Response.status(Response.Status.NOT_FOUND).build();
         } else {
             return Response.ok(response).build();
         }

@@ -2,19 +2,11 @@ TODO: aggiungere le funzioni di logging
 TODO: aggiungere le funzioni di health check
 
 
+TODO:Calcolo perdite = tot attiva * 1,1 (Bassa tensione) * 1,038 (Media tensione)
 
-TODO: aggiungere estrazione da bolletta Peak ofPeak kwh
-
-TODO: aggiungere costi di picco e fuori picco nella tabella costi
-
-TODO: poi nei calcoli di verifica controllare se il prezzo unitario è corretto
-
-TODO: Creare dabeòlla mercato con all'interno i dati presi dal sito GME (Pun)
+TODO: Creare tabella mercato con all'interno i dati presi dal sito GME (Pun)
 
 TODO: aggiungere una voce nella casella dell'utente che sarà modificabile solo dall'admin dove verrà inserito il costo a kwh in accordo tra fornitore e cliente
 
 TODO: aggiornare la tabella bolletta con F0 e creare una tabella di appoggio dove verrano caricati i calcoli dei vari Articoli che compongono una voce pe esempio I trasporti
 
-TODO: Controllare la parte dei Futures
-
-TODO:Calcolo perdite = tot attiva * 1,1 (Bassa tensione) * 1,038 (Media tensione)
