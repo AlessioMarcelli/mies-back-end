@@ -55,13 +55,17 @@ public class AutenticationResource {
             //Se l'utente ha già una sessione attiva
             if (maybeSessione.isPresent()) {
                 autenticationService.logout(maybeSessione.get().getId());
-                NewCookie sessionCookie = new NewCookie.Builder("SESSION_COOKIE").path("/").build();
+                NewCookie sessionCookie = new NewCookie.Builder("SESSION_COOKIE")
+                        .path("/")
+                        .sameSite(NewCookie.SameSite.NONE)
+                        .build();
             }
         }
         int sessione = autenticationService.login(request.getUsername(), request.getPassword());
         NewCookie sessionCookie = new NewCookie.Builder("SESSION_COOKIE")
                 .value(String.valueOf(sessione))
                 .path("/")
+                .sameSite(NewCookie.SameSite.NONE)
                 .build();
         return Response.ok()
                 .cookie(sessionCookie)
@@ -84,7 +88,7 @@ public class AutenticationResource {
     public Response check(@CookieParam("SESSION_COOKIE") int sessionId) {
         Integer sessione = sessionService.trovaUtentebBySessione(sessionId);
         if (sessione != null) {
-            return Response.ok().build();
+            return Response.ok("sesione presente").build();
         } else {
             return Response.status(Response.Status.UNAUTHORIZED).build();
         }
