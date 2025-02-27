@@ -14,6 +14,7 @@ import java.io.InputStream;
 import java.math.BigDecimal;
 import java.sql.Connection;
 import java.sql.SQLException;
+import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -84,7 +85,7 @@ public class CostiService {
             String[] headers = {
                     "Descrizione", "Unità di Misura", "Trimestre", "Anno",
                     "Costo", "Categoria", "Intervallo Potenza",
-                    "Classe Agevolazione"
+                    "Classe Agevolazione", "Anno di riferimento"
             };
 
             for (int i = 0; i < headers.length; i++) {
@@ -105,6 +106,7 @@ public class CostiService {
                 row.createCell(5).setCellValue(costo.getCategoria());
                 row.createCell(6).setCellValue(costo.getIntervalloPotenza());
                 row.createCell(7).setCellValue(costo.getClasseAgevolazione());
+                row.createCell(8).setCellValue(costo.getAnnoRiferimento());
             }
 
             // Scrivi il workbook nel flusso di output
@@ -168,11 +170,12 @@ public class CostiService {
                 String categoria = getCellValue(row.getCell(5));
                 String intervalloPotenza = getCellValue(row.getCell(6));
                 String classeAgevolazione = getCellValue(row.getCell(7));
+                String annoRiferimento = getCellValue(row.getCell(8));
 
                 int trimestre = trimestreStr.isEmpty() ? 0 : (int) Double.parseDouble(trimestreStr);
                 float costo = costoStr.isEmpty() ? 0.0f : Float.parseFloat(costoStr);
 
-                if (!existsInList(existingCosti, descrizione, unitaMisura, trimestre, annoStr, costo, categoria, intervalloPotenza, classeAgevolazione)) {
+                if (!existsInList(existingCosti, descrizione, unitaMisura, trimestre, annoStr, costo, categoria, intervalloPotenza, classeAgevolazione, annoRiferimento)) {
                     Costi dettaglioCosto = new Costi();
                     dettaglioCosto.setDescrizione(descrizione);
                     dettaglioCosto.setUnitaMisura(unitaMisura);
@@ -182,8 +185,9 @@ public class CostiService {
                     dettaglioCosto.setCategoria(categoria);
                     dettaglioCosto.setIntervalloPotenza(intervalloPotenza);
                     dettaglioCosto.setClasseAgevolazione(classeAgevolazione);
+                    dettaglioCosto.setAnnoRiferimento(annoRiferimento.replaceAll("\\.0+$", ""));
 
-                    costiRepo.save(dettaglioCosto);
+                    costiRepo.persist(dettaglioCosto);
                     existingCosti.add(dettaglioCosto);
                 }
             }
@@ -193,16 +197,19 @@ public class CostiService {
     }
 
 
-    private boolean existsInList(List<Costi> existingCosti, String descrizione, String unitaMisura, int trimestre, String anno, float costo, String categoria, String intervalloPotenza, String classeAgevolazione) {
+    private boolean existsInList(List<Costi> existingCosti, String descrizione, String unitaMisura, int trimestre, String anno, float costo, String categoria, String intervalloPotenza, String classeAgevolazione, String annoRiferimento) {
         for (Costi costoEsistente : existingCosti) {
-            if (areEqual(costoEsistente.getDescrizione(), descrizione) &&
-                    areEqual(costoEsistente.getUnitaMisura(), unitaMisura) &&
-                    costoEsistente.getTrimestre() == trimestre &&
-                    areEqual(costoEsistente.getAnno(), anno) &&
-                    Float.compare(costoEsistente.getCosto(), costo) == 0 && // Confronto sicuro per float
-                    areEqual(costoEsistente.getCategoria(), categoria) &&
-                    areEqual(costoEsistente.getIntervalloPotenza(), intervalloPotenza) &&
-                    areEqual(costoEsistente.getClasseAgevolazione(), classeAgevolazione)) {
+            if (
+                    areEqual(costoEsistente.getDescrizione(), descrizione) &&
+                            areEqual(costoEsistente.getUnitaMisura(), unitaMisura) &&
+                            costoEsistente.getTrimestre() == trimestre &&
+                            areEqual(costoEsistente.getAnno(), anno) &&
+                            Float.compare(costoEsistente.getCosto(), costo) == 0 && // Confronto sicuro per float
+                            areEqual(costoEsistente.getCategoria(), categoria) &&
+                            areEqual(costoEsistente.getIntervalloPotenza(), intervalloPotenza) &&
+                            areEqual(costoEsistente.getClasseAgevolazione(), classeAgevolazione) &&
+                            areEqual(costoEsistente.getAnnoRiferimento(), annoRiferimento)
+            ) {
                 return true; // Duplicato trovato
             }
         }

@@ -2,6 +2,7 @@ package miesgroup.mies.webdev.Persistance.Model;
 
 import io.quarkus.hibernate.orm.panache.PanacheEntityBase;
 import jakarta.persistence.*;
+
 import java.sql.Date;
 
 @Entity
@@ -39,6 +40,9 @@ public class Costi extends PanacheEntityBase {
 
     @Column(name = "Data_Inserimento", columnDefinition = "DATE DEFAULT CURRENT_DATE")
     private Date dataInserimento;
+
+    @Column(name = "anno_riferimento")
+    private String annoRiferimento;
 
     // GETTER e SETTER
     public Integer getId() {
@@ -119,5 +123,13 @@ public class Costi extends PanacheEntityBase {
 
     public void setDataInserimento(Date dataInserimento) {
         this.dataInserimento = dataInserimento;
+    }
+
+    public String getAnnoRiferimento() {
+        return annoRiferimento;
+    }
+
+    public void setAnnoRiferimento(String annoRiferimento) {
+        this.annoRiferimento = annoRiferimento;
     }
 }

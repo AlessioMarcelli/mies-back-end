@@ -51,26 +51,37 @@ public class AutenticationResource {
     public Response login(LoginRequest request) {
         try {
             Optional<Cliente> maybeUtente = clienteRepo.findByUsername(request.getUsername());
+            NewCookie sessionCookie = null;
+
             if (maybeUtente.isPresent()) {
                 Optional<Sessione> maybeSessione = sessionRepo.getSessionByUserId(maybeUtente.get().getId());
-                // Se l'utente ha già una sessione attiva
+
+                // Se l'utente ha già una sessione attiva, la invalidiamo
                 if (maybeSessione.isPresent()) {
                     autenticationService.logout(maybeSessione.get().getId());
-                    NewCookie sessionCookie = new NewCookie.Builder("SESSION_COOKIE")
+
+                    // Cookie che scade subito per invalidare quello esistente
+                    sessionCookie = new NewCookie.Builder("SESSION_COOKIE")
+                            .value("") // Vuoto per invalidarlo
                             .path("/")
-                            .sameSite(NewCookie.SameSite.NONE)
+                            .maxAge(0) // Scade immediatamente
                             .build();
                 }
             }
+
+            // Ora creiamo una nuova sessione
             int sessione = autenticationService.login(request.getUsername(), request.getPassword());
-            NewCookie sessionCookie = new NewCookie.Builder("SESSION_COOKIE")
+
+            // Creiamo il nuovo session cookie
+            NewCookie newSessionCookie = new NewCookie.Builder("SESSION_COOKIE")
                     .value(String.valueOf(sessione))
                     .path("/")
-                    .sameSite(NewCookie.SameSite.NONE)
                     .build();
+
             return Response.ok()
-                    .cookie(sessionCookie)
+                    .cookie(sessionCookie, newSessionCookie) // Passiamo entrambi per invalidare e creare
                     .build();
+
         } catch (SessionCreationException | WrongUsernameOrPasswordException e) {
             return Response.status(Response.Status.UNAUTHORIZED)
                     .entity("Login failed: " + e.getMessage())
@@ -81,6 +92,7 @@ public class AutenticationResource {
                     .build();
         }
     }
+
 
     @DELETE
     @Path("/logout")

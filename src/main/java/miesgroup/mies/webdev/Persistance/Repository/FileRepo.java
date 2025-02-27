@@ -58,7 +58,7 @@ public class FileRepo implements PanacheRepositoryBase<PDFFile, Integer> {
             Map<String, Double> spese,
             String idPod,
             String nomeBolletta,
-            Map<String, Map<String, Double>> piccoEFuoriPicco,
+            Map<String, Map<String, Map<String, Double>>> piccoEFuoriPicco,
             Periodo periodo
     ) {
         for (Map.Entry<String, Map<String, Map<String, Integer>>> meseEntry : lettureMese.entrySet()) {
@@ -77,9 +77,14 @@ public class FileRepo implements PanacheRepositoryBase<PDFFile, Integer> {
             Double f3Potenza = getCategoriaConsumo(categorie, "Potenza", "F3");
 
             // Extract "Picco" and "Fuori Picco" data for the given month
-            Double valorePicco = piccoEFuoriPicco.getOrDefault(mese, new HashMap<>()).getOrDefault("Picco", 0.0);
-            Double valoreFuoriPicco = piccoEFuoriPicco.getOrDefault(mese, new HashMap<>()).getOrDefault("Fuori Picco", 0.0);
+            Map<String, Map<String, Double>> piccoData = piccoEFuoriPicco.getOrDefault(mese, new HashMap<>());
+            Map<String, Double> picco = piccoData.getOrDefault("Picco", new HashMap<>());
+            Map<String, Double> fuoriPicco = piccoData.getOrDefault("Fuori Picco", new HashMap<>());
 
+            Double consumoPicco = picco.getOrDefault("kWh", 0.0);
+            Double costoPicco = picco.getOrDefault("€", 0.0);
+            Double consumoFuoriPicco = fuoriPicco.getOrDefault("kWh", 0.0);
+            Double costoFuoriPicco = fuoriPicco.getOrDefault("€", 0.0);
 
             // Extract expenses
             Double spesaEnergia = spese.getOrDefault("Materia Energia", 0.0);
@@ -114,8 +119,10 @@ public class FileRepo implements PanacheRepositoryBase<PDFFile, Integer> {
             bolletta.setTotAttiva(totAttiva);
             bolletta.setTotReattiva(totReattiva);
             bolletta.setAnno(periodo.getAnno());
-            bolletta.setPicco(valorePicco);
-            bolletta.setFuoriPicco(valoreFuoriPicco);
+            bolletta.setPiccoKwh(consumoPicco);
+            bolletta.setCostoPicco(costoPicco);
+            bolletta.setFuoriPiccoKwh(consumoFuoriPicco);
+            bolletta.setCostoFuoriPicco(costoFuoriPicco);
 
             bollettaRepo.persist(bolletta);
         }

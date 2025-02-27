@@ -93,7 +93,7 @@ public class BollettaPod extends PanacheEntityBase {
     private String mese;
 
     @Column(name = "Verifica_Oneri")
-    private Double verificaOnneri;
+    private Double verificaOneri;
 
     @Column(name = "Verifica_Trasporti")
     private Double verificaTrasporti;
@@ -101,11 +101,26 @@ public class BollettaPod extends PanacheEntityBase {
     @Column(name = "Verifica_Imposte")
     private Double verificaImposte;
 
-    @Column(name = "picco")
-    private Double picco;
+    @Column(name = "picco_kwh")
+    private Double piccoKwh;
 
-    @Column(name = "fuori_picco")
-    private Double fuoriPicco;
+    @Column(name = "fuori_picco_kwh")
+    private Double fuoriPiccoKwh;
+
+    @Column(name = "€_picco")
+    private Double costoPicco;
+
+    @Column(name = "€_fuori_picco")
+    private Double costoFuoriPicco;
+
+    @Column(name = "verifica_picco")
+    private Double verificaPicco;
+
+    @Column(name = "verifica_fuori_picco")
+    private Double verificaFuoriPicco;
+
+    @Column(name = "tot_attiva_perdite")
+    private Double totAttivaPerdite;
 
     // GETTER e SETTER
 
@@ -325,12 +340,12 @@ public class BollettaPod extends PanacheEntityBase {
         this.mese = mese;
     }
 
-    public Double getVerificaOnneri() {
-        return verificaOnneri;
+    public Double getVerificaOneri() {
+        return verificaOneri;
     }
 
-    public void setVerificaOnneri(Double verificaOnneri) {
-        this.verificaOnneri = verificaOnneri;
+    public void setVerificaOneri(Double verificaOnneri) {
+        this.verificaOneri = verificaOnneri;
     }
 
     public Double getVerificaTrasporti() {
@@ -349,19 +364,59 @@ public class BollettaPod extends PanacheEntityBase {
         this.verificaImposte = verificaImposte;
     }
 
-    public Double getPicco() {
-        return picco;
+    public Double getPiccoKwh() {
+        return piccoKwh;
     }
 
-    public void setPicco(Double picco) {
-        this.picco = picco;
+    public void setPiccoKwh(Double picco) {
+        this.piccoKwh = picco;
     }
 
-    public Double getFuoriPicco() {
-        return fuoriPicco;
+    public Double getFuoriPiccoKwh() {
+        return fuoriPiccoKwh;
     }
 
-    public void setFuoriPicco(Double fuoriPicco) {
-        this.fuoriPicco = fuoriPicco;
+    public void setFuoriPiccoKwh(Double fuoriPicco) {
+        this.fuoriPiccoKwh = fuoriPicco;
+    }
+
+    public Double getCostoPicco() {
+        return costoPicco;
+    }
+
+    public void setCostoPicco(Double costoPicco) {
+        this.costoPicco = costoPicco;
+    }
+
+    public Double getCostoFuoriPicco() {
+        return costoFuoriPicco;
+    }
+
+    public void setCostoFuoriPicco(Double costoFuoriPicco) {
+        this.costoFuoriPicco = costoFuoriPicco;
+    }
+
+    public Double getVerificaPicco() {
+        return verificaPicco;
+    }
+
+    public void setVerificaPicco(Double verificaPicco) {
+        this.verificaPicco = verificaPicco;
+    }
+
+    public Double getVerificaFuoriPicco() {
+        return verificaFuoriPicco;
+    }
+
+    public void setVerificaFuoriPicco(Double verificaFuoriPicco) {
+        this.verificaFuoriPicco = verificaFuoriPicco;
+    }
+
+    public Double getTotAttivaPerdite() {
+        return totAttivaPerdite;
+    }
+
+    public void setTotAttivaPerdite(Double totAttivaPerdite) {
+        this.totAttivaPerdite = totAttivaPerdite;
     }
 }

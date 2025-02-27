@@ -6,6 +6,7 @@ import jakarta.enterprise.context.ApplicationScoped;
 import miesgroup.mies.webdev.Persistance.Model.Costi;
 
 import javax.sql.DataSource;
+import java.time.LocalDate;
 import java.util.List;
 import java.util.Optional;
 
@@ -25,7 +26,13 @@ public class CostiRepo implements PanacheRepositoryBase<Costi, Integer> {
 
 
     public List<Costi> getAllCosti() {
-        return listAll();
+        List<Costi> costi = listAll();
+        costi.forEach(costo -> {
+            if (costo.getAnnoRiferimento() == null || costo.getAnnoRiferimento().isEmpty()) {
+                costo.setAnnoRiferimento(String.valueOf(LocalDate.now().getYear()));
+            }
+        });
+        return costi;
     }
 
 
@@ -62,14 +69,9 @@ public class CostiRepo implements PanacheRepositoryBase<Costi, Integer> {
     }
 
 
-    public void save(Costi dettaglioCosto) {
-        dettaglioCosto.persist();
-    }
-
-
-    public Optional<Double> findByCategoriaUnitaTrimestre(String categoria, String unitaMisura, String intervalloPotenza, int trimestre) {
-        List<Costi> costi = find("categoria = ?1 AND unitaMisura = ?2 AND intervalloPotenza = ?3 AND (trimestre = ?4 OR anno IS NOT NULL)",
-                categoria, unitaMisura, intervalloPotenza, trimestre).list();
+    public Optional<Double> findByCategoriaUnitaTrimestre(String categoria, String unitaMisura, String intervalloPotenza, int trimestre, String annoBolletta) {
+        List<Costi> costi = find("categoria = ?1 AND unitaMisura = ?2 AND intervalloPotenza = ?3 AND (trimestre = ?4 OR anno IS NOT NULL) AND annoRiferimento = ?5",
+                categoria, unitaMisura, intervalloPotenza, trimestre, annoBolletta).list();
 
         if (costi.isEmpty()) {
             return Optional.empty();
@@ -82,4 +84,5 @@ public class CostiRepo implements PanacheRepositoryBase<Costi, Integer> {
         }
 
     }
+
 }

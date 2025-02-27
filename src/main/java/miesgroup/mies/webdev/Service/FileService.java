@@ -2,6 +2,7 @@ package miesgroup.mies.webdev.Service;//package miesgroup.mies.webdev.Service;
 
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.transaction.Transactional;
+import miesgroup.mies.webdev.Persistance.Model.BollettaPod;
 import miesgroup.mies.webdev.Persistance.Model.PDFFile;
 import miesgroup.mies.webdev.Persistance.Model.Periodo;
 import miesgroup.mies.webdev.Persistance.Repository.BollettaRepo;
@@ -32,9 +33,7 @@ import org.xml.sax.SAXException;
 
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
-import java.time.LocalDate;
 import java.time.ZoneId;
-import java.time.format.DateTimeFormatter;
 
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -45,11 +44,13 @@ public class FileService {
     private final FileRepo fileRepo;
     private final BollettaRepo bollettaRepo;
     private final BollettaService bollettaService;
+    private final SessionService sessionService;
 
-    public FileService(FileRepo fileRepo, BollettaRepo bollettaRepo, BollettaService bollettaService) {
+    public FileService(FileRepo fileRepo, BollettaRepo bollettaRepo, BollettaService bollettaService, SessionService sessionService) {
         this.fileRepo = fileRepo;
         this.bollettaRepo = bollettaRepo;
         this.bollettaService = bollettaService;
+        this.sessionService = sessionService;
     }
 
     @Transactional
@@ -106,7 +107,7 @@ public class FileService {
 
 
     @Transactional
-    public boolean extractValuesFromXmlA2A(byte[] xmlData, String idPod) {
+    public String extractValuesFromXmlA2A(byte[] xmlData, String idPod) {
         try {
             // Parsing del documento XML
             DocumentBuilderFactory factory = DocumentBuilderFactory.newInstance();
@@ -116,7 +117,7 @@ public class FileService {
             // Verifica se la bolletta esiste
             String nomeBolletta = extractBollettaNome(document);
             if (nomeBolletta == null) {
-                return false;
+                return null;
             } else {
                 bollettaService.A2AisPresent(nomeBolletta, idPod);
             }
@@ -125,7 +126,7 @@ public class FileService {
             Map<String, Map<String, Map<String, Integer>>> lettureMese = extractLetture(document);
 
             // Estrazione delle misure di picco e fuori picco
-            Map<String, Map<String, Double>> misurePicco = extractPiccoFuoriPicco(document);
+            Map<String, Map<String, Map<String, Double>>> piccoEFuoriPicco = extractPiccoFuoriPicco(document);
 
             // Estrazione delle spese
             Map<String, Double> spese = extractSpese(document);
@@ -138,27 +139,32 @@ public class FileService {
 
             if (lettureMese.isEmpty()) {
                 System.err.println("Nessuna lettura valida trovata.");
-                return false;
+                return null;
             }
 
-            fileRepo.saveDataToDatabase(lettureMese, spese, idPod, nomeBolletta, misurePicco, periodo);
+            fileRepo.saveDataToDatabase(lettureMese, spese, idPod, nomeBolletta, piccoEFuoriPicco, periodo);
 
-
-            Double spesaMateriaEnergia = spese.getOrDefault("Materia Energia", 0.0);
-            bollettaService.A2AVerifica(nomeBolletta, idPod, spesaMateriaEnergia);
-            return true;
+            return nomeBolletta;
 
         } catch (ParserConfigurationException | IOException | SAXException e) {
             e.printStackTrace();
-            return false;
-        } catch (SQLException e) {
-            throw new RuntimeException(e);
+            return null;
         }
     }
 
-    private Map<String, Map<String, Double>> extractPiccoFuoriPicco(Document document) {
-        Map<String, Map<String, Double>> consumiPicco = new HashMap<>();
+    @Transactional
+    public void verificaA2A(String nomeB) throws SQLException {
+        List<BollettaPod> b = bollettaRepo.find("nomeBolletta", nomeB).list();
+        for (BollettaPod bollettaPod : b) {
+            bollettaService.A2AVerifica(bollettaPod);
+        }
+
+    }
+
+    private static Map<String, Map<String, Map<String, Double>>> extractPiccoFuoriPicco(Document document) {
+        Map<String, Map<String, Map<String, Double>>> piccoEFuoriPicco = new HashMap<>();
         String categoriaCorrente = null;
+        boolean attesaPicco = false; // Flag per capire se stiamo aspettando "picco" dopo "fuori"
 
         NodeList lineNodes = document.getElementsByTagName("Line");
         for (int i = 0; i < lineNodes.getLength(); i++) {
@@ -166,34 +172,55 @@ public class FileService {
             if (lineNode.getNodeType() == Node.ELEMENT_NODE) {
                 String lineText = lineNode.getTextContent().trim();
 
-                // Identifica la categoria di consumo
+                // Caso in cui troviamo "Corrispettivo mercato capacità ore picco"
                 if (lineText.contains("Corrispettivo mercato capacità ore picco")) {
                     categoriaCorrente = "Picco";
+                    attesaPicco = false;
                     continue;
                 }
+
+                // Caso in cui troviamo "Corrispettivo mercato capacità ore fuori"
                 if (lineText.contains("Corrispettivo mercato capacità ore fuori")) {
-                    categoriaCorrente = "Fuori Picco";
+                    categoriaCorrente = null;
+                    attesaPicco = true; // Flag per attendere la parola "picco" nella riga successiva
                     continue;
                 }
 
-                // Estrazione valori se siamo in una categoria valida
-                if (categoriaCorrente != null && (categoriaCorrente.equals("Fuori Picco") || categoriaCorrente.equals("Picco")) && lineText.contains("€/kWh")) {
+                // Se la riga successiva contiene solo "picco", completa la categoria "Fuori Picco"
+                if (attesaPicco && lineText.equalsIgnoreCase("picco")) {
+                    categoriaCorrente = "Fuori Picco";
+                    attesaPicco = false;
+                    continue;
+                }
+
+                // Se troviamo una riga con "€/kWh" ed è associata a una categoria
+                if (categoriaCorrente != null && lineText.contains("€/kWh")) {
                     ArrayList<Date> dates = extractDates(lineText);
-                    Double valueKWh = extractKWhFromLine(lineText);
-                    String mese = dates.isEmpty() ? null : DateUtils.getMonthFromDateLocalized(dates.get(1));
+                    Double valoreKWh = extractKWhFromLine(lineText);
+                    Double costoEuro = extractEuroValue(lineText);
 
-                    if (mese != null && valueKWh != null) {
-                        consumiPicco.putIfAbsent(mese, new HashMap<>());
-                        Map<String, Double> categorie = consumiPicco.get(mese);
+                    if (dates.size() == 2 && valoreKWh != null && costoEuro != null) {
+                        String mese = DateUtils.getMonthFromDateLocalized(dates.get(1));
 
-                        // Aggiunge o aggiorna il valore esistente
-                        categorie.put(categoriaCorrente, categorie.getOrDefault(categoriaCorrente, 0.0) + valueKWh);
-                        categoriaCorrente = null; // Resetta la categoria corrente
+                        // Creiamo la struttura della mappa se non esiste
+                        piccoEFuoriPicco.putIfAbsent(mese, new HashMap<>());
+                        Map<String, Map<String, Double>> categorie = piccoEFuoriPicco.get(mese);
+                        categorie.putIfAbsent(categoriaCorrente, new HashMap<>());
+
+                        // Salviamo i valori di consumo e costo
+                        Map<String, Double> valori = categorie.get(categoriaCorrente);
+                        valori.put("kWh", valoreKWh);
+                        valori.put("€", costoEuro);
                     }
+                }
+
+                // Se troviamo una riga senza "€/kWh" e non è una nuova categoria, resettiamo la categoria corrente
+                if (!lineText.contains("€/kWh") && !lineText.toLowerCase().contains("corrispettivo mercato capacità")) {
+                    categoriaCorrente = null;
                 }
             }
         }
-        return consumiPicco;
+        return piccoEFuoriPicco;
     }
 
 
@@ -366,25 +393,25 @@ public class FileService {
 
     private static Double extractEuroValue(String lineText) {
         try {
-            // Regex per catturare il valore in euro
-            String regex = "€\\s*([\\d.,]+)";
+            // Regex migliorata per catturare il valore in euro (€)
+            String regex = "€\\s*([0-9]{1,3}(?:\\.[0-9]{3})*,[0-9]+)";
             Pattern pattern = Pattern.compile(regex);
             Matcher matcher = pattern.matcher(lineText);
 
             if (matcher.find()) {
-                // Ottieni il valore corrispondente
                 String valueString = matcher.group(1);
 
-                // Rimuove i punti come separatori di migliaia e sostituisce le virgole con punti
-                valueString = valueString.replace(".", "").replace(",", ".");
+                // Sostituisci solo l'ultimo separatore decimale (virgola con punto)
+                valueString = valueString.replaceAll("\\.", "").replace(",", ".");
 
-                // Converte il valore in Double
                 return Double.parseDouble(valueString);
+            } else {
+                System.out.println("❌ Nessun valore in € trovato in: " + lineText);
             }
         } catch (NumberFormatException e) {
             System.err.println("Errore durante il parsing del valore in euro: " + lineText);
         }
-        return null; // Nessun valore trovato
+        return null; // Nessun valore trovato o errore nel parsing
     }
 
 
@@ -470,7 +497,7 @@ public class FileService {
         }
     }
 
-    private Double extractKWhFromLine(String lineText) {
+    private static Double extractKWhFromLine(String lineText) {
         Pattern pattern = Pattern.compile("(\\d{1,3}(?:[.,]\\d{3})*(?:[.,]\\d+)?)\\s*kWh", Pattern.CASE_INSENSITIVE);
         Matcher matcher = pattern.matcher(lineText);
         if (matcher.find()) {
