@@ -14,13 +14,11 @@ import java.util.Optional;
 public class BollettaService {
 
     private final BollettaRepo bollettaRepo;
-    private final CostiRepo costiRepo;
     private final ClienteService clienteService;
 
 
-    public BollettaService(BollettaRepo bollettaRepo, CostiRepo costiRepo, ClienteService clienteService) {
+    public BollettaService(BollettaRepo bollettaRepo, ClienteService clienteService) {
         this.bollettaRepo = bollettaRepo;
-        this.costiRepo = costiRepo;
         this.clienteService = clienteService;
     }
 

@@ -2,11 +2,8 @@ TODO: aggiungere le funzioni di logging
 TODO: aggiungere le funzioni di health check
 
 
-
-TODO: Creare tabella mercato con all'interno i dati presi dal sito GME (Pun)
-
-TODO: aggiungere una voce nella casella dell'utente che sarà modificabile solo dall'admin dove verrà inserito il costo a kwh in accordo tra fornitore e cliente
-
-TODO: aggiornare la tabella bolletta con F0
+TODO: creare una nuova tabella per salvare i fixing ovvero costi accordati tra cliente e fornitore ad esempio F0, f1,f2,f3, icco, fuori picco costi che vanno sommati a PUN(GME) + SPREAD(Contrattuale comunicato dal cliente)
 
 TODO: riguardo ai ricalcoli i  bolletta bisognoa salvare quota fissa,variabile e potenza che calcolo. Poi estrarre(controllare) i valori delle relative quote sommare quelle delle stesso mese e fare differenza tra cio che è appena stato sommato a quello gia presente nel db
+
+TODO: creare tabella di inserimento per il budget (front-end) e tabella di salvataggio (back-end) per il budget

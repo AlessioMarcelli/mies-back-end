@@ -24,4 +24,5 @@ public class SessionService {
         int id = sessionRepo.find(sessionId);
         return sessionRepo.findCategory(id);
     }
+
 }

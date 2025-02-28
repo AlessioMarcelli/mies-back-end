@@ -3,6 +3,8 @@ package miesgroup.mies.webdev.Persistance.Model;
 import io.quarkus.hibernate.orm.panache.PanacheEntityBase;
 import jakarta.persistence.*;
 
+import java.util.Objects;
+
 
 @Entity
 @Table(name = "utente")
@@ -179,4 +181,5 @@ public class Cliente extends PanacheEntityBase {
     public void setFatturatoAnnuo(Float fatturatoAnnuo) {
         this.fatturatoAnnuo = fatturatoAnnuo;
     }
+
 }
