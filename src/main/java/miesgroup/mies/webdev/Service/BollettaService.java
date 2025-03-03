@@ -27,7 +27,6 @@ public class BollettaService {
 
         try {
 
-
             // Recupera e controlla TOT Attiva
             double totAttiva = Optional.ofNullable(bollettaRepo.getConsumoA2A(b.getNomeBolletta(), b.getMese()))
                     .orElse(0.0);
@@ -85,14 +84,14 @@ public class BollettaService {
             String rangePotenza = (potenzaImpegnata <= 100) ? "<100KW" :
                     (potenzaImpegnata <= 500) ? "100-500KW" : ">500KW";
 
-            Double QuotaVariabile = Optional.ofNullable(bollettaRepo.getCostiTrasporto(trimestre, rangePotenza, "€/KWh", b.getAnno()))
+            Double quotaVariabileT = Optional.ofNullable(bollettaRepo.getCostiTrasporto(trimestre, rangePotenza, "€/KWh", b.getAnno()))
                     .orElse(0.0);
-            Double QuotaFissa = Optional.ofNullable(bollettaRepo.getCostiTrasporto(trimestre, rangePotenza, "€/Month", b.getAnno()))
+            Double quotaFissaT = Optional.ofNullable(bollettaRepo.getCostiTrasporto(trimestre, rangePotenza, "€/Month", b.getAnno()))
                     .orElse(0.0);
-            Double QuotaPotenza = Optional.ofNullable(bollettaRepo.getCostiTrasporto(trimestre, rangePotenza, "€/KW/Month", b.getAnno()))
+            Double quotaPotenzaT = Optional.ofNullable(bollettaRepo.getCostiTrasporto(trimestre, rangePotenza, "€/KW/Month", b.getAnno()))
                     .orElse(0.0) * maggiorePotenza;
 
-            double costiTrasporti = arrotonda((QuotaVariabile * totAttiva) + QuotaFissa + QuotaPotenza);
+            double costiTrasporti = arrotonda((quotaVariabileT * totAttiva) + quotaFissaT + quotaPotenzaT);
             bollettaRepo.updateVerificaTrasportiA2A(costiTrasporti, b.getNomeBolletta(), b.getMese());
 
             // Calcolo Imposte

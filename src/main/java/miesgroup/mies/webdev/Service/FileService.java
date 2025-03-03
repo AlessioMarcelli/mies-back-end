@@ -258,88 +258,173 @@ public class FileService {
     }
 
 
+//    private Map<String, Double> extractSpese(Document document) {
+//        Map<String, Double> spese = new HashMap<>();
+//
+//        NodeList lineNodes = document.getElementsByTagName("Line");
+//        boolean foundSpesaMateriaEnergia = false;
+//        boolean foundSpesaOneriSistema = false;
+//        boolean foundSpesaTrasporto = false;
+//        boolean foundSpesaImposte = false;
+//
+//        for (int i = 0; i < lineNodes.getLength(); i++) {
+//            Node lineNode = lineNodes.item(i);
+//            if (lineNode.getNodeType() == Node.ELEMENT_NODE) {
+//                String lineText = lineNode.getTextContent();
+//
+//                if (lineText.contains("SPESA PER LA MATERIA ENERGIA") && !foundSpesaMateriaEnergia) {
+//                    Double spesaMateriaEnergia = extractEuroValue(lineText);
+//                    if (spesaMateriaEnergia != null) {
+//                        spese.put("Materia Energia", spesaMateriaEnergia);
+//                    }
+//                    foundSpesaMateriaEnergia = true;
+//                }
+//
+//                if (lineText.contains("SPESA PER ONERI DI SISTEMA") && !foundSpesaOneriSistema) {
+//                    Double spesaOneri = extractEuroValue(lineText);
+//                    if (spesaOneri != null) {
+//                        spese.put("Oneri di Sistema", spesaOneri);
+//                    }
+//                    foundSpesaOneriSistema = true;
+//                }
+//
+//                if (lineText.contains("SPESA PER IL TRASPORTO E LA GESTIONE DEL CONTATORE") && !foundSpesaTrasporto) {
+//                    Double spesaTrasporto = extractEuroValue(lineText);
+//                    if (spesaTrasporto != null) {
+//                        spese.put("Trasporto e Gestione Contatore", spesaTrasporto);
+//                    }
+//                    foundSpesaTrasporto = true;
+//                }
+//
+//                if (lineText.contains("TOTALE IMPOSTE") && !foundSpesaImposte) {
+//                    Double spesaImposte = extractEuroValue(lineText);
+//                    if (spesaImposte != null) {
+//                        spese.put("Totale Imposte", spesaImposte);
+//                    }
+//                    foundSpesaImposte = true;
+//                }
+//            }
+//        }
+//        return spese;
+//    }
+
     private Map<String, Double> extractSpese(Document document) {
-        Map<String, Double> spese = new HashMap<>();
+        Map<String, List<Double>> speseNonSommarizzate = new HashMap<>();
+        Set<String> categorieGiaViste = new HashSet<>();
+        String categoriaCorrente = null;
+        boolean controlloAttivo = false;
+        int righeSenzaEuro = 0; // Contatore per il reset
+
+        // Parole chiave per interrompere il parsing
+        Set<String> stopParsingKeywords = Set.of(
+                "TOTALE FORNITURA ENERGIA ELETTRICA E IMPOSTE",
+                "RICALCOLO"
+        );
 
         NodeList lineNodes = document.getElementsByTagName("Line");
-        boolean foundSpesaMateriaEnergia = false;
-        boolean foundSpesaOneriSistema = false;
-        boolean foundSpesaTrasporto = false;
-        boolean foundSpesaImposte = false;
-
         for (int i = 0; i < lineNodes.getLength(); i++) {
             Node lineNode = lineNodes.item(i);
             if (lineNode.getNodeType() == Node.ELEMENT_NODE) {
-                String lineText = lineNode.getTextContent();
+                String lineText = lineNode.getTextContent().trim();
+                System.out.println("🔍 Riga: " + lineText);
 
-                if (lineText.contains("SPESA PER LA MATERIA ENERGIA") && !foundSpesaMateriaEnergia) {
-                    Double spesaMateriaEnergia = extractEuroValue(lineText);
-                    if (spesaMateriaEnergia != null) {
-                        spese.put("Materia Energia", spesaMateriaEnergia);
-                    }
-                    foundSpesaMateriaEnergia = true;
+                // ✅ Interrompe il parsing se trova un titolo che indica fine sezione
+                if (stopParsingKeywords.stream().anyMatch(lineText::contains)) {
+                    System.out.println("🚨 Interruzione del parsing: trovata riga '" + lineText + "'");
+                    break;
                 }
 
-                if (lineText.contains("SPESA PER ONERI DI SISTEMA") && !foundSpesaOneriSistema) {
-                    Double spesaOneri = extractEuroValue(lineText);
-                    if (spesaOneri != null) {
-                        spese.put("Oneri di Sistema", spesaOneri);
-                    }
-                    foundSpesaOneriSistema = true;
+                // ✅ Identificare la categoria corrente
+                if (lineText.contains("SPESA PER LA MATERIA ENERGIA")) {
+                    categoriaCorrente = "Materia Energia";
+                    categorieGiaViste.add(categoriaCorrente);
+                    System.out.println("🔍 Categoria corrente: " + categoriaCorrente);
+                    controlloAttivo = false;
+                    righeSenzaEuro = 0;
+                    continue;
+                }
+                if (lineText.contains("SPESA PER ONERI DI SISTEMA")) {
+                    categoriaCorrente = "Oneri di Sistema";
+                    categorieGiaViste.add(categoriaCorrente);
+                    System.out.println("🔍 Categoria corrente: " + categoriaCorrente);
+
+                    controlloAttivo = false;
+                    righeSenzaEuro = 0;
+                    continue;
+                }
+                if (lineText.contains("SPESA PER IL TRASPORTO E LA GESTIONE DEL CONTATORE")) {
+                    categoriaCorrente = "Trasporto e Gestione Contatore";
+                    categorieGiaViste.add(categoriaCorrente);
+                    System.out.println("🔍 Categoria corrente: " + categoriaCorrente);
+
+                    controlloAttivo = false;
+                    righeSenzaEuro = 0;
+                    continue;
+                }
+                if (lineText.contains("TOTALE IMPOSTE")) {
+                    categoriaCorrente = "Totale Imposte";
+                    categorieGiaViste.add(categoriaCorrente);
+                    System.out.println("🔍 Categoria corrente: " + categoriaCorrente);
+
+                    controlloAttivo = false;
+                    righeSenzaEuro = 0;
+                    continue;
                 }
 
-                if (lineText.contains("SPESA PER IL TRASPORTO E LA GESTIONE DEL CONTATORE") && !foundSpesaTrasporto) {
-                    Double spesaTrasporto = extractEuroValue(lineText);
-                    if (spesaTrasporto != null) {
-                        spese.put("Trasporto e Gestione Contatore", spesaTrasporto);
-                    }
-                    foundSpesaTrasporto = true;
-                }
+                // ✅ Se la categoria è attiva e troviamo un valore monetario (€), lo estraiamo
+                if (categoriaCorrente != null && lineText.contains("€")) {
+                    Double valore = extractEuroValue(lineText);
 
-                if (lineText.contains("TOTALE IMPOSTE") && !foundSpesaImposte) {
-                    Double spesaImposte = extractEuroValue(lineText);
-                    if (spesaImposte != null) {
-                        spese.put("Totale Imposte", spesaImposte);
+                    if (valore != null) {
+                        // ✅ Assicura che il primo valore venga sommato correttamente
+                        if (categorieGiaViste.contains(categoriaCorrente)) {
+                            categorieGiaViste.remove(categoriaCorrente);
+                            controlloAttivo = true;
+                            righeSenzaEuro = 0; // Reset del contatore
+                        }
+
+                        // ✅ Aggiunge il valore alla categoria
+                        speseNonSommarizzate.putIfAbsent(categoriaCorrente, new ArrayList<>());
+                        speseNonSommarizzate.get(categoriaCorrente).add(valore);
+
+                        controlloAttivo = true; // Attiva il reset solo dopo il primo valore
+                        righeSenzaEuro = 0; // Reset del contatore
                     }
-                    foundSpesaImposte = true;
+                } else if (controlloAttivo) {
+                    // ✅ Se abbiamo attivato il controllo e la riga non ha €, incrementiamo il contatore
+                    righeSenzaEuro++;
+
+                    // ✅ Se sono passate 3 righe senza €, resettiamo la categoria SOLO se la riga non ha parole chiave
+                    if (righeSenzaEuro >= 10 &&
+                            !lineText.matches(".*(QUOTA|Componente|Corrispettivi|€/kWh|€/kW/mese|€/cliente/mese|QUOTA VARIABILE).*")) {
+
+                        System.out.println("🔄 Reset categoria corrente dopo 3 righe senza €");
+                        categoriaCorrente = null;
+                        controlloAttivo = false;
+                        righeSenzaEuro = 0;
+                    }
+                } else {
+                    // ✅ Se troviamo un'altra riga con €, resettiamo il contatore per evitare reset prematuri
+                    righeSenzaEuro = 0;
                 }
             }
         }
-        return spese;
+
+        // ✅ Processa e somma i dati estratti
+        return processSpese(speseNonSommarizzate);
     }
 
 
-    private Double extractEuroValueFromLines(NodeList lineNodes, int startIndex) {
-        StringBuilder combinedText = new StringBuilder();
+    private Map<String, Double> processSpese(Map<String, List<Double>> speseNonSommarizzate) {
+        Map<String, Double> speseFinali = new HashMap<>();
 
-        // Combina le righe successive
-        for (int i = startIndex; i < lineNodes.getLength(); i++) {
-            Node lineNode = lineNodes.item(i);
-            if (lineNode.getNodeType() == Node.ELEMENT_NODE) {
-                combinedText.append(lineNode.getTextContent()).append(" ");
-            }
-            // Interrompi se trovi un valore in euro
-            if (lineNode.getTextContent().contains("€")) {
-                break;
-            }
+        for (Map.Entry<String, List<Double>> entry : speseNonSommarizzate.entrySet()) {
+            String categoria = entry.getKey();
+            double somma = entry.getValue().stream().mapToDouble(Double::doubleValue).sum();
+            speseFinali.put(categoria, somma);
         }
 
-        // Regex per estrarre il valore in euro
-        String regex = "€\\s*([\\d.,]+)";
-        Pattern pattern = Pattern.compile(regex);
-        Matcher matcher = pattern.matcher(combinedText.toString().trim());
-
-        if (matcher.find()) {
-            try {
-                // Ottieni il valore e convertilo in Double
-                String valueString = matcher.group(1).replace(".", "").replace(",", ".");
-                return Double.parseDouble(valueString);
-            } catch (NumberFormatException e) {
-                System.err.println("Errore nel parsing del valore in euro: " + matcher.group(1));
-            }
-        }
-
-        return null; // Nessun valore trovato
+        return speseFinali;
     }
 
 
@@ -352,6 +437,7 @@ public class FileService {
             Node lineNode = lineNodes.item(i);
             if (lineNode.getNodeType() == Node.ELEMENT_NODE) {
                 String lineText = lineNode.getTextContent();
+
 
                 // Gestione delle categorie
                 if (lineText.contains("ENERGIA ATTIVA")) {
@@ -393,23 +479,26 @@ public class FileService {
 
     private static Double extractEuroValue(String lineText) {
         try {
-            // Regex migliorata per catturare il valore in euro (€)
-            String regex = "€\\s*([0-9]{1,3}(?:\\.[0-9]{3})*,[0-9]+)";
+            System.out.println("🧐 Tentativo di estrarre valore monetario da: " + lineText);
+
+            // Regex migliorato per supportare più formati
+            String regex = "€\\s*([0-9]+(?:\\.[0-9]{3})*,[0-9]+)";
             Pattern pattern = Pattern.compile(regex);
             Matcher matcher = pattern.matcher(lineText);
 
             if (matcher.find()) {
                 String valueString = matcher.group(1);
 
-                // Sostituisci solo l'ultimo separatore decimale (virgola con punto)
-                valueString = valueString.replaceAll("\\.", "").replace(",", ".");
+                // Rimuove i separatori delle migliaia (i punti) MA mantiene il separatore decimale (virgola -> punto)
+                valueString = valueString.replaceAll("\\.(?=[0-9]{3},)", "").replace(",", ".");
 
+                System.out.println("✅ Valore estratto: " + valueString);
                 return Double.parseDouble(valueString);
             } else {
                 System.out.println("❌ Nessun valore in € trovato in: " + lineText);
             }
         } catch (NumberFormatException e) {
-            System.err.println("Errore durante il parsing del valore in euro: " + lineText);
+            System.err.println("❌ Errore durante il parsing del valore in euro: " + lineText);
         }
         return null; // Nessun valore trovato o errore nel parsing
     }

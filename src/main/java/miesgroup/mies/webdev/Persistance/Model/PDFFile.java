@@ -16,7 +16,7 @@ public class PDFFile extends PanacheEntityBase {
     private String fileName;
 
     @Lob
-    @Column(name = "file_Data")
+    @Column(name = "file_Data", columnDefinition = "LONGBLOB")
     private byte[] fileData;
 
     @Column(name = "id_pod")
