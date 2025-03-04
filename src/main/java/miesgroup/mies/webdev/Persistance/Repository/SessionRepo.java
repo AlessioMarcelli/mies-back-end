@@ -1,107 +1,61 @@
 package miesgroup.mies.webdev.Persistance.Repository;
 
+import io.quarkus.hibernate.orm.panache.PanacheRepositoryBase;
 import jakarta.enterprise.context.ApplicationScoped;
 import miesgroup.mies.webdev.Persistance.Model.Cliente;
 import miesgroup.mies.webdev.Persistance.Model.Sessione;
 
 import javax.sql.DataSource;
-import java.sql.Connection;
-import java.sql.PreparedStatement;
-import java.sql.ResultSet;
-import java.sql.SQLException;
+import java.io.File;
+import java.sql.*;
 import java.util.Optional;
 
 @ApplicationScoped
-public class SessionRepo {
+public class SessionRepo implements PanacheRepositoryBase<Sessione, Integer> {
     private final DataSource dataSources;
+    private final ClienteRepo clienteRepo;
+    private final SessionRepo sessionRepo;
 
-    public SessionRepo(DataSource dataSources) {
+    public SessionRepo(DataSource dataSources, ClienteRepo clienteRepo, SessionRepo sessionRepo) {
         this.dataSources = dataSources;
+        this.clienteRepo = clienteRepo;
+        this.sessionRepo = sessionRepo;
     }
 
-    public int insertSession(int idUtente) throws SQLException {
 
-        try (Connection connection = dataSources.getConnection()) {
-            try (PreparedStatement statement = connection.prepareStatement("INSERT INTO sessione (id_utente) VALUES (?)", PreparedStatement.RETURN_GENERATED_KEYS)) {
-                statement.setInt(1, idUtente);
-                statement.executeUpdate();
-                ResultSet generatedKeys = statement.getGeneratedKeys();
-                if (generatedKeys.next()) {
-                    int id = generatedKeys.getInt(1);
-                    return id;
-                }
-            }
+    public int insertSession(int idUtente) {
+        Cliente cliente = clienteRepo.findById(idUtente);
+        if (cliente == null) {
+            throw new IllegalArgumentException("Cliente con ID " + idUtente + " non trovato.");
         }
-        throw new SQLException("Cannot insert new session for partecipante " + idUtente);
+
+        Sessione sessione = new Sessione();
+        sessione.setUtente(cliente);
+        sessione.setDataSessione(new Timestamp(System.currentTimeMillis())); // Imposta la data attuale
+        sessione.persist();
+
+        return sessione.getId(); // Hibernate aggiorna automaticamente l'ID dopo il persist
     }
+
 
     public Optional<Sessione> getSessionByUserId(int userId) {
-        try (Connection conn = dataSources.getConnection()) {
-            try (PreparedStatement ps = conn.prepareStatement("SELECT * FROM sessione WHERE id_utente = ?")) {
-                ps.setInt(1, userId);
-                try (ResultSet rs = ps.executeQuery()) {
-                    if (rs.next()) {
-                        Sessione sessione = new Sessione();
-                        sessione.setId(rs.getInt("Id_Sessione"));
-                        sessione.setUtenteId(rs.getInt("id_Utente"));
-                        sessione.setData_Sessione(rs.getTimestamp("Data_Sessione"));
-                        return Optional.of(sessione);
-                    }
-                }
-            }
-        } catch (SQLException e) {
-            throw new RuntimeException(e);
-        }
-        return Optional.empty();
+        return find("utente.id", userId).firstResultOptional();
     }
 
-    public void delete(int sessionId) {
-        try {
-            try (Connection connection = dataSources.getConnection()) {
-                try (PreparedStatement statement = connection.prepareStatement("DELETE FROM sessione WHERE Id_Sessione = ?")) {
-                    statement.setInt(1, sessionId);
-                    statement.executeUpdate();
-                }
-            }
-        } catch (SQLException e) {
-            throw new RuntimeException(e);
-        }
 
+    public void delete(int sessionId) {
+        delete("id", sessionId);
     }
 
     public Integer find(int idSessione) {
-        try (Connection connsessione = dataSources.getConnection()) {
-            try (PreparedStatement statement = connsessione.prepareStatement("SELECT id_utente FROM sessione WHERE Id_Sessione = ?")) {
-                statement.setInt(1, idSessione);
-                try (ResultSet resultSet = statement.executeQuery()) {
-                    if (resultSet.next()) {
-                        int idUtente = resultSet.getInt("id_utente");
-                        return idUtente;
-                    }
-                }
-            }
-        } catch (SQLException e) {
-            throw new RuntimeException(e);
-        }
-        return null;
+        Sessione sessione = sessionRepo.findById(idSessione);
+        return (sessione != null) ? sessione.getUtente().getId() : null;
     }
 
-    public Cliente findCategory(int sessionId) {
-        try (Connection connection = dataSources.getConnection()) {
-            try (PreparedStatement statement = connection.prepareStatement("SELECT Id_Utente,Tipologia FROM utente WHERE Id_Utente = ?")) {
-                statement.setInt(1, sessionId);
-                try (ResultSet resultSet = statement.executeQuery()) {
-                    if (resultSet.next()) {
-                        Cliente cliente = new Cliente();
-                        cliente.setId(resultSet.getInt("Id_Utente"));
-                        cliente.setTipologia(resultSet.getString("Tipologia"));
-                        return cliente;
-                    }
-                }
-            }
-        } catch (SQLException e) {
-            throw new RuntimeException(e);
-        }
-        return null;
+
+    public Cliente findCategory(int idUtente) {
+        return clienteRepo.findById(idUtente);
     }
+
 }
+

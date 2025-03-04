@@ -1,6 +1,8 @@
 package miesgroup.mies.webdev.Service;//package miesgroup.mies.webdev.Service;
 
 import jakarta.enterprise.context.ApplicationScoped;
+import jakarta.transaction.Transactional;
+import miesgroup.mies.webdev.Persistance.Model.BollettaPod;
 import miesgroup.mies.webdev.Persistance.Model.PDFFile;
 import miesgroup.mies.webdev.Persistance.Model.Periodo;
 import miesgroup.mies.webdev.Persistance.Repository.BollettaRepo;
@@ -13,7 +15,7 @@ import javax.xml.parsers.DocumentBuilderFactory;
 import javax.xml.parsers.ParserConfigurationException;
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
-import java.util.Date;
+import java.util.*;
 import java.sql.SQLException;
 import javax.xml.transform.OutputKeys;
 import javax.xml.transform.Transformer;
@@ -31,14 +33,8 @@ import org.xml.sax.SAXException;
 
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
-import java.time.LocalDate;
 import java.time.ZoneId;
-import java.time.format.DateTimeFormatter;
-import java.util.ArrayList;
 
-import java.util.HashMap;
-import java.util.Locale;
-import java.util.Map;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -48,29 +44,34 @@ public class FileService {
     private final FileRepo fileRepo;
     private final BollettaRepo bollettaRepo;
     private final BollettaService bollettaService;
+    private final SessionService sessionService;
 
-    public FileService(FileRepo fileRepo, BollettaRepo bollettaRepo, BollettaService bollettaService) {
+    public FileService(FileRepo fileRepo, BollettaRepo bollettaRepo, BollettaService bollettaService, SessionService sessionService) {
         this.fileRepo = fileRepo;
         this.bollettaRepo = bollettaRepo;
         this.bollettaService = bollettaService;
+        this.sessionService = sessionService;
     }
 
+    @Transactional
     public int saveFile(String fileName, byte[] fileData) throws SQLException {
         if (fileName == null || fileData == null || fileData.length == 0) {
             throw new IllegalArgumentException("File name and data must not be null or empty");
         }
         PDFFile pdfFile = new PDFFile();
-        pdfFile.setFile_Name(fileName);
-        pdfFile.setFile_Data(fileData);
+        pdfFile.setFileName(fileName);
+        pdfFile.setFileData(fileData);
         return fileRepo.insert(pdfFile);
     }
 
+    @Transactional
     public PDFFile getFile(int id) {
         return fileRepo.findById(id);
     }
 
 
     //CONVERTI FILE IN XML
+    @Transactional
     public Document convertPdfToXml(byte[] pdfData) throws IOException, ParserConfigurationException {
         try (PDDocument document = PDDocument.load(new ByteArrayInputStream(pdfData))) {
             PDFTextStripper stripper = new PDFTextStripper();
@@ -93,6 +94,7 @@ public class FileService {
         }
     }
 
+    @Transactional
     public String convertDocumentToString(Document doc) throws TransformerException {
         TransformerFactory tf = TransformerFactory.newInstance();
         Transformer transformer = tf.newTransformer();
@@ -104,7 +106,8 @@ public class FileService {
     }
 
 
-    public boolean extractValuesFromXmlA2A(byte[] xmlData, String idPod) {
+    @Transactional
+    public String extractValuesFromXmlA2A(byte[] xmlData, String idPod) {
         try {
             // Parsing del documento XML
             DocumentBuilderFactory factory = DocumentBuilderFactory.newInstance();
@@ -113,40 +116,113 @@ public class FileService {
 
             // Verifica se la bolletta esiste
             String nomeBolletta = extractBollettaNome(document);
-            if (nomeBolletta == null || nomeBolletta.equals(bollettaService.A2AisPresent(nomeBolletta, idPod))) {
-                return false;
+            if (nomeBolletta == null) {
+                return null;
+            } else {
+                bollettaService.A2AisPresent(nomeBolletta, idPod);
             }
 
             // Estrazione delle letture
             Map<String, Map<String, Map<String, Integer>>> lettureMese = extractLetture(document);
+
+            // Estrazione delle misure di picco e fuori picco
+            Map<String, Map<String, Map<String, Double>>> piccoEFuoriPicco = extractPiccoFuoriPicco(document);
 
             // Estrazione delle spese
             Map<String, Double> spese = extractSpese(document);
 
             //Estrazione dataInizio, daaFine e anno
             Periodo periodo = extractPeriodo(document);
-            System.out.println("Data inizio: " + periodo.getInizio());
-            System.out.println("Data fine: " + periodo.getFine());
-            System.out.println("Anno: " + periodo.getAnno());
+
+            //TODO:estrazione possibili ricalcoli
+
 
             if (lettureMese.isEmpty()) {
                 System.err.println("Nessuna lettura valida trovata.");
-                return false;
+                return null;
             }
 
-            fileRepo.saveDataToDatabase(lettureMese, spese, idPod, nomeBolletta, periodo);
+            fileRepo.saveDataToDatabase(lettureMese, spese, idPod, nomeBolletta, piccoEFuoriPicco, periodo);
 
-            Double spesaMateriaEnergia = spese.getOrDefault("Materia Energia", 0.0);
-            bollettaService.A2AVerifica(nomeBolletta, idPod, spesaMateriaEnergia);
-            return true;
+            return nomeBolletta;
 
         } catch (ParserConfigurationException | IOException | SAXException e) {
             e.printStackTrace();
-            return false;
-        } catch (SQLException e) {
-            throw new RuntimeException(e);
+            return null;
         }
     }
+
+    @Transactional
+    public void verificaA2A(String nomeB) throws SQLException {
+        List<BollettaPod> b = bollettaRepo.find("nomeBolletta", nomeB).list();
+        for (BollettaPod bollettaPod : b) {
+            bollettaService.A2AVerifica(bollettaPod);
+        }
+
+    }
+
+    private static Map<String, Map<String, Map<String, Double>>> extractPiccoFuoriPicco(Document document) {
+        Map<String, Map<String, Map<String, Double>>> piccoEFuoriPicco = new HashMap<>();
+        String categoriaCorrente = null;
+        boolean attesaPicco = false; // Flag per capire se stiamo aspettando "picco" dopo "fuori"
+
+        NodeList lineNodes = document.getElementsByTagName("Line");
+        for (int i = 0; i < lineNodes.getLength(); i++) {
+            Node lineNode = lineNodes.item(i);
+            if (lineNode.getNodeType() == Node.ELEMENT_NODE) {
+                String lineText = lineNode.getTextContent().trim();
+
+                // Caso in cui troviamo "Corrispettivo mercato capacità ore picco"
+                if (lineText.contains("Corrispettivo mercato capacità ore picco")) {
+                    categoriaCorrente = "Picco";
+                    attesaPicco = false;
+                    continue;
+                }
+
+                // Caso in cui troviamo "Corrispettivo mercato capacità ore fuori"
+                if (lineText.contains("Corrispettivo mercato capacità ore fuori")) {
+                    categoriaCorrente = null;
+                    attesaPicco = true; // Flag per attendere la parola "picco" nella riga successiva
+                    continue;
+                }
+
+                // Se la riga successiva contiene solo "picco", completa la categoria "Fuori Picco"
+                if (attesaPicco && lineText.equalsIgnoreCase("picco")) {
+                    categoriaCorrente = "Fuori Picco";
+                    attesaPicco = false;
+                    continue;
+                }
+
+                // Se troviamo una riga con "€/kWh" ed è associata a una categoria
+                if (categoriaCorrente != null && lineText.contains("€/kWh")) {
+                    ArrayList<Date> dates = extractDates(lineText);
+                    Double valoreKWh = extractKWhFromLine(lineText);
+                    Double costoEuro = extractEuroValue(lineText);
+
+                    if (dates.size() == 2 && valoreKWh != null && costoEuro != null) {
+                        String mese = DateUtils.getMonthFromDateLocalized(dates.get(1));
+
+                        // Creiamo la struttura della mappa se non esiste
+                        piccoEFuoriPicco.putIfAbsent(mese, new HashMap<>());
+                        Map<String, Map<String, Double>> categorie = piccoEFuoriPicco.get(mese);
+                        categorie.putIfAbsent(categoriaCorrente, new HashMap<>());
+
+                        // Salviamo i valori di consumo e costo
+                        Map<String, Double> valori = categorie.get(categoriaCorrente);
+                        valori.put("kWh", valoreKWh);
+                        valori.put("€", costoEuro);
+                    }
+                }
+
+                // Se troviamo una riga senza "€/kWh" e non è una nuova categoria, resettiamo la categoria corrente
+                if (!lineText.contains("€/kWh") && !lineText.toLowerCase().contains("corrispettivo mercato capacità")) {
+                    categoriaCorrente = null;
+                }
+            }
+        }
+        return piccoEFuoriPicco;
+    }
+
 
     private Periodo extractPeriodo(Document document) {
         NodeList lineNodes = document.getElementsByTagName("Line");
@@ -182,54 +258,173 @@ public class FileService {
     }
 
 
+//    private Map<String, Double> extractSpese(Document document) {
+//        Map<String, Double> spese = new HashMap<>();
+//
+//        NodeList lineNodes = document.getElementsByTagName("Line");
+//        boolean foundSpesaMateriaEnergia = false;
+//        boolean foundSpesaOneriSistema = false;
+//        boolean foundSpesaTrasporto = false;
+//        boolean foundSpesaImposte = false;
+//
+//        for (int i = 0; i < lineNodes.getLength(); i++) {
+//            Node lineNode = lineNodes.item(i);
+//            if (lineNode.getNodeType() == Node.ELEMENT_NODE) {
+//                String lineText = lineNode.getTextContent();
+//
+//                if (lineText.contains("SPESA PER LA MATERIA ENERGIA") && !foundSpesaMateriaEnergia) {
+//                    Double spesaMateriaEnergia = extractEuroValue(lineText);
+//                    if (spesaMateriaEnergia != null) {
+//                        spese.put("Materia Energia", spesaMateriaEnergia);
+//                    }
+//                    foundSpesaMateriaEnergia = true;
+//                }
+//
+//                if (lineText.contains("SPESA PER ONERI DI SISTEMA") && !foundSpesaOneriSistema) {
+//                    Double spesaOneri = extractEuroValue(lineText);
+//                    if (spesaOneri != null) {
+//                        spese.put("Oneri di Sistema", spesaOneri);
+//                    }
+//                    foundSpesaOneriSistema = true;
+//                }
+//
+//                if (lineText.contains("SPESA PER IL TRASPORTO E LA GESTIONE DEL CONTATORE") && !foundSpesaTrasporto) {
+//                    Double spesaTrasporto = extractEuroValue(lineText);
+//                    if (spesaTrasporto != null) {
+//                        spese.put("Trasporto e Gestione Contatore", spesaTrasporto);
+//                    }
+//                    foundSpesaTrasporto = true;
+//                }
+//
+//                if (lineText.contains("TOTALE IMPOSTE") && !foundSpesaImposte) {
+//                    Double spesaImposte = extractEuroValue(lineText);
+//                    if (spesaImposte != null) {
+//                        spese.put("Totale Imposte", spesaImposte);
+//                    }
+//                    foundSpesaImposte = true;
+//                }
+//            }
+//        }
+//        return spese;
+//    }
+
     private Map<String, Double> extractSpese(Document document) {
-        Map<String, Double> spese = new HashMap<>();
+        Map<String, List<Double>> speseNonSommarizzate = new HashMap<>();
+        Set<String> categorieGiaViste = new HashSet<>();
+        String categoriaCorrente = null;
+        boolean controlloAttivo = false;
+        int righeSenzaEuro = 0; // Contatore per il reset
+
+        // Parole chiave per interrompere il parsing
+        Set<String> stopParsingKeywords = Set.of(
+                "TOTALE FORNITURA ENERGIA ELETTRICA E IMPOSTE",
+                "RICALCOLO"
+        );
 
         NodeList lineNodes = document.getElementsByTagName("Line");
-        boolean foundSpesaMateriaEnergia = false;
-        boolean foundSpesaOneriSistema = false;
-        boolean foundSpesaTrasporto = false;
-        boolean foundSpesaImposte = false;
-
         for (int i = 0; i < lineNodes.getLength(); i++) {
             Node lineNode = lineNodes.item(i);
             if (lineNode.getNodeType() == Node.ELEMENT_NODE) {
-                String lineText = lineNode.getTextContent();
+                String lineText = lineNode.getTextContent().trim();
+                System.out.println("🔍 Riga: " + lineText);
 
-                if (lineText.contains("SPESA PER LA MATERIA ENERGIA") && !foundSpesaMateriaEnergia) {
-                    Double spesaMateriaEnergia = extractEuroValue(lineText);
-                    if (spesaMateriaEnergia != null) {
-                        spese.put("Materia Energia", spesaMateriaEnergia);
-                    }
-                    foundSpesaMateriaEnergia = true;
+                // ✅ Interrompe il parsing se trova un titolo che indica fine sezione
+                if (stopParsingKeywords.stream().anyMatch(lineText::contains)) {
+                    System.out.println("🚨 Interruzione del parsing: trovata riga '" + lineText + "'");
+                    break;
                 }
 
-                if (lineText.contains("SPESA PER ONERI DI SISTEMA") && !foundSpesaOneriSistema) {
-                    Double spesaOneri = extractEuroValue(lineText);
-                    if (spesaOneri != null) {
-                        spese.put("Oneri di Sistema", spesaOneri);
-                    }
-                    foundSpesaOneriSistema = true;
+                // ✅ Identificare la categoria corrente
+                if (lineText.contains("SPESA PER LA MATERIA ENERGIA")) {
+                    categoriaCorrente = "Materia Energia";
+                    categorieGiaViste.add(categoriaCorrente);
+                    System.out.println("🔍 Categoria corrente: " + categoriaCorrente);
+                    controlloAttivo = false;
+                    righeSenzaEuro = 0;
+                    continue;
+                }
+                if (lineText.contains("SPESA PER ONERI DI SISTEMA")) {
+                    categoriaCorrente = "Oneri di Sistema";
+                    categorieGiaViste.add(categoriaCorrente);
+                    System.out.println("🔍 Categoria corrente: " + categoriaCorrente);
+
+                    controlloAttivo = false;
+                    righeSenzaEuro = 0;
+                    continue;
+                }
+                if (lineText.contains("SPESA PER IL TRASPORTO E LA GESTIONE DEL CONTATORE")) {
+                    categoriaCorrente = "Trasporto e Gestione Contatore";
+                    categorieGiaViste.add(categoriaCorrente);
+                    System.out.println("🔍 Categoria corrente: " + categoriaCorrente);
+
+                    controlloAttivo = false;
+                    righeSenzaEuro = 0;
+                    continue;
+                }
+                if (lineText.contains("TOTALE IMPOSTE")) {
+                    categoriaCorrente = "Totale Imposte";
+                    categorieGiaViste.add(categoriaCorrente);
+                    System.out.println("🔍 Categoria corrente: " + categoriaCorrente);
+
+                    controlloAttivo = false;
+                    righeSenzaEuro = 0;
+                    continue;
                 }
 
-                if (lineText.contains("SPESA PER IL TRASPORTO E LA GESTIONE DEL CONTATORE") && !foundSpesaTrasporto) {
-                    Double spesaTrasporto = extractEuroValue(lineText);
-                    if (spesaTrasporto != null) {
-                        spese.put("Trasporto e Gestione Contatore", spesaTrasporto);
-                    }
-                    foundSpesaTrasporto = true;
-                }
+                // ✅ Se la categoria è attiva e troviamo un valore monetario (€), lo estraiamo
+                if (categoriaCorrente != null && lineText.contains("€")) {
+                    Double valore = extractEuroValue(lineText);
 
-                if (lineText.contains("TOTALE IMPOSTE") && !foundSpesaImposte) {
-                    Double spesaImposte = extractEuroValue(lineText);
-                    if (spesaImposte != null) {
-                        spese.put("Totale Imposte", spesaImposte);
+                    if (valore != null) {
+                        // ✅ Assicura che il primo valore venga sommato correttamente
+                        if (categorieGiaViste.contains(categoriaCorrente)) {
+                            categorieGiaViste.remove(categoriaCorrente);
+                            controlloAttivo = true;
+                            righeSenzaEuro = 0; // Reset del contatore
+                        }
+
+                        // ✅ Aggiunge il valore alla categoria
+                        speseNonSommarizzate.putIfAbsent(categoriaCorrente, new ArrayList<>());
+                        speseNonSommarizzate.get(categoriaCorrente).add(valore);
+
+                        controlloAttivo = true; // Attiva il reset solo dopo il primo valore
+                        righeSenzaEuro = 0; // Reset del contatore
                     }
-                    foundSpesaImposte = true;
+                } else if (controlloAttivo) {
+                    // ✅ Se abbiamo attivato il controllo e la riga non ha €, incrementiamo il contatore
+                    righeSenzaEuro++;
+
+                    // ✅ Se sono passate 3 righe senza €, resettiamo la categoria SOLO se la riga non ha parole chiave
+                    if (righeSenzaEuro >= 10 &&
+                            !lineText.matches(".*(QUOTA|Componente|Corrispettivi|€/kWh|€/kW/mese|€/cliente/mese|QUOTA VARIABILE).*")) {
+
+                        System.out.println("🔄 Reset categoria corrente dopo 3 righe senza €");
+                        categoriaCorrente = null;
+                        controlloAttivo = false;
+                        righeSenzaEuro = 0;
+                    }
+                } else {
+                    // ✅ Se troviamo un'altra riga con €, resettiamo il contatore per evitare reset prematuri
+                    righeSenzaEuro = 0;
                 }
             }
         }
-        return spese;
+
+        // ✅ Processa e somma i dati estratti
+        return processSpese(speseNonSommarizzate);
+    }
+
+
+    private Map<String, Double> processSpese(Map<String, List<Double>> speseNonSommarizzate) {
+        Map<String, Double> speseFinali = new HashMap<>();
+
+        for (Map.Entry<String, List<Double>> entry : speseNonSommarizzate.entrySet()) {
+            String categoria = entry.getKey();
+            double somma = entry.getValue().stream().mapToDouble(Double::doubleValue).sum();
+            speseFinali.put(categoria, somma);
+        }
+
+        return speseFinali;
     }
 
 
@@ -242,6 +437,7 @@ public class FileService {
             Node lineNode = lineNodes.item(i);
             if (lineNode.getNodeType() == Node.ELEMENT_NODE) {
                 String lineText = lineNode.getTextContent();
+
 
                 // Gestione delle categorie
                 if (lineText.contains("ENERGIA ATTIVA")) {
@@ -283,25 +479,28 @@ public class FileService {
 
     private static Double extractEuroValue(String lineText) {
         try {
-            // Regex per catturare il valore in euro
-            String regex = "€\\s*([\\d.,]+)";
+            System.out.println("🧐 Tentativo di estrarre valore monetario da: " + lineText);
+
+            // Regex migliorato per supportare più formati
+            String regex = "€\\s*([0-9]+(?:\\.[0-9]{3})*,[0-9]+)";
             Pattern pattern = Pattern.compile(regex);
             Matcher matcher = pattern.matcher(lineText);
 
             if (matcher.find()) {
-                // Ottieni il valore corrispondente
                 String valueString = matcher.group(1);
 
-                // Rimuove i punti come separatori di migliaia e sostituisce le virgole con punti
-                valueString = valueString.replace(".", "").replace(",", ".");
+                // Rimuove i separatori delle migliaia (i punti) MA mantiene il separatore decimale (virgola -> punto)
+                valueString = valueString.replaceAll("\\.(?=[0-9]{3},)", "").replace(",", ".");
 
-                // Converte il valore in Double
+                System.out.println("✅ Valore estratto: " + valueString);
                 return Double.parseDouble(valueString);
+            } else {
+                System.out.println("❌ Nessun valore in € trovato in: " + lineText);
             }
         } catch (NumberFormatException e) {
-            System.err.println("Errore durante il parsing del valore in euro: " + lineText);
+            System.err.println("❌ Errore durante il parsing del valore in euro: " + lineText);
         }
-        return null; // Nessun valore trovato
+        return null; // Nessun valore trovato o errore nel parsing
     }
 
 
@@ -311,7 +510,7 @@ public class FileService {
             Node lineNode = lineNodes.item(i);
             if (lineNode.getNodeType() == Node.ELEMENT_NODE) {
                 String lineText = lineNode.getTextContent();
-                if (lineText.contains("Bolletta")) {
+                if (lineText.contains("Bolletta n")) {
                     return extractBollettaNumero(lineText);
                 }
             }
@@ -387,11 +586,24 @@ public class FileService {
         }
     }
 
+    private static Double extractKWhFromLine(String lineText) {
+        Pattern pattern = Pattern.compile("(\\d{1,3}(?:[.,]\\d{3})*(?:[.,]\\d+)?)\\s*kWh", Pattern.CASE_INSENSITIVE);
+        Matcher matcher = pattern.matcher(lineText);
+        if (matcher.find()) {
+            String value = matcher.group(1).replace(".", "").replace(",", "."); // Normalizza i separatori
+            Double numero = Double.parseDouble(value);
+            return numero;
+        }
+        return null;
+    }
 
+
+    @Transactional
     public void abbinaPod(int idFile, String idPod) {
         fileRepo.abbinaPod(idFile, idPod);
     }
 
+    @Transactional
     public byte[] getXmlData(int id) {
         return fileRepo.getFile(id);
     }

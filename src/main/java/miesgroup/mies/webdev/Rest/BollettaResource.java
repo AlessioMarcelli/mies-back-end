@@ -43,7 +43,7 @@ public class BollettaResource {
     @POST
     @Consumes(MediaType.MULTIPART_FORM_DATA)
     @Produces(MediaType.TEXT_PLAIN)
-    public Response uploadAndProcessFileA2A(@MultipartForm FileUploadForm form, @CookieParam("SESSION_COOKIE") int id_sessione) {
+    public Response uploadAndProcessFileA2A(@MultipartForm FileUploadForm form, @CookieParam("SESSION_COOKIE") int idSessione) {
         try {
             // 1. Salva il file caricato e ottieni l'ID associato
             int idFile = fileService.saveFile(form.getFileName(), form.getFileData());
@@ -56,7 +56,7 @@ public class BollettaResource {
             byte[] xmlData = xmlString.getBytes();
 
             // 4. Estrae l'ID del POD dal documento XML usando i dati della sessione
-            String idPod = podService.extractValuesFromXml(xmlData, id_sessione);
+            String idPod = podService.extractValuesFromXml(xmlData, idSessione);
 
             // Verifica che l'ID del POD sia stato estratto correttamente
             if (idPod == null || idPod.isEmpty()) {
@@ -66,14 +66,15 @@ public class BollettaResource {
             }
 
             // 5. Estrai i dati della bolletta dal documento XML e inseriscili nel database
-            boolean result = fileService.extractValuesFromXmlA2A(xmlData, idPod);
-
-            // Verifica se i dati della bolletta sono stati inseriti correttamente
-            if (!result) {
+            String nomeB = fileService.extractValuesFromXmlA2A(xmlData, idPod);
+            if (nomeB == null || nomeB.isEmpty()) {
                 return Response.status(Response.Status.BAD_REQUEST)
-                        .entity("Impossibile inserire i dati della bolletta nel database.")
+                        .entity("Impossibile estrarre i dati della bolletta dal documento XML.")
                         .build();
             }
+
+            // 6. effettua i vari calcoli per verificare la correttezza dei dati
+            fileService.verificaA2A(nomeB);
 
             // 6. Associa l'ID del POD con l'ID del file caricato
             fileService.abbinaPod(idFile, idPod);
@@ -111,8 +112,8 @@ public class BollettaResource {
         }
 
         // Fetch the file data and the file name
-        byte[] fileData = pdfFile.getFile_Data();
-        String fileName = pdfFile.getFile_Name();
+        byte[] fileData = pdfFile.getFileData();
+        String fileName = pdfFile.getFileName();
 
         return Response.ok(fileData, MediaType.APPLICATION_OCTET_STREAM)
                 .header("Content-Disposition", "attachment; filename=\"" + fileName + "\"")

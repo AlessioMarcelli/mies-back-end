@@ -1,47 +1,57 @@
 package miesgroup.mies.webdev.Persistance.Model;
 
+import io.quarkus.hibernate.orm.panache.PanacheEntityBase;
+import jakarta.persistence.*;
 
-public class PDFFile {
+@Entity
+@Table(name = "filepdf") // Nome corretto della tabella
+public class PDFFile extends PanacheEntityBase {
 
-    private int id_File;
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY) // Auto-increment su MySQL
+    @Column(name = "Id_File") // Nome corretto della colonna ID
+    private Integer idFile;
 
-    private String File_Name;
+    @Column(name = "File_Name", nullable = false, unique = true)
+    private String fileName;
 
-    private byte[] file_Data;
+    @Lob
+    @Column(name = "file_Data", columnDefinition = "LONGBLOB")
+    private byte[] fileData;
 
-    private String id_pod;
+    @Column(name = "id_pod")
+    private String idPod;
 
-    // Getters and setters
-    public int getId_File() {
-        return id_File;
-    }
-    public void setId_File(int id_File) {
-        this.id_File = id_File;
-    }
-
-    public String getFile_Name() {
-        return File_Name;
-    }
-
-    public void setFile_Name(String file_Name) {
-        this.File_Name = file_Name;
-    }
-
-    public byte[] getFile_Data() {
-        return file_Data;
+    // Getters e Setters
+    public Integer getIdFile() {
+        return idFile;
     }
 
-    public void setFile_Data(byte[] file_Data) {
-        this.file_Data = file_Data;
+    public void setIdFile(Integer idFile) {
+        this.idFile = idFile;
     }
 
-    public String getId_pod() {
-        return id_pod;
+    public String getFileName() {
+        return fileName;
     }
 
-    public void setId_pod(String id_pod) {
-        this.id_pod = id_pod;
+    public void setFileName(String fileName) {
+        this.fileName = fileName;
     }
 
+    public byte[] getFileData() {
+        return fileData;
+    }
 
+    public void setFileData(byte[] fileData) {
+        this.fileData = fileData;
+    }
+
+    public String getIdPod() {
+        return idPod;
+    }
+
+    public void setIdPod(String idPod) {
+        this.idPod = idPod;
+    }
 }

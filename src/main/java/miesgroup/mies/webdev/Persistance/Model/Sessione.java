@@ -1,37 +1,50 @@
 package miesgroup.mies.webdev.Persistance.Model;
 
+import io.quarkus.hibernate.orm.panache.PanacheEntityBase;
+import jakarta.persistence.*;
 import java.sql.Timestamp;
 
-public class Sessione {
-    private int id;
-    private int utenteId;
-    private Timestamp Data_Sessione;
+@Entity
+@Table(name = "sessione") // Nome corretto della tabella nel database
+public class Sessione extends PanacheEntityBase {
 
-    public Sessione() {
-    }
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY) // Auto-increment su MySQL
+    @Column(name = "Id_Sessione")
+    private Integer id;
 
-    public int getId() {
+    @ManyToOne
+    @JoinColumn(name = "id_utente", nullable = false) // Foreign key verso `utente`
+    private Cliente utente;
+
+    @Column(name = "Data_Sessione", nullable = false, updatable = false, columnDefinition = "TIMESTAMP DEFAULT CURRENT_TIMESTAMP")
+    private Timestamp dataSessione;
+
+    // Costruttore vuoto richiesto da Hibernate
+    public Sessione() {}
+
+    // GETTER e SETTER
+    public Integer getId() {
         return id;
     }
 
-    public void setId(int id) {
+    public void setId(Integer id) {
         this.id = id;
     }
 
-    public int getUtenteId() {
-        return utenteId;
+    public Cliente getUtente() {
+        return utente;
     }
 
-    public void setUtenteId(int utenteId) {
-        this.utenteId = utenteId;
+    public void setUtente(Cliente utente) {
+        this.utente = utente;
     }
 
-    public Timestamp getData_Sessione() {
-        return Data_Sessione;
+    public Timestamp getDataSessione() {
+        return dataSessione;
     }
 
-    public void setData_Sessione(Timestamp dataCreazione) {
-        this.Data_Sessione = dataCreazione;
+    public void setDataSessione(Timestamp dataSessione) {
+        this.dataSessione = dataSessione;
     }
-
 }

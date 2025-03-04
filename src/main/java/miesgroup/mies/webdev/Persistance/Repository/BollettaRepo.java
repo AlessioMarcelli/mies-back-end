@@ -1,822 +1,210 @@
 package miesgroup.mies.webdev.Persistance.Repository;
 
-import jakarta.enterprise.context.ApplicationScoped;
-import miesgroup.mies.webdev.Persistance.Model.Bolletta;
 
-import javax.sql.DataSource;
-import java.sql.Connection;
-import java.sql.PreparedStatement;
-import java.sql.ResultSet;
-import java.sql.SQLException;
+import io.quarkus.hibernate.orm.panache.PanacheRepositoryBase;
+import jakarta.enterprise.context.ApplicationScoped;
+import miesgroup.mies.webdev.Persistance.Model.BollettaPod;
+import miesgroup.mies.webdev.Persistance.Model.Costi;
+import miesgroup.mies.webdev.Persistance.Model.Pod;
+
+import java.util.List;
 
 @ApplicationScoped
-public class BollettaRepo {
+public class BollettaRepo implements PanacheRepositoryBase<BollettaPod, Integer> {
 
-    private final DataSource dataSource;
+    private final CostiRepo costiRepo;
+    private final PodRepo podRepo;
 
-    public BollettaRepo(DataSource dataSource) {
-        this.dataSource = dataSource;
+    public BollettaRepo(CostiRepo costiRepo, PodRepo podRepo) {
+        this.costiRepo = costiRepo;
+        this.podRepo = podRepo;
     }
 
-    public void A2Ainsert(Bolletta bolletta) throws SQLException {
-        try (Connection connection = dataSource.getConnection()) {
-            try (PreparedStatement statement = connection.prepareStatement(
-                    "INSERT INTO bolletta_pod (F1_Attiva,F2_Attiva,F3_Attiva,F1_Reattiva,F2_Reattiva,F3_Reattiva,F1_Potenza,F2_Potenza,F3_Potenza,Spese_Energia,Oneri,Imposte,Spese_Trasporto, Nome_Bolletta, Periodo_Inizio, Periodo_Fine,id_pod,Anno) VALUES (?, ? , ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?,?) ", PreparedStatement.RETURN_GENERATED_KEYS
-            )) {
-                statement.setDouble(1, bolletta.getF1A());
-                statement.setDouble(2, bolletta.getF2A());
-                statement.setDouble(3, bolletta.getF3A());
-                statement.setDouble(4, bolletta.getF1R());
-                statement.setDouble(5, bolletta.getF2R());
-                statement.setDouble(6, bolletta.getF3R());
-                statement.setDouble(7, bolletta.getF1P());
-                statement.setDouble(8, bolletta.getF2P());
-                statement.setDouble(9, bolletta.getF3P());
-                statement.setDouble(10, bolletta.getSpese_Energia());
-                statement.setDouble(11, bolletta.getOneri());
-                statement.setDouble(12, bolletta.getImposte());
-                statement.setDouble(13, bolletta.getTrasporti());
-                statement.setString(14, bolletta.getNomeBolletta());
-                statement.setDate(15, bolletta.getPeriodoInizio());
-                statement.setDate(16, bolletta.getPeriodoFine());
-                statement.setString(17, bolletta.getId_pod());
-                statement.setString(18, bolletta.getAnno());
-                statement.executeUpdate();
-                try (var generatedKeys = statement.getGeneratedKeys()) {
-                    if (generatedKeys.next()) {
-                        int id = generatedKeys.getInt(1);
-                        bolletta.setId(id);
-                    }
-                }
-            } catch (SQLException e) {
-                throw new RuntimeException("Error inserting bolletta into database", e);
-            }
-        } catch (SQLException e) {
-            throw new RuntimeException("Error connecting to database", e);
+    public Double getCorrispettiviDispacciamentoA2A(int trimestre, String annoRiferimento) {
+        List<Costi> lista = costiRepo.find("unitaMisura = ?1 AND categoria = 'dispacciamento' AND (trimestre = ?2 OR anno IS NOT NULL) AND annoRiferimento = ?3", "€/KWh", trimestre, annoRiferimento).list();
+        double somma = 0;
+        for (Costi c : lista) {
+            somma += c.getCosto();
         }
+        return somma;
     }
 
-    public Double getCorrispettiviDispacciamentoA2A(int trimestre) throws SQLException {
-        String query = "SELECT SUM(Costo) FROM dettaglio_costo WHERE Unità_Misura = '€/KWh' AND Categoria = 'dispacciamento' AND (Trimestrale = ? OR Annuale IS NOT NULL)";
-
-        try (Connection connection = dataSource.getConnection();
-             PreparedStatement statement = connection.prepareStatement(query)) {
-
-            // Imposta il valore del parametro
-            statement.setInt(1, trimestre);
-
-            try (ResultSet resultSet = statement.executeQuery()) {
-                if (resultSet.next()) {
-                    return resultSet.getDouble(1); // Ottieni il risultato della somma
-                }
-            } catch (SQLException e) {
-                throw new RuntimeException("Error getting consumption from database", e);
-            }
-        } catch (SQLException e) {
-            throw new RuntimeException("Error connecting to database", e);
-        }
-
-        return null; // Se non ci sono risultati, restituisce null
-    }
-
-
-    public Double getConsumoA2A(String nome) throws SQLException {
-        try (Connection connection = dataSource.getConnection()) {
-            try (PreparedStatement statement = connection.prepareStatement("SELECT SUM(F1_Attiva+F2_Attiva+F3_Attiva) FROM bolletta_pod WHERE Nome_Bolletta = ?")) {
-                statement.setString(1, nome);
-                statement.executeQuery();
-                try (ResultSet resultSet = statement.executeQuery()) {
-                    if (resultSet.next()) {
-                        return resultSet.getDouble(1);
-                    }
-                }
-            } catch (SQLException e) {
-                throw new RuntimeException("Error getting consumption from database", e);
-            }
-
-        }
-        return null;
+    public Double getConsumoA2A(String nome, String mese) {
+        BollettaPod b = find("nomeBolletta = ?1 AND mese = ?2", nome, mese).firstResult();
+        return b.getTotAttiva();
     }
 
     public String getTipoTensione(String idPod) {
-        try (Connection connection = dataSource.getConnection()) {
-            try (PreparedStatement statement = connection.prepareStatement("SELECT Tipo_Tensione FROM pod WHERE Id_Pod = ?")) {
-                statement.setString(1, idPod);
-                try (ResultSet resultSet = statement.executeQuery()) {
-                    if (resultSet.next()) {
-                        return resultSet.getString(1);
-                    }
-                }
-            } catch (SQLException e) {
-                throw new RuntimeException("Error getting tensione from database", e);
-            }
-        } catch (SQLException e) {
-            throw new RuntimeException("Error connecting to database", e);
-        }
-        return null;
+        Pod pod = podRepo.find("id", idPod).firstResult();
+        return pod.getTipoTensione();
     }
 
-    public void updateDispacciamentoA2A(double dispacciamento, String nomeBolletta) {
-        try (Connection connection = dataSource.getConnection()) {
-            try (PreparedStatement statement = connection.prepareStatement("UPDATE bolletta_pod SET Dispacciamento = ? WHERE Nome_Bolletta = ?")) {
-                statement.setDouble(1, dispacciamento);
-                statement.setString(2, nomeBolletta);
-                statement.executeUpdate();
-            } catch (SQLException e) {
-                throw new RuntimeException("Error updating dispacciamento in database", e);
-            }
-        } catch (SQLException e) {
-            throw new RuntimeException("Error connecting to database", e);
-        }
+    public void updateDispacciamentoA2A(double dispacciamento, String nome, String mese) {
+        update("SET dispacciamento = ?1 WHERE nomeBolletta = ?2 AND mese = ?3", dispacciamento, nome, mese);
     }
 
-    public void updateGenerationA2A(Double generation, String nomeBolletta) {
-        try (Connection connection = dataSource.getConnection()) {
-            try (PreparedStatement statement = connection.prepareStatement("UPDATE bolletta_pod SET Generation = ? WHERE Nome_Bolletta = ?")) {
-                statement.setDouble(1, generation);
-                statement.setString(2, nomeBolletta);
-                statement.executeUpdate();
-            } catch (SQLException e) {
-                throw new RuntimeException("Error updating generation in database", e);
-            }
-        } catch (SQLException e) {
-            throw new RuntimeException("Error connecting to database", e);
-        }
+
+    public void updateGenerationA2A(Double generation, String nome, String mese) {
+        update("SET generation = ?1 WHERE nomeBolletta = ?2 AND mese = ?3", generation, nome, mese);
     }
 
-    public void updateMeseBolletta(String mese, String nomeBolletta) throws SQLException {
-        try (Connection connection = dataSource.getConnection()) {
-            try (PreparedStatement statement = connection.prepareStatement("UPDATE bolletta_pod SET Mese = ? WHERE Nome_Bolletta = ?")) {
-                statement.setString(1, mese);
-                statement.setString(2, nomeBolletta);
-                statement.executeUpdate();
-            } catch (SQLException e) {
-                throw new RuntimeException("Error updating mese in database", e);
-            }
-        }
-    }
-
-    public String getMese(String nomeBolletta) {
-        try (Connection connection = dataSource.getConnection()) {
-            try (PreparedStatement statement = connection.prepareStatement("SELECT Mese FROM bolletta_pod WHERE Nome_Bolletta = ?")) {
-                statement.setString(1, nomeBolletta);
-                try (ResultSet resultSet = statement.executeQuery()) {
-                    if (resultSet.next()) {
-                        return resultSet.getString(1);
-                    }
-                }
-            } catch (SQLException e) {
-                throw new RuntimeException("Error getting mese from database", e);
-            }
-        } catch (SQLException e) {
-            throw new RuntimeException("Error connecting to database", e);
-        }
-        return null;
-    }
 
     public Double getPotenzaImpegnata(String idPod) {
-        try (Connection connection = dataSource.getConnection()) {
-            try (PreparedStatement statemente = connection.prepareStatement("SELECT Potenza_Impegnata FROM pod WHERE Id_Pod = ?")) {
-                statemente.setString(1, idPod);
-                try (ResultSet resultSet = statemente.executeQuery()) {
-                    if (resultSet.next()) {
-                        return resultSet.getDouble(1);
-                    }
-                }
-
-            }
-        } catch (SQLException e) {
-            throw new RuntimeException(e);
-        }
-        return null;
+        Pod pod = podRepo.find("id", idPod).firstResult();
+        return pod.getPotenzaImpegnata();
     }
 
-    public Double getCostiSotto100(int trimestre) {
-        String query = "SELECT SUM(Costo) AS TotaleCosto " +
-                "FROM dettaglio_costo " +
-                "WHERE Categoria = 'trasporti' " +
-                "AND Unità_Misura = '€/KWh' " +
-                "AND Intervallo_Potenza = '<100KW' " +
-                "AND (Trimestrale = ? OR Annuale IS NOT NULL)";
+    public Double getCostiTrasporto(int trimestre, String intervalloPotenza, String unitaMisura, String annoBolletta) {
+        return costiRepo.findByCategoriaUnitaTrimestre("trasporti", unitaMisura, intervalloPotenza, trimestre, annoBolletta)
+                .orElse(0.0);
+    }
 
-        try (Connection connection = dataSource.getConnection();
-             PreparedStatement statement = connection.prepareStatement(query)) {
-
-            statement.setInt(1, trimestre);
-
-            try (ResultSet resultSet = statement.executeQuery()) {
-                if (resultSet.next()) {
-                    double costi = resultSet.getDouble("TotaleCosto");
-                    System.out.println("Totale Costo: " + costi);
-                    return costi;
-                } else {
-                    System.out.println("Nessun risultato trovato.");
-                }
-            }
-        } catch (SQLException e) {
-            // Aggiungi un messaggio di log o stampa l'eccezione per debug
-            System.err.println("Errore durante l'esecuzione della query: " + e.getMessage());
-            throw new RuntimeException(e);
+    public Double getCostiOneri(int trimestre, String intervalloPotenza, String unitaMisura, String classeAgevolazione, String annoRiferimento) {
+        List<Costi> lista = costiRepo.find("categoria = 'oneri' AND unitaMisura = ?1 AND intervalloPotenza = ?2 AND (trimestre = ?3 OR anno IS NOT NULL) AND classeAgevolazione = ?4 AND annoRiferimento = ?5",
+                unitaMisura, intervalloPotenza, trimestre, classeAgevolazione, annoRiferimento).list();
+        if (lista.isEmpty()) {
+            return 0.0;
         }
-        return null;
+
+        Double somma = 0.0;
+        for (Costi c : lista) {
+            somma += c.getCosto();
+        }
+        return somma;
+    }
+
+    public void updateVerificaTrasportiA2A(double trasporti, String nomeBolletta, String mese) {
+        update("SET verificaTrasporti = ?1 WHERE nomeBolletta = ?2 AND mese = ?3", trasporti, nomeBolletta, mese);
     }
 
 
-    public Double getCostiSotto500(int trimestre) {
-        String query = "SELECT SUM(Costo) AS TotaleCosto " +
-                "FROM dettaglio_costo " +
-                "WHERE Categoria = 'trasporti' " +
-                "AND Unità_Misura = '€/KWh' " +
-                "AND Intervallo_Potenza = '100-500KW' " +
-                "AND (Trimestrale = ? OR Annuale IS NOT NULL)";
-
-        try (Connection connection = dataSource.getConnection();
-             PreparedStatement statement = connection.prepareStatement(query)) {
-
-            statement.setInt(1, trimestre);
-
-            try (ResultSet resultSet = statement.executeQuery()) {
-                if (resultSet.next()) {
-                    double costi = resultSet.getDouble("TotaleCosto");
-                    System.out.println("Totale Costo: " + costi);
-                    return costi;
-                } else {
-                    System.out.println("Nessun risultato trovato.");
-                }
-            }
-        } catch (SQLException e) {
-            // Aggiungi un messaggio di log o stampa l'eccezione per debug
-            System.err.println("Errore durante l'esecuzione della query: " + e.getMessage());
-            throw new RuntimeException(e);
-        }
-        return null;
+    public void updatePenali33(double penali33, String nomeBolletta, String mese) {
+        update("SET penali33 = ?1 WHERE nomeBolletta = ?2 AND mese = ?3", penali33, nomeBolletta, mese);
     }
 
 
-    public Double getCostiSopra500(int trimestre) {
-        String query = "SELECT SUM(Costo) AS TotaleCosto " +
-                "FROM dettaglio_costo " +
-                "WHERE Categoria = 'trasporti' " +
-                "AND Unità_Misura = '€/KWh' " +
-                "AND Intervallo_Potenza = '>500KW' " +
-                "AND (Trimestrale = ? OR Annuale IS NOT NULL)";
-
-        try (Connection connection = dataSource.getConnection();
-             PreparedStatement statement = connection.prepareStatement(query)) {
-
-            statement.setInt(1, trimestre);
-
-            try (ResultSet resultSet = statement.executeQuery()) {
-                if (resultSet.next()) {
-                    double costi = resultSet.getDouble("TotaleCosto");
-                    System.out.println("Totale Costo: " + costi);
-                    return costi;
-                } else {
-                    System.out.println("Nessun risultato trovato.");
-                }
-            }
-        } catch (SQLException e) {
-            // Aggiungi un messaggio di log o stampa l'eccezione per debug
-            System.err.println("Errore durante l'esecuzione della query: " + e.getMessage());
-            throw new RuntimeException(e);
-        }
-        return null;
+    public void updatePenali75(double penali75, String nomeBolletta, String mese) {
+        update("SET penali75 = ?1 WHERE nomeBolletta = ?2 AND mese = ?3", penali75, nomeBolletta, mese);
     }
 
 
-    public double getF1(String nomeBolletta) {
-        try (Connection connection = dataSource.getConnection()) {
-            try (PreparedStatement statement = connection.prepareStatement("SELECT F1_Attiva FROM bolletta_pod WHERE Nome_Bolletta = ?")) {
-                statement.setString(1, nomeBolletta);
-                try (ResultSet resultSet = statement.executeQuery()) {
-                    if (resultSet.next()) {
-                        return resultSet.getDouble(1);
-                    }
-                }
-
-            }
-        } catch (SQLException e) {
-            throw new RuntimeException(e);
-        }
-        return 0;
+    public void updateVerificaOneri(Double costiOneri, String nomeBolletta, String mese) {
+        update("SET verificaOneri = ?1 WHERE nomeBolletta = ?2 AND mese = ?3", costiOneri, nomeBolletta, mese);
     }
 
-    public double getF2(String nomeBolletta) {
-        try (Connection connection = dataSource.getConnection()) {
-            try (PreparedStatement statement = connection.prepareStatement("SELECT F2_Attiva FROM bolletta_pod WHERE Nome_Bolletta = ?")) {
-                statement.setString(1, nomeBolletta);
-                try (ResultSet resultSet = statement.executeQuery()) {
-                    if (resultSet.next()) {
-                        return resultSet.getDouble(1);
-                    }
-                }
 
-            }
-        } catch (SQLException e) {
-            throw new RuntimeException(e);
-        }
-        return 0;
+    public Double getMaggiorePotenza(String nomeBolletta) {
+        BollettaPod bolletta = find("nomeBolletta", nomeBolletta).firstResult();
+        Double maggiore = Math.max(bolletta.getF1P(), Math.max(bolletta.getF2P(), bolletta.getF3P()));
+        return maggiore;
     }
 
-    public double getF1Reattiva(String nomeBolletta) {
-        try (Connection connection = dataSource.getConnection()) {
-            try (PreparedStatement statement = connection.prepareStatement("SELECT F1_Reattiva FROM bolletta_pod WHERE Nome_Bolletta = ?")) {
-                statement.setString(1, nomeBolletta);
-                try (ResultSet resultSet = statement.executeQuery()) {
-                    if (resultSet.next()) {
-                        return resultSet.getDouble(1);
-                    }
-                }
-
-            }
-        } catch (SQLException e) {
-            throw new RuntimeException(e);
-        }
-        return 0;
+    public boolean A2AisPresent(String nomeBolletta, String idPod) {
+        return count("nomeBolletta = ?1 AND idPod = ?2", nomeBolletta, idPod) > 0;
     }
 
-    public double getF2Reattiva(String nomeBolletta) {
-        try (Connection connection = dataSource.getConnection()) {
-            try (PreparedStatement statement = connection.prepareStatement("SELECT F2_Reattiva FROM bolletta_pod WHERE Nome_Bolletta = ?")) {
-                statement.setString(1, nomeBolletta);
-                try (ResultSet resultSet = statement.executeQuery()) {
-                    if (resultSet.next()) {
-                        return resultSet.getDouble(1);
-                    }
-                }
+    public Double getF1(String nomeBolletta, String mese) {
 
-            }
-        } catch (SQLException e) {
-            throw new RuntimeException(e);
-        }
-        return 0;
+        BollettaPod b = find("nomeBolletta = ?1 AND mese = ?2", nomeBolletta, mese).firstResult();
+
+        Double f1 = b.getF1P();
+        return f1;
     }
 
-    public double getPenaliSotto75() {
-        try (Connection connection = dataSource.getConnection()) {
-            try (PreparedStatement statement = connection.prepareStatement("SELECT Costo FROM dettaglio_costo WHERE Categoria = 'penali' AND Descrizione = '>33%&75%<'")) {
-                try (ResultSet resultSet = statement.executeQuery()) {
-                    if (resultSet.next()) {
-                        return resultSet.getDouble(1);
-                    }
-                }
+    public Double getF2(String nomeBolletta, String mese) {
+        BollettaPod b = find("nomeBolletta = ?1 AND mese = ?2", nomeBolletta, mese).firstResult();
+        Double f2 = b.getF2P();
+        return f2;
 
-            }
-        } catch (SQLException e) {
-            throw new RuntimeException(e);
-        }
-        return 0;
     }
 
-    public double getPenaliSopra75() {
-        try (Connection connection = dataSource.getConnection()) {
-            try (PreparedStatement statement = connection.prepareStatement("SELECT Costo FROM dettaglio_costo WHERE Categoria = 'penali' AND Descrizione = '>75%'")) {
-                try (ResultSet resultSet = statement.executeQuery()) {
-                    if (resultSet.next()) {
-                        return resultSet.getDouble(1);
-                    }
-                }
-
-            }
-        } catch (SQLException e) {
-            throw new RuntimeException(e);
+    public Double getPenaliSotto75(String annoRiferimento) {
+        List<Costi> costi = costiRepo.find("categoria = 'penali' AND descrizione = '>33%&75%<' AND annoRiferimento = ?1", annoRiferimento).list();
+        Double somma = 0.0;
+        for (Costi c : costi) {
+            somma += c.getCosto();
         }
-        return 0;
+        return somma;
     }
 
-    public void updateTrasportiA2A(double trasporti, String nomeBolletta) {
-        try (Connection connection = dataSource.getConnection()) {
-            try (PreparedStatement statement = connection.prepareStatement("UPDATE bolletta_pod SET Verifica_Trasporti = ? WHERE Nome_Bolletta = ?")) {
-                statement.setDouble(1, trasporti);
-                statement.setString(2, nomeBolletta);
-                statement.executeUpdate();
-            } catch (SQLException e) {
-                throw new RuntimeException("Error updating trasporti in database", e);
-            }
-        } catch (SQLException e) {
-            throw new RuntimeException("Error connecting to database", e);
+    public Double getPenaliSopra75(String annoRiferiemnto) {
+        List<Costi> c = costiRepo.find("categoria = 'penali' AND descrizione = '>75%' AND annoRiferimento = ?1", annoRiferiemnto).list();
+        Double somma = 0.0;
+        for (Costi costi : c) {
+            somma += costi.getCosto();
         }
+        return somma;
     }
 
-    public void updatePenali33(double penali33, String nomeBolletta) {
-        try (Connection connection = dataSource.getConnection()) {
-            try (PreparedStatement statement = connection.prepareStatement("UPDATE bolletta_pod SET Penali33 = ? WHERE Nome_Bolletta = ?")) {
-                statement.setDouble(1, penali33);
-                statement.setString(2, nomeBolletta);
-                statement.executeUpdate();
-            } catch (SQLException e) {
-                throw new RuntimeException("Error updating penali33 in database", e);
-            }
-        } catch (SQLException e) {
-            throw new RuntimeException("Error connecting to database", e);
-        }
+    public void updateVerificaImposte(double costiImposte, String nomeBolletta, String mese) {
+        update("SET verificaImposte = ?1 WHERE nomeBolletta = ?2 AND mese = ?3", costiImposte, nomeBolletta, mese);
     }
 
-    public void updatePenali75(double penali75, String nomeBolletta) {
-        try (Connection connection = dataSource.getConnection()) {
-            try (PreparedStatement statement = connection.prepareStatement("UPDATE bolletta_pod SET Penali75 = ? WHERE Nome_Bolletta = ?")) {
-                statement.setDouble(1, penali75);
-                statement.setString(2, nomeBolletta);
-                statement.executeUpdate();
-            } catch (SQLException e) {
-                throw new RuntimeException("Error updating penali75 in database", e);
-            }
-        } catch (SQLException e) {
-            throw new RuntimeException("Error connecting to database", e);
-        }
+
+    public Double getF1R(String nomeBolletta, String mese) {
+        BollettaPod b = find("nomeBolletta = ?1 AND mese = ?2", nomeBolletta, mese).firstResult();
+        Double f1 = b.getF1R();
+        return f1;
     }
 
-    public double getCostiFissiSotto100(int trimestre) {
-        String query = "SELECT SUM(Costo) AS TotaleCosto " +
-                "FROM dettaglio_costo " +
-                "WHERE Categoria = 'trasporti' " +
-                "AND Unità_Misura = '€/Month' " +
-                "AND Intervallo_Potenza = '<100KW' " +
-                "AND (Trimestrale = ? OR Annuale IS NOT NULL)";
-
-        try (Connection connection = dataSource.getConnection();
-             PreparedStatement statement = connection.prepareStatement(query)) {
-
-            statement.setInt(1, trimestre);
-
-            try (ResultSet resultSet = statement.executeQuery()) {
-                if (resultSet.next()) {
-                    double costi = resultSet.getDouble("TotaleCosto");
-                    System.out.println("Totale Costo: " + costi);
-                    return costi;
-                } else {
-                    System.out.println("Nessun risultato trovato.");
-                }
-            }
-        } catch (SQLException e) {
-            // Aggiungi un messaggio di log o stampa l'eccezione per debug
-            System.err.println("Errore durante l'esecuzione della query: " + e.getMessage());
-            throw new RuntimeException(e);
-        }
-        return 0;
+    public Double getF2R(String nomeBolletta, String mese) {
+        BollettaPod b = find("nomeBolletta = ?1 AND mese = ?2", nomeBolletta, mese).firstResult();
+        Double f2 = b.getF2R();
+        return f2;
     }
 
-    public double getCostiFissiSotto500(int trimestre) {
-        String query = "SELECT SUM(Costo) AS TotaleCosto " +
-                "FROM dettaglio_costo " +
-                "WHERE Categoria = 'trasporti' " +
-                "AND Unità_Misura = '€/Month' " +
-                "AND Intervallo_Potenza = '100-500KW' " +
-                "AND (Trimestrale = ? OR Annuale IS NOT NULL)";
-
-        try (Connection connection = dataSource.getConnection();
-             PreparedStatement statement = connection.prepareStatement(query)) {
-
-            statement.setInt(1, trimestre);
-
-            try (ResultSet resultSet = statement.executeQuery()) {
-                if (resultSet.next()) {
-                    double costi = resultSet.getDouble("TotaleCosto");
-                    System.out.println("Totale Costo: " + costi);
-                    return costi;
-                } else {
-                    System.out.println("Nessun risultato trovato.");
-                }
-            }
-        } catch (SQLException e) {
-            // Aggiungi un messaggio di log o stampa l'eccezione per debug
-            System.err.println("Errore durante l'esecuzione della query: " + e.getMessage());
-            throw new RuntimeException(e);
-        }
-        return 0;
+    public Double getPiccoKwh(String nomeBolletta, String mese) {
+        BollettaPod b = find("nomeBolletta = ?1 AND mese = ?2", nomeBolletta, mese).firstResult();
+        return b.getPiccoKwh();
     }
 
-    public double getCostiFissiSopra500(int trimestre) {
-        String query = "SELECT SUM(Costo) AS TotaleCosto " +
-                "FROM dettaglio_costo " +
-                "WHERE Categoria = 'trasporti' " +
-                "AND Unità_Misura = '€/Month' " +
-                "AND Intervallo_Potenza = '>500KW' " +
-                "AND (Trimestrale = ? OR Annuale IS NOT NULL)";
-
-        try (Connection connection = dataSource.getConnection();
-             PreparedStatement statement = connection.prepareStatement(query)) {
-
-            statement.setInt(1, trimestre);
-
-            try (ResultSet resultSet = statement.executeQuery()) {
-                if (resultSet.next()) {
-                    double costi = resultSet.getDouble("TotaleCosto");
-                    System.out.println("Totale Costo: " + costi);
-                    return costi;
-                } else {
-                    System.out.println("Nessun risultato trovato.");
-                }
-            }
-        } catch (SQLException e) {
-            // Aggiungi un messaggio di log o stampa l'eccezione per debug
-            System.err.println("Errore durante l'esecuzione della query: " + e.getMessage());
-            throw new RuntimeException(e);
-        }
-        return 0;
+    public Double getFuoriPiccoKwh(String nomeBolletta, String mese) {
+        BollettaPod b = find("nomeBolletta = ?1 AND mese = ?2", nomeBolletta, mese).firstResult();
+        return b.getFuoriPiccoKwh();
     }
 
-    public double getCostiPotenzaSotto100(int trimestre) {
-        String query = "SELECT SUM(Costo) AS TotaleCosto " +
-                "FROM dettaglio_costo " +
-                "WHERE Categoria = 'trasporti' " +
-                "AND Unità_Misura = '€/KW/Month' " +
-                "AND Intervallo_Potenza = '<100KW' " +
-                "AND (Trimestrale = ? OR Annuale IS NOT NULL)";
+    public Double getCostoFuoriPicco(int trimestre, String annoBolletta, String intervalloPotenza) {
+        List<Costi> furoiPicco = costiRepo.find("categoria = 'fuori picco' AND ( trimestre = ?1 OR anno IS NOT NULL ) AND annoRiferimento = ?2 AND intervalloPotenza = ?3",
+                trimestre, annoBolletta, intervalloPotenza).list();
 
-        try (Connection connection = dataSource.getConnection();
-             PreparedStatement statement = connection.prepareStatement(query)) {
-
-            statement.setInt(1, trimestre);
-
-            try (ResultSet resultSet = statement.executeQuery()) {
-                if (resultSet.next()) {
-                    double costi = resultSet.getDouble("TotaleCosto");
-                    System.out.println("Totale Costo: " + costi);
-                    return costi;
-                } else {
-                    System.out.println("Nessun risultato trovato.");
-                }
-            }
-        } catch (SQLException e) {
-            // Aggiungi un messaggio di log o stampa l'eccezione per debug
-            System.err.println("Errore durante l'esecuzione della query: " + e.getMessage());
-            throw new RuntimeException(e);
+        if (furoiPicco.isEmpty()) {
+            return 0.0;
         }
-        return 0;
+
+        double somma = 0;
+        for (Costi c : furoiPicco) {
+            somma += c.getCosto();
+        }
+        return somma;
     }
 
-    public double getCostiPotenzaSotto500(int trimestre) {
-        String query = "SELECT SUM(Costo) AS TotaleCosto " +
-                "FROM dettaglio_costo " +
-                "WHERE Categoria = 'trasporti' " +
-                "AND Unità_Misura = '€/KW/Month' " +
-                "AND Intervallo_Potenza = '100-500KW' " +
-                "AND (Trimestrale = ? OR Annuale IS NOT NULL)";
+    public Double getCostoPicco(int trimestre, String anno, String rangePotenza) {
+        List<Costi> picco = costiRepo.find("categoria = 'picco' AND ( trimestre = ?1 OR anno IS NOT NULL ) AND annoRiferimento = ?2 AND intervalloPotenza = ?3",
+                trimestre, anno, rangePotenza).list();
 
-        try (Connection connection = dataSource.getConnection();
-             PreparedStatement statement = connection.prepareStatement(query)) {
-
-            statement.setInt(1, trimestre);
-
-            try (ResultSet resultSet = statement.executeQuery()) {
-                if (resultSet.next()) {
-                    double costi = resultSet.getDouble("TotaleCosto");
-                    System.out.println("Totale Costo: " + costi);
-                    return costi;
-                } else {
-                    System.out.println("Nessun risultato trovato.");
-                }
-            }
-        } catch (SQLException e) {
-            // Aggiungi un messaggio di log o stampa l'eccezione per debug
-            System.err.println("Errore durante l'esecuzione della query: " + e.getMessage());
-            throw new RuntimeException(e);
+        if (picco.isEmpty()) {
+            return 0.0;
         }
-        return 0;
+
+        double somma = 0;
+        for (Costi c : picco) {
+            somma += c.getCosto();
+        }
+        return somma;
     }
 
-    public double getCostiPotenzaSopra500(int trimestre) {
-        String query = "SELECT SUM(Costo) AS TotaleCosto " +
-                "FROM dettaglio_costo " +
-                "WHERE Categoria = 'trasporti' " +
-                "AND Unità_Misura = '€/KW/Month' " +
-                "AND Intervallo_Potenza = '>500KW' " +
-                "AND (Trimestrale = ? OR Annuale IS NOT NULL)";
-
-        try (Connection connection = dataSource.getConnection();
-             PreparedStatement statement = connection.prepareStatement(query)) {
-
-            statement.setInt(1, trimestre);
-
-            try (ResultSet resultSet = statement.executeQuery()) {
-                if (resultSet.next()) {
-                    double costi = resultSet.getDouble("TotaleCosto");
-                    System.out.println("Totale Costo: " + costi);
-                    return costi;
-                } else {
-                    System.out.println("Nessun risultato trovato.");
-                }
-            }
-        } catch (SQLException e) {
-            // Aggiungi un messaggio di log o stampa l'eccezione per debug
-            System.err.println("Errore durante l'esecuzione della query: " + e.getMessage());
-            throw new RuntimeException(e);
-        }
-        return 0;
+    public void updateVerificaPicco(Double verificaPicco, String nomeBolletta, String mese) {
+        update("SET verificaPicco = ?1 WHERE nomeBolletta = ?2 AND mese = ?3", verificaPicco, nomeBolletta, mese);
     }
 
-    public double getMaggiorePotenza(String nomeBolletta) {
-        try (Connection connection = dataSource.getConnection()) {
-            try (PreparedStatement statement = connection.prepareStatement("SELECT GREATEST(F1_Potenza, F2_Potenza, F3_Potenza) AS MaxPotenza FROM bolletta_pod WHERE Nome_Bolletta = ?");) {
-                statement.setString(1, nomeBolletta);
-                try (ResultSet resultSet = statement.executeQuery()) {
-                    if (resultSet.next()) {
-                        return resultSet.getDouble(1);
-                    }
-                }
 
-            }
-        } catch (SQLException e) {
-            throw new RuntimeException(e);
-        }
-        return 0;
+    public void updateVerificaFuoriPicco(Double verificaFuoriPicco, String nomeBolletta, String mese) {
+        update("SET verificaFuoriPicco = ?1 WHERE nomeBolletta = ?2 AND mese = ?3", verificaFuoriPicco, nomeBolletta, mese);
     }
 
-    public double getCostiEnergiaOneri100E500(int trimestre, String classeAgevolazione) {
-        try (Connection connection = dataSource.getConnection()) {
-            try (PreparedStatement statement = connection.prepareStatement("SELECT SUM(Costo) AS TotaleCosto FROM dettaglio_costo WHERE Categoria = 'oneri' AND Unità_Misura = '€/KWh' AND Intervallo_Potenza = '100-500KW' AND (Trimestrale = ? OR Annuale IS NOT NULL) AND Classe_Agevolazione = ?")) {
-                statement.setInt(1, trimestre);
-                statement.setString(2, classeAgevolazione);
-                try (ResultSet resultSet = statement.executeQuery()) {
-                    if (resultSet.next()) {
-                        double costi = resultSet.getDouble("TotaleCosto");
-                        System.out.println("Totale Costo: " + costi);
-                        return costi;
-                    }
-                }
-            }
-        } catch (SQLException e) {
-            throw new RuntimeException(e);
-        }
-        return 0;
-    }
 
-    public double getCostiEnergiaOneriSopra500(int trimestre, String classeAgevolazione) {
-        try (Connection connection = dataSource.getConnection()) {
-            try (PreparedStatement statement = connection.prepareStatement("SELECT SUM(Costo) AS TotaleCosto FROM dettaglio_costo WHERE Categoria = 'oneri' AND Unità_Misura = '€/KWh' AND Intervallo_Potenza = '>500KW' AND (Trimestrale = ? OR Annuale IS NOT NULL) AND Classe_Agevolazione = ?")) {
-                statement.setInt(1, trimestre);
-                statement.setString(2, classeAgevolazione);
-                try (ResultSet resultSet = statement.executeQuery()) {
-                    if (resultSet.next()) {
-                        double costi = resultSet.getDouble("TotaleCosto");
-                        System.out.println("Totale Costo: " + costi);
-                        return costi;
-                    }
-                }
-            }
-        } catch (SQLException e) {
-            throw new RuntimeException(e);
-        }
-        return 0;
-    }
-
-    public double getCostiFissiOneri100E500(int trimestre, String classeAgevolazione) {
-        try (Connection connection = dataSource.getConnection()) {
-            try (PreparedStatement statement = connection.prepareStatement("SELECT SUM(Costo) AS TotaleCosto FROM dettaglio_costo WHERE Categoria = 'oneri' AND Unità_Misura = '€/Month' AND Intervallo_Potenza = '100-500KW' AND (Trimestrale = ? OR Annuale IS NOT NULL) AND Classe_Agevolazione = ?")) {
-                statement.setInt(1, trimestre);
-                statement.setString(2, classeAgevolazione);
-                try (ResultSet resultSet = statement.executeQuery()) {
-                    if (resultSet.next()) {
-                        double costi = resultSet.getDouble("TotaleCosto");
-                        System.out.println("Totale Costo: " + costi);
-                        return costi;
-                    }
-                }
-            }
-        } catch (SQLException e) {
-            throw new RuntimeException(e);
-        }
-        return 0;
-    }
-
-    public double getCostiFissiOneriSopra500(int trimestre, String classeAgevolazione) {
-        try (Connection connection = dataSource.getConnection()) {
-            try (PreparedStatement statement = connection.prepareStatement("SELECT SUM(Costo) AS TotaleCosto FROM dettaglio_costo WHERE Categoria = 'oneri' AND Unità_Misura = '€/Month' AND Intervallo_Potenza = '>500KW' AND (Trimestrale = ? OR Annuale IS NOT NULL) AND Classe_Agevolazione = ?")) {
-                statement.setInt(1, trimestre);
-                statement.setString(2, classeAgevolazione);
-                try (ResultSet resultSet = statement.executeQuery()) {
-                    if (resultSet.next()) {
-                        double costi = resultSet.getDouble("TotaleCosto");
-                        System.out.println("Totale Costo: " + costi);
-                        return costi;
-                    }
-                }
-            }
-        } catch (SQLException e) {
-            throw new RuntimeException(e);
-        }
-        return 0;
-    }
-
-    public double getCostiPotenzaOneri100E500(int trimestre, String classeAgevolazione) {
-        try (Connection connection = dataSource.getConnection()) {
-            try (PreparedStatement statement = connection.prepareStatement("SELECT SUM(Costo) AS TotaleCosto FROM dettaglio_costo WHERE Categoria = 'oneri' AND Unità_Misura = '€/KW/Month' AND Intervallo_Potenza = '100-500KW' AND (Trimestrale = ? OR Annuale IS NOT NULL) AND Classe_Agevolazione = ?")) {
-                statement.setInt(1, trimestre);
-                statement.setString(2, classeAgevolazione);
-                try (ResultSet resultSet = statement.executeQuery()) {
-                    if (resultSet.next()) {
-                        double costi = resultSet.getDouble("TotaleCosto");
-                        System.out.println("Totale Costo: " + costi);
-                        return costi;
-                    }
-                }
-            }
-        } catch (SQLException e) {
-            throw new RuntimeException(e);
-        }
-        return 0;
-    }
-
-    public double getCostiPotenzaOneriSopra500(int trimestre, String classeAgevolazione) {
-        try (Connection connection = dataSource.getConnection()) {
-            try (PreparedStatement statement = connection.prepareStatement("SELECT SUM(Costo) AS TotaleCosto FROM dettaglio_costo WHERE Categoria = 'oneri' AND Unità_Misura = '€/KW/Month' AND Intervallo_Potenza = '>500KW' AND (Trimestrale = ? OR Annuale IS NOT NULL) AND Classe_Agevolazione = ?")) {
-                statement.setInt(1, trimestre);
-                statement.setString(2, classeAgevolazione);
-                try (ResultSet resultSet = statement.executeQuery()) {
-                    if (resultSet.next()) {
-                        double costi = resultSet.getDouble("TotaleCosto");
-                        System.out.println("Totale Costo: " + costi);
-                        return costi;
-                    }
-                }
-            }
-        } catch (SQLException e) {
-            throw new RuntimeException(e);
-        }
-        return 0;
-    }
-
-    public void updateVerificaOneri(double costiOneri, String nomeBolletta) {
-        try (Connection connection = dataSource.getConnection()) {
-            try (PreparedStatement statement = connection.prepareStatement("UPDATE bolletta_pod SET Verifica_Oneri = ? WHERE Nome_Bolletta = ?")) {
-                statement.setDouble(1, costiOneri);
-                statement.setString(2, nomeBolletta);
-                statement.executeUpdate();
-            } catch (SQLException e) {
-                throw new RuntimeException("Error updating oneri in database", e);
-            }
-        } catch (SQLException e) {
-            throw new RuntimeException("Error connecting to database", e);
-        }
-    }
-
-    public void updateVerificaImposte(double costiImposte, String nomeBolletta) {
-        try (Connection connection = dataSource.getConnection()) {
-            try (PreparedStatement statement = connection.prepareStatement("UPDATE bolletta_pod SET Verifica_Imposte = ? WHERE Nome_Bolletta = ?")) {
-                statement.setDouble(1, costiImposte);
-                statement.setString(2, nomeBolletta);
-                statement.executeUpdate();
-            } catch (SQLException e) {
-                throw new RuntimeException("Error updating imposte in database", e);
-            }
-        } catch (SQLException e) {
-            throw new RuntimeException("Error connecting to database", e);
-        }
-    }
-
-    public void updateTOTAttiva(Double totAttiva, String nomeBolletta) {
-        try (Connection connection = dataSource.getConnection()) {
-            try (PreparedStatement statement = connection.prepareStatement("UPDATE bolletta_pod SET TOT_Attiva = ? WHERE Nome_Bolletta = ?")) {
-                statement.setDouble(1, totAttiva);
-                statement.setString(2, nomeBolletta);
-                statement.executeUpdate();
-            } catch (SQLException e) {
-                throw new RuntimeException("Error updating totAttiva in database", e);
-            }
-        } catch (SQLException e) {
-            throw new RuntimeException("Error connecting to database", e);
-        }
-    }
-
-    public void updateTOTReattiva(String nomeBolletta) {
-        try (Connection connection = dataSource.getConnection()) {
-            try (PreparedStatement statement = connection.prepareStatement("UPDATE bolletta_pod SET TOT_Reattiva = F1_Reattiva + F2_Reattiva + F3_Reattiva WHERE Nome_Bolletta = ?")) {
-                statement.setString(1, nomeBolletta);
-                statement.executeUpdate();
-            } catch (SQLException e) {
-                throw new RuntimeException("Error updating totReattiva in database", e);
-            }
-        } catch (SQLException e) {
-            throw new RuntimeException("Error connecting to database", e);
-        }
-    }
-
-    public String A2AisPresent(String nomeBolletta, String idPod) {
-        String query = "SELECT Nome_Bolletta FROM bolletta_pod WHERE Nome_Bolletta = ? AND id_pod = ?";
-
-        try (Connection connection = dataSource.getConnection();
-             PreparedStatement statement = connection.prepareStatement(query)) {
-
-            // Imposta i parametri della query
-            statement.setString(1, nomeBolletta);
-            statement.setString(2, idPod);
-
-            // Esegui la query
-            try (ResultSet resultSet = statement.executeQuery()) {
-                if (resultSet.next()) {
-                    // Ritorna il nome della bolletta trovata
-                    return resultSet.getString("Nome_Bolletta");
-                } else {
-                    // Se non ci sono risultati, ritorna null o una stringa indicativa
-                    return null;
-                }
-            }
-
-        } catch (SQLException e) {
-            // Gestione dell'errore
-            throw new RuntimeException("Errore durante la verifica della presenza della bolletta nel database.", e);
-        }
+    public void updateTOTAttivaPerdite(Double totAttivaPerdite, String nomeBolletta, String mese) {
+        update("SET totAttivaPerdite = ?1 WHERE nomeBolletta = ?2 AND mese = ?3", totAttivaPerdite, nomeBolletta, mese);
     }
 
 }

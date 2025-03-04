@@ -1,8 +1,11 @@
 package miesgroup.mies.webdev.Service;
 
 import jakarta.enterprise.context.ApplicationScoped;
+import jakarta.transaction.Transactional;
+import miesgroup.mies.webdev.Persistance.Model.Cliente;
 import miesgroup.mies.webdev.Persistance.Model.PDFFile;
 import miesgroup.mies.webdev.Persistance.Model.Pod;
+import miesgroup.mies.webdev.Persistance.Repository.ClienteRepo;
 import miesgroup.mies.webdev.Persistance.Repository.PodRepo;
 import miesgroup.mies.webdev.Persistance.Repository.SessionRepo;
 import org.w3c.dom.Document;
@@ -26,19 +29,22 @@ public class PodService {
     private final PodRepo podRepo;
     private final SessionService sessionService;
     private final SessionRepo sessionRepo;
+    private final ClienteRepo clienteRepo;
 
-    public PodService(PodRepo podRepo, SessionService sessionService, SessionRepo sessionRepo) {
+    public PodService(PodRepo podRepo, SessionService sessionService, SessionRepo sessionRepo, ClienteRepo clienteRepo) {
         this.podRepo = podRepo;
         this.sessionService = sessionService;
         this.sessionRepo = sessionRepo;
+        this.clienteRepo = clienteRepo;
     }
 
 
-
+    @Transactional
     public String extractValuesFromXml(byte[] xmlData, int sessione) {
         ArrayList<Double> extractedValues = new ArrayList<>();
         String id_pod = "";
         int id_utente = sessionService.trovaUtentebBySessione(sessione);
+        String fornitore = "";
         boolean esiste = false;
         try {
             DocumentBuilderFactory factory = DocumentBuilderFactory.newInstance();
@@ -59,7 +65,13 @@ public class PodService {
                         Element LineElement = (Element) LineNode;
                         id_pod = LineElement.getTextContent();
                     }
+
                     if (podRepo.verificaSePodEsiste(id_pod, id_utente) == null) {
+                        if (lineText.contains("SEGNALAZIONE GUASTI ELETTRICITA")) {
+                            Node LineNode = lineNodes.item(i + 2);
+                            Element LineElement = (Element) LineNode;
+                            fornitore = LineElement.getTextContent();
+                        }
                         if (lineText.contains("Tensione di alimentazione") || lineText.contains("Potenza impegnata") || lineText.contains("Potenza disponibile") && estrai < 3) {
                             estrai++;
                             if (i + 1 < lineNodes.getLength()) {
@@ -95,7 +107,7 @@ public class PodService {
                     }
                 }
             }
-            creaPod(extractedValues, id_utente, id_pod);
+            creaPod(extractedValues, id_utente, id_pod, fornitore);
         } catch (SAXException | IOException | ParserConfigurationException e) {
             e.printStackTrace();
         }
@@ -103,40 +115,48 @@ public class PodService {
     }
 
 
-    public void creaPod(ArrayList<Double> extractedValues, int id_utente, String id_pod) {
+    @Transactional
+    public void creaPod(ArrayList<Double> extractedValues, int id_utente, String id_pod, String fornitore) {
+        Cliente c = clienteRepo.findById(id_utente);
         Pod pod = new Pod();
-        pod.setId_utente(id_utente);
+        pod.setUtente(c);
         pod.setId(id_pod);
-        pod.setTensione_Alimentazione(extractedValues.get(0));
-        pod.setPotenza_Impegnata(extractedValues.get(1));
-        pod.setPotenza_Disponibile(extractedValues.get(2));
-        if (pod.getTensione_Alimentazione() <= 1000.0) {
-            pod.setTipo_tensione("Bassa");
-        } else if (pod.getTensione_Alimentazione() > 1000.0 && pod.getTensione_Alimentazione() <= 35000.0) {
-            pod.setTipo_tensione("Media");
+        pod.setFornitore(fornitore);
+        pod.setTensioneAlimentazione(extractedValues.get(0));
+        pod.setPotenzaImpegnata(extractedValues.get(1));
+        pod.setPotenzaDisponibile(extractedValues.get(2));
+        if (pod.getTensioneAlimentazione() <= 1000.0) {
+            pod.setTipoTensione("Bassa");
+        } else if (pod.getTensioneAlimentazione() > 1000.0 && pod.getTensioneAlimentazione() <= 35000.0) {
+            pod.setTipoTensione("Media");
         } else {
-            pod.setTipo_tensione("Alta");
+            pod.setTipoTensione("Alta");
         }
-        podRepo.insert(pod);
+        podRepo.persist(pod);
     }
 
-    public ArrayList<Pod> tutti(int id_sessione) {
+    @Transactional
+    public List<Pod> tutti(int id_sessione) {
         return podRepo.findAll(sessionRepo.find(id_sessione));
     }
 
+    @Transactional
     public Pod getPod(String id, int id_utente) {
         return podRepo.cercaIdPod(id, sessionRepo.find(id_utente));
     }
 
+    @Transactional
     public void addSedeNazione(String idPod, String sede, String nazione, int idUtente) {
         podRepo.aggiungiSedeNazione(idPod, sede, nazione, sessionRepo.find(idUtente));
     }
 
+    @Transactional
     public List<Pod> findPodByIdUser(int idSessione) {
         return podRepo.findPodByIdUser(sessionRepo.find(idSessione));
     }
 
-    public ArrayList<PDFFile> getBollette(List<Pod> elencoPod) {
+    @Transactional
+    public List<PDFFile> getBollette(List<Pod> elencoPod) {
         return podRepo.getBollette(elencoPod);
     }
 }
