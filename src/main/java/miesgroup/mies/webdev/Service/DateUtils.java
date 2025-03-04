@@ -1,8 +1,10 @@
 package miesgroup.mies.webdev.Service;
 
+import java.time.DayOfWeek;
 import java.time.LocalDate;
 import java.time.ZoneId;
 import java.time.format.TextStyle;
+import java.time.temporal.TemporalAdjusters;
 import java.util.Date;
 import java.util.Locale;
 
@@ -39,5 +41,43 @@ public class DateUtils {
                 .toLocalDate();
         // Restituisce il mese come numero
         return localDate.getMonthValue(); // Esempio: 1 (Gennaio)
+    }
+
+    public static LocalDate getPreviousMonday(LocalDate date) {
+        return date.minusWeeks(1).with(DayOfWeek.MONDAY);
+    }
+
+    public static LocalDate getPreviousFriday(LocalDate date) {
+        return date.with(TemporalAdjusters.previous(DayOfWeek.FRIDAY));
+    }
+
+    public static LocalDate getFirstBusinessDayOfPreviousMonth(LocalDate date) {
+        // Trova il primo giorno del mese precedente
+        LocalDate firstDay = date.minusMonths(1).with(TemporalAdjusters.firstDayOfMonth());
+
+        // Se è sabato, spostalo a lunedì
+        if (firstDay.getDayOfWeek() == DayOfWeek.SATURDAY) {
+            return firstDay.plusDays(2);
+        }
+        // Se è domenica, spostalo a lunedì
+        else if (firstDay.getDayOfWeek() == DayOfWeek.SUNDAY) {
+            return firstDay.plusDays(1);
+        }
+        return firstDay;
+    }
+
+    public static LocalDate getLastBusinessDayOfPreviousMonth(LocalDate date) {
+        // Trova l'ultimo giorno del mese precedente
+        LocalDate lastDay = date.minusMonths(1).with(TemporalAdjusters.lastDayOfMonth());
+
+        // Se è sabato, torna indietro a venerdì
+        if (lastDay.getDayOfWeek() == DayOfWeek.SATURDAY) {
+            return lastDay.minusDays(1);
+        }
+        // Se è domenica, torna indietro a venerdì
+        else if (lastDay.getDayOfWeek() == DayOfWeek.SUNDAY) {
+            return lastDay.minusDays(2);
+        }
+        return lastDay;
     }
 }

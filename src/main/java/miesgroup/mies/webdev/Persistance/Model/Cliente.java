@@ -12,7 +12,7 @@ public class Cliente {
     private String telefono;
     private String classeAgevolazione;
     private int id;
-
+    private boolean checkEmail;
 
     public Cliente() {
     }
@@ -95,5 +95,13 @@ public class Cliente {
 
     public void setId(int id) {
         this.id = id;
+    }
+
+    public boolean isCheckEmail() {
+        return checkEmail;
+    }
+
+    public void setCheckEmail(boolean checkEmail) {
+        this.checkEmail = checkEmail;
     }
 }

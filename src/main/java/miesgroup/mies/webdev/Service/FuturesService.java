@@ -2,6 +2,7 @@ package miesgroup.mies.webdev.Service;
 
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
+import miesgroup.mies.webdev.Persistance.Model.Future;
 import miesgroup.mies.webdev.Persistance.Repository.FuturesRepo;
 import miesgroup.mies.webdev.Rest.Model.Futures;
 
@@ -18,7 +19,7 @@ public class FuturesService {
     }
 
     // Metodo per ottenere i futures in base alla data e al tipo di future (anno, trimestre, mese)
-    public List<Futures> getFutures(String date, String type) {
+    public List<Future> getFutures(String date, String type) {
         try {
             switch (type) {
                 case "year":
@@ -35,7 +36,7 @@ public class FuturesService {
         }
     }
 
-    public List<Futures> getFuturesYear(String date, String type) {
+    public List<Future> getFuturesYear(String date) {
         try {
             return futuresRepo.findByYear(date); // Query per ottenere tutti i futures annuali
         } catch (SQLException e) {
@@ -43,9 +44,25 @@ public class FuturesService {
         }
     }
 
-    public List<Futures> getFuturesQuarter(String date, String type) {
+    public List<Future> getFutureYear(String date) {
+        try {
+            return futuresRepo.findByYear(date); // Query per ottenere tutti i futures annuali
+        } catch (SQLException e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+    public List<Future> getFuturesQuarter(String date) {
         try {
             return futuresRepo.findByQuarter(date); // Query per ottenere tutti i futures annuali
+        } catch (SQLException e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+    public List<Future> getFuturesMonth(String date) {
+        try {
+            return futuresRepo.findByMonth(date); // Query per ottenere tutti i futures annuali
         } catch (SQLException e) {
             throw new RuntimeException(e);
         }
