@@ -1,15 +1,11 @@
 TODO: aggiungere le funzioni di logging
 TODO: aggiungere le funzioni di health check
 
-TODO:rimodellare il metodo di estrazione dalla bolletta della materia energia in quanto nella possibilità di più mesi
- i valori dei costi non sarebbero divisi per mese ma bensi apparrebbe la somma di tutti i presenti
-
 TODO: creare una nuova tabella per salvare i fixing ovvero costi accordati tra cliente e fornitore ad esempio F0,
- f1,f2,f3, icco, fuori picco costi che vanno sommati a
+ f1,f2,f3, picco, fuori picco costi che vanno sommati a
   PUN(GME) + SPREAD(Contrattuale comunicato dal cliente va legato al pod)
 
-TODO: riguardo ai ricalcoli i  bolletta bisognoa salvare quota fissa,variabile e potenza che calcolo.
-    Poi estrarre(controllare) i valori delle relative quote sommare quelle delle stesso mese e fare differenza tra
+TODO: Poi estrarre(controllare) i valori delle relative quote sommare quelle delle stesso mese e fare differenza tra
     cio che è appena stato sommato a quello gia presente nel db
 
 TODO: creare tabella di inserimento per il budget (front-end) e tabella di salvataggio (back-end) per il budget

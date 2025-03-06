@@ -2,6 +2,7 @@ package miesgroup.mies.webdev.Rest;
 
 import jakarta.ws.rs.*;
 import jakarta.ws.rs.core.MediaType;
+import jakarta.ws.rs.core.Response;
 import miesgroup.mies.webdev.Persistance.Model.PDFFile;
 import miesgroup.mies.webdev.Persistance.Model.Pod;
 import miesgroup.mies.webdev.Rest.Model.UpdatePodRequest;
@@ -38,12 +39,29 @@ public class PodResource {
         podService.addSedeNazione(request.getIdPod(), request.getSede(), request.getNazione(), id_sessione);
     }
 
+    @PUT
+    @Path("/modifica-sede-nazione")
+    @Consumes(MediaType.APPLICATION_JSON)
+    @Produces(MediaType.APPLICATION_JSON)
+    public void updatePodSedeNazione(UpdatePodRequest request, @CookieParam("SESSION_COOKIE") int id_sessione) {
+        podService.modificaSedeNazione(request.getIdPod(), request.getSede(), request.getNazione(), id_sessione);
+    }
+
     @GET
     @Path("/bollette")
     @Produces(MediaType.APPLICATION_JSON)
     public List<PDFFile> getBollette(@CookieParam("SESSION_COOKIE") int id_sessione) {
         List<Pod> elencoPod = podService.findPodByIdUser(id_sessione);
         return podService.getBollette(elencoPod);
+    }
+
+    @PUT
+    @Path("/spread")
+    @Consumes(MediaType.APPLICATION_JSON)
+    @Produces(MediaType.APPLICATION_JSON)
+    public Response updateSpread(UpdatePodRequest request, @CookieParam("SESSION_COOKIE") int id_sessione) {
+        podService.addSpread(request.getIdPod(), request.getSpread(), id_sessione);
+        return Response.ok().build();
     }
 
 }

@@ -5,6 +5,7 @@ import jakarta.enterprise.context.ApplicationScoped;
 import miesgroup.mies.webdev.Persistance.Model.Cliente;
 import miesgroup.mies.webdev.Persistance.Model.PDFFile;
 import miesgroup.mies.webdev.Persistance.Model.Pod;
+import miesgroup.mies.webdev.Rest.Exception.PodNotFound;
 
 import javax.sql.DataSource;
 import java.util.ArrayList;
@@ -66,4 +67,22 @@ public class PodRepo implements PanacheRepositoryBase<Pod, String> {
         return fileRepo.list("idPod IN ?1", podIds);
     }
 
+    public void aggiungiSpread(String idPod, Double spread) {
+        Pod pod = findById(idPod);
+        if (pod != null) {
+            update("spread = ?1 WHERE id = ?2", spread, idPod);
+
+        } else {
+            throw new PodNotFound("POD con ID " + idPod + " non trovato.");
+        }
+    }
+
+    public void modificaSedeNazione(String idPod, String sede, String nazione) {
+        Pod pod = findById(idPod);
+        if (pod != null) {
+            update("sede = ?1, nazione = ?2 WHERE id = ?3", sede, nazione, idPod);
+        } else {
+            throw new PodNotFound("POD con ID " + idPod + " non trovato.");
+        }
+    }
 }

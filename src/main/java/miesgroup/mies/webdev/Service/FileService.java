@@ -15,6 +15,10 @@ import javax.xml.parsers.DocumentBuilderFactory;
 import javax.xml.parsers.ParserConfigurationException;
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
+import java.time.LocalDate;
+import java.time.YearMonth;
+import java.time.format.DateTimeFormatter;
+import java.time.format.TextStyle;
 import java.util.*;
 import java.sql.SQLException;
 import javax.xml.transform.OutputKeys;
@@ -109,12 +113,10 @@ public class FileService {
     @Transactional
     public String extractValuesFromXmlA2A(byte[] xmlData, String idPod) {
         try {
-            // Parsing del documento XML
             DocumentBuilderFactory factory = DocumentBuilderFactory.newInstance();
             DocumentBuilder builder = factory.newDocumentBuilder();
             Document document = builder.parse(new ByteArrayInputStream(xmlData));
 
-            // Verifica se la bolletta esiste
             String nomeBolletta = extractBollettaNome(document);
             if (nomeBolletta == null) {
                 return null;
@@ -122,27 +124,17 @@ public class FileService {
                 bollettaService.A2AisPresent(nomeBolletta, idPod);
             }
 
-            // Estrazione delle letture
             Map<String, Map<String, Map<String, Integer>>> lettureMese = extractLetture(document);
-
-            // Estrazione delle misure di picco e fuori picco
-            Map<String, Map<String, Map<String, Double>>> piccoEFuoriPicco = extractPiccoFuoriPicco(document);
-
-            // Estrazione delle spese
-            Map<String, Double> spese = extractSpese(document);
-
-            //Estrazione dataInizio, daaFine e anno
+            Map<String, Map<String, Map<String, Double>>> piccoEFuoriPiccoPerMese = extractPiccoFuoriPicco(document);
+            Map<String, Map<String, Double>> spesePerMese = extractSpesePerMese(document);
             Periodo periodo = extractPeriodo(document);
-
-            //TODO:estrazione possibili ricalcoli
-
 
             if (lettureMese.isEmpty()) {
                 System.err.println("Nessuna lettura valida trovata.");
                 return null;
             }
 
-            fileRepo.saveDataToDatabase(lettureMese, spese, idPod, nomeBolletta, piccoEFuoriPicco, periodo);
+            fileRepo.saveDataToDatabase(lettureMese, spesePerMese, idPod, nomeBolletta, piccoEFuoriPiccoPerMese, periodo);
 
             return nomeBolletta;
 
@@ -151,6 +143,7 @@ public class FileService {
             return null;
         }
     }
+
 
     @Transactional
     public void verificaA2A(String nomeB) throws SQLException {
@@ -258,62 +251,15 @@ public class FileService {
     }
 
 
-//    private Map<String, Double> extractSpese(Document document) {
-//        Map<String, Double> spese = new HashMap<>();
-//
-//        NodeList lineNodes = document.getElementsByTagName("Line");
-//        boolean foundSpesaMateriaEnergia = false;
-//        boolean foundSpesaOneriSistema = false;
-//        boolean foundSpesaTrasporto = false;
-//        boolean foundSpesaImposte = false;
-//
-//        for (int i = 0; i < lineNodes.getLength(); i++) {
-//            Node lineNode = lineNodes.item(i);
-//            if (lineNode.getNodeType() == Node.ELEMENT_NODE) {
-//                String lineText = lineNode.getTextContent();
-//
-//                if (lineText.contains("SPESA PER LA MATERIA ENERGIA") && !foundSpesaMateriaEnergia) {
-//                    Double spesaMateriaEnergia = extractEuroValue(lineText);
-//                    if (spesaMateriaEnergia != null) {
-//                        spese.put("Materia Energia", spesaMateriaEnergia);
-//                    }
-//                    foundSpesaMateriaEnergia = true;
-//                }
-//
-//                if (lineText.contains("SPESA PER ONERI DI SISTEMA") && !foundSpesaOneriSistema) {
-//                    Double spesaOneri = extractEuroValue(lineText);
-//                    if (spesaOneri != null) {
-//                        spese.put("Oneri di Sistema", spesaOneri);
-//                    }
-//                    foundSpesaOneriSistema = true;
-//                }
-//
-//                if (lineText.contains("SPESA PER IL TRASPORTO E LA GESTIONE DEL CONTATORE") && !foundSpesaTrasporto) {
-//                    Double spesaTrasporto = extractEuroValue(lineText);
-//                    if (spesaTrasporto != null) {
-//                        spese.put("Trasporto e Gestione Contatore", spesaTrasporto);
-//                    }
-//                    foundSpesaTrasporto = true;
-//                }
-//
-//                if (lineText.contains("TOTALE IMPOSTE") && !foundSpesaImposte) {
-//                    Double spesaImposte = extractEuroValue(lineText);
-//                    if (spesaImposte != null) {
-//                        spese.put("Totale Imposte", spesaImposte);
-//                    }
-//                    foundSpesaImposte = true;
-//                }
-//            }
-//        }
-//        return spese;
-//    }
+    private Map<String, Map<String, Double>> extractSpesePerMese(Document document) {
+        // Struttura dati intermedia: mese -> (categoria -> lista di valori)
+        Map<String, Map<String, List<Double>>> spesePerMese = new HashMap<>();
 
-    private Map<String, Double> extractSpese(Document document) {
-        Map<String, List<Double>> speseNonSommarizzate = new HashMap<>();
         Set<String> categorieGiaViste = new HashSet<>();
         String categoriaCorrente = null;
+        String meseCorrente = null; // Campo per il mese/periodo in parsing
         boolean controlloAttivo = false;
-        int righeSenzaEuro = 0; // Contatore per il reset
+        int righeSenzaEuro = 0;
 
         // Parole chiave per interrompere il parsing
         Set<String> stopParsingKeywords = Set.of(
@@ -326,19 +272,25 @@ public class FileService {
             Node lineNode = lineNodes.item(i);
             if (lineNode.getNodeType() == Node.ELEMENT_NODE) {
                 String lineText = lineNode.getTextContent().trim();
-                System.out.println("🔍 Riga: " + lineText);
 
-                // ✅ Interrompe il parsing se trova un titolo che indica fine sezione
+                // 1) Interrompe il parsing se trova un titolo che indica fine sezione
                 if (stopParsingKeywords.stream().anyMatch(lineText::contains)) {
                     System.out.println("🚨 Interruzione del parsing: trovata riga '" + lineText + "'");
                     break;
                 }
 
-                // ✅ Identificare la categoria corrente
+                // 2) Controlla se la riga contiene informazioni sul mese
+                //    (NB: qui dovrai adattare la logica di estrazione al formato delle tue bollette)
+                String meseEstratto = estraiMese(lineText);
+                if (meseEstratto != null) {
+                    meseCorrente = meseEstratto;
+                    System.out.println("📅 Mese corrente: " + meseCorrente);
+                }
+
+                // 3) Identificare la categoria corrente
                 if (lineText.contains("SPESA PER LA MATERIA ENERGIA")) {
                     categoriaCorrente = "Materia Energia";
                     categorieGiaViste.add(categoriaCorrente);
-                    System.out.println("🔍 Categoria corrente: " + categoriaCorrente);
                     controlloAttivo = false;
                     righeSenzaEuro = 0;
                     continue;
@@ -346,8 +298,6 @@ public class FileService {
                 if (lineText.contains("SPESA PER ONERI DI SISTEMA")) {
                     categoriaCorrente = "Oneri di Sistema";
                     categorieGiaViste.add(categoriaCorrente);
-                    System.out.println("🔍 Categoria corrente: " + categoriaCorrente);
-
                     controlloAttivo = false;
                     righeSenzaEuro = 0;
                     continue;
@@ -355,8 +305,6 @@ public class FileService {
                 if (lineText.contains("SPESA PER IL TRASPORTO E LA GESTIONE DEL CONTATORE")) {
                     categoriaCorrente = "Trasporto e Gestione Contatore";
                     categorieGiaViste.add(categoriaCorrente);
-                    System.out.println("🔍 Categoria corrente: " + categoriaCorrente);
-
                     controlloAttivo = false;
                     righeSenzaEuro = 0;
                     continue;
@@ -364,67 +312,115 @@ public class FileService {
                 if (lineText.contains("TOTALE IMPOSTE")) {
                     categoriaCorrente = "Totale Imposte";
                     categorieGiaViste.add(categoriaCorrente);
-                    System.out.println("🔍 Categoria corrente: " + categoriaCorrente);
-
                     controlloAttivo = false;
                     righeSenzaEuro = 0;
                     continue;
                 }
 
-                // ✅ Se la categoria è attiva e troviamo un valore monetario (€), lo estraiamo
+                // 4) Se la categoria è attiva e troviamo un valore monetario (€), lo estraiamo
                 if (categoriaCorrente != null && lineText.contains("€")) {
                     Double valore = extractEuroValue(lineText);
-
                     if (valore != null) {
-                        // ✅ Assicura che il primo valore venga sommato correttamente
+                        // Assicura che il primo valore venga sommato correttamente
                         if (categorieGiaViste.contains(categoriaCorrente)) {
                             categorieGiaViste.remove(categoriaCorrente);
                             controlloAttivo = true;
-                            righeSenzaEuro = 0; // Reset del contatore
+                            righeSenzaEuro = 0;
                         }
 
-                        // ✅ Aggiunge il valore alla categoria
-                        speseNonSommarizzate.putIfAbsent(categoriaCorrente, new ArrayList<>());
-                        speseNonSommarizzate.get(categoriaCorrente).add(valore);
+                        // Se non è stato ancora impostato un mese, assegniamo un mese di default
+                        if (meseCorrente == null) {
+                            meseCorrente = "MeseSconosciuto";
+                        }
 
-                        controlloAttivo = true; // Attiva il reset solo dopo il primo valore
-                        righeSenzaEuro = 0; // Reset del contatore
+                        // Aggiunge il valore nella struttura (mese -> categoria -> valori)
+                        spesePerMese
+                                .computeIfAbsent(meseCorrente, k -> new HashMap<>())
+                                .computeIfAbsent(categoriaCorrente, k -> new ArrayList<>())
+                                .add(valore);
+
+                        controlloAttivo = true;
+                        righeSenzaEuro = 0;
                     }
                 } else if (controlloAttivo) {
-                    // ✅ Se abbiamo attivato il controllo e la riga non ha €, incrementiamo il contatore
+                    // Se abbiamo attivato il controllo e la riga non ha €, incrementiamo il contatore
                     righeSenzaEuro++;
 
-                    // ✅ Se sono passate 3 righe senza €, resettiamo la categoria SOLO se la riga non ha parole chiave
+                    // Se sono passate 10 righe senza €, resettiamo la categoria (no parse di nuove spese)
                     if (righeSenzaEuro >= 10 &&
                             !lineText.matches(".*(QUOTA|Componente|Corrispettivi|€/kWh|€/kW/mese|€/cliente/mese|QUOTA VARIABILE).*")) {
 
-                        System.out.println("🔄 Reset categoria corrente dopo 3 righe senza €");
+                        System.out.println("🔄 Reset categoria corrente dopo 10 righe senza €");
                         categoriaCorrente = null;
                         controlloAttivo = false;
                         righeSenzaEuro = 0;
                     }
                 } else {
-                    // ✅ Se troviamo un'altra riga con €, resettiamo il contatore per evitare reset prematuri
+                    // Se troviamo un'altra riga con €, resettiamo il contatore per evitare reset prematuri
                     righeSenzaEuro = 0;
                 }
             }
         }
 
-        // ✅ Processa e somma i dati estratti
-        return processSpese(speseNonSommarizzate);
+        // Una volta terminato il parsing, andiamo a processare e sommare i dati
+        return processSpesePerMese(spesePerMese);
     }
 
+    /**
+     * Metodo che, data la struttura dati con chiave (mese, categoria), somma i valori
+     * e produce una mappa (mese -> (categoria -> valore totale)).
+     */
+    private Map<String, Map<String, Double>> processSpesePerMese(
+            Map<String, Map<String, List<Double>>> spesePerMese) {
 
-    private Map<String, Double> processSpese(Map<String, List<Double>> speseNonSommarizzate) {
-        Map<String, Double> speseFinali = new HashMap<>();
+        Map<String, Map<String, Double>> speseFinali = new HashMap<>();
 
-        for (Map.Entry<String, List<Double>> entry : speseNonSommarizzate.entrySet()) {
-            String categoria = entry.getKey();
-            double somma = entry.getValue().stream().mapToDouble(Double::doubleValue).sum();
-            speseFinali.put(categoria, somma);
+        for (Map.Entry<String, Map<String, List<Double>>> entryMese : spesePerMese.entrySet()) {
+            String mese = entryMese.getKey();
+            Map<String, Double> categorieSomma = new HashMap<>();
+
+            for (Map.Entry<String, List<Double>> entryCat : entryMese.getValue().entrySet()) {
+                String categoria = entryCat.getKey();
+                double somma = entryCat.getValue().stream().mapToDouble(Double::doubleValue).sum();
+                categorieSomma.put(categoria, somma);
+            }
+
+            speseFinali.put(mese, categorieSomma);
         }
 
+        System.out.println("📊 Spese finali: " + speseFinali);
         return speseFinali;
+    }
+
+    /**
+     * Esempio di metodo per estrarre il mese da una riga del documento.
+     * Da adattare a seconda del formato effettivo (ad es. "Periodo di riferimento: 01/03/2023 - 31/03/2023").
+     */
+    private String estraiMese(String lineText) {
+        // Cerco il pattern "dd.MM.yyyy", ad es. "01.01.2024"
+        Pattern pattern = Pattern.compile("(\\d{2}\\.\\d{2}\\.\\d{4})");
+        Matcher matcher = pattern.matcher(lineText);
+
+        if (matcher.find()) {
+            // Prendo la prima data trovata: es. "01.01.2024"
+            String dataTrovata = matcher.group(1);
+
+            // Parso la stringa in LocalDate
+            LocalDate parsedDate = LocalDate.parse(dataTrovata,
+                    DateTimeFormatter.ofPattern("dd.MM.yyyy"));
+
+            // Ora costruisco la stringa che vuoi salvare.
+            // Esempio: "gennaio 2024" in italiano
+            String nomeMese = parsedDate.getMonth()
+                    .getDisplayName(TextStyle.FULL, Locale.ITALIAN);
+            //int anno = parsedDate.getYear();
+
+            // Ritorno "gennaio 2024"
+            return nomeMese;
+        }
+
+        // Se non trova nulla, ritorno null
+        return null;
     }
 
 

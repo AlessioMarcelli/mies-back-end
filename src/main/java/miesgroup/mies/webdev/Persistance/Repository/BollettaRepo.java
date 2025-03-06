@@ -207,4 +207,13 @@ public class BollettaRepo implements PanacheRepositoryBase<BollettaPod, Integer>
         update("SET totAttivaPerdite = ?1 WHERE nomeBolletta = ?2 AND mese = ?3", totAttivaPerdite, nomeBolletta, mese);
     }
 
+    public void updateQuoteTrasporto(Double quotaVariabileT, Double quotaFissaT, Double quotaPotenzaT, String nomeBolletta, String mese) {
+        update("SET quotaVariabileT = ?1, quotaFissaT = ?2, quotaPotenzaT = ?3 WHERE nomeBolletta = ?4 AND mese = ?5",
+                quotaVariabileT, quotaFissaT, quotaPotenzaT, nomeBolletta, mese);
+    }
+
+    public void updateQuoteOneri(Double quotaEnergiaOneri, Double quotaFissaOneri, Double quotaPotenzaOneri, String nomeBolletta, String mese) {
+        update("SET quotaEnergiaOneri = ?1, quotaFissaOneri = ?2, quotaPotenzaOneri = ?3 WHERE nomeBolletta = ?4 AND mese = ?5",
+                quotaEnergiaOneri, quotaFissaOneri, quotaPotenzaOneri, nomeBolletta, mese);
+    }
 }

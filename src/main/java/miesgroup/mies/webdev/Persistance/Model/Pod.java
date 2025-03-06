@@ -36,6 +36,9 @@ public class Pod extends PanacheEntityBase {
     @Column(name = "fornitore")
     private String fornitore;
 
+    @Column(name= "spread")
+    private Double spread;
+
     // GETTER e SETTER
 
     public String getId() {
@@ -108,5 +111,13 @@ public class Pod extends PanacheEntityBase {
 
     public void setFornitore(String fornitore) {
         this.fornitore = fornitore;
+    }
+
+    public Double getSpread() {
+        return spread;
+    }
+
+    public void setSpread(Double spread) {
+        this.spread = spread;
     }
 }

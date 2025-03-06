@@ -4,6 +4,7 @@ public class UpdatePodRequest {
     private String idPod;
     private String sede;
     private String nazione;
+    private Double spread;
 
     public String getIdPod() {
         return idPod;
@@ -27,5 +28,13 @@ public class UpdatePodRequest {
 
     public void setNazione(String nazione) {
         this.nazione = nazione;
+    }
+
+    public Double getSpread() {
+        return spread;
+    }
+
+    public void setSpread(Double spread) {
+        this.spread = spread;
     }
 }

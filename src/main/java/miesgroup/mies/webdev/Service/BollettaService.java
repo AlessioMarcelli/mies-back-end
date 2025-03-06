@@ -91,6 +91,8 @@ public class BollettaService {
             Double quotaPotenzaT = Optional.ofNullable(bollettaRepo.getCostiTrasporto(trimestre, rangePotenza, "€/KW/Month", b.getAnno()))
                     .orElse(0.0) * maggiorePotenza;
 
+            bollettaRepo.updateQuoteTrasporto(quotaVariabileT, quotaFissaT, quotaPotenzaT, b.getNomeBolletta(), b.getMese());
+
             double costiTrasporti = arrotonda((quotaVariabileT * totAttiva) + quotaFissaT + quotaPotenzaT);
             bollettaRepo.updateVerificaTrasportiA2A(costiTrasporti, b.getNomeBolletta(), b.getMese());
 
@@ -110,6 +112,8 @@ public class BollettaService {
                     .orElse(0.0);
             Double quotaPotenzaOneri = Optional.ofNullable(bollettaRepo.getCostiOneri(trimestre, rangePotenza, "€/KW/Month", classeAgevolazione, b.getAnno()))
                     .orElse(0.0) * maggiorePotenza;
+
+            bollettaRepo.updateQuoteOneri(quotaEnergiaOneri, quotaFissaOneri, quotaPotenzaOneri, b.getNomeBolletta(), b.getMese());
 
             Double costiOneri = arrotonda((quotaEnergiaOneri * totAttiva) + quotaFissaOneri + quotaPotenzaOneri);
             bollettaRepo.updateVerificaOneri(costiOneri, b.getNomeBolletta(), b.getMese());

@@ -55,12 +55,13 @@ public class FileRepo implements PanacheRepositoryBase<PDFFile, Integer> {
     @Transactional
     public void saveDataToDatabase(
             Map<String, Map<String, Map<String, Integer>>> lettureMese,
-            Map<String, Double> spese,
+            Map<String, Map<String, Double>> spese,
             String idPod,
             String nomeBolletta,
             Map<String, Map<String, Map<String, Double>>> piccoEFuoriPicco,
             Periodo periodo
     ) {
+
         for (Map.Entry<String, Map<String, Map<String, Integer>>> meseEntry : lettureMese.entrySet()) {
             String mese = meseEntry.getKey();
             Map<String, Map<String, Integer>> categorie = meseEntry.getValue();
@@ -87,10 +88,12 @@ public class FileRepo implements PanacheRepositoryBase<PDFFile, Integer> {
             Double costoFuoriPicco = fuoriPicco.getOrDefault("€", 0.0);
 
             // Extract expenses
-            Double spesaEnergia = spese.getOrDefault("Materia Energia", 0.0);
-            Double spesaTrasporto = spese.getOrDefault("Trasporto e Gestione Contatore", 0.0);
-            Double oneri = spese.getOrDefault("Oneri di Sistema", 0.0);
-            Double imposte = spese.getOrDefault("Totale Imposte", 0.0);
+            Map<String, Double> speseMese = spese.getOrDefault(mese, new HashMap<>());
+            System.out.println(speseMese);
+            Double spesaEnergia = speseMese.getOrDefault("Materia Energia", 0.0);
+            Double spesaTrasporto = speseMese.getOrDefault("Trasporto e Gestione Contatore", 0.0);
+            Double oneri = speseMese.getOrDefault("Oneri di Sistema", 0.0);
+            Double imposte = speseMese.getOrDefault("Totale Imposte", 0.0);
 
             // Calculate totals
             Double totAttiva = (f1Attiva + f2Attiva + f3Attiva);

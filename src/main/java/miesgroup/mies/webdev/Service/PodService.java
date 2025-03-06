@@ -2,12 +2,14 @@ package miesgroup.mies.webdev.Service;
 
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.transaction.Transactional;
+import jakarta.ws.rs.core.Response;
 import miesgroup.mies.webdev.Persistance.Model.Cliente;
 import miesgroup.mies.webdev.Persistance.Model.PDFFile;
 import miesgroup.mies.webdev.Persistance.Model.Pod;
 import miesgroup.mies.webdev.Persistance.Repository.ClienteRepo;
 import miesgroup.mies.webdev.Persistance.Repository.PodRepo;
 import miesgroup.mies.webdev.Persistance.Repository.SessionRepo;
+import miesgroup.mies.webdev.Rest.Exception.NotYourPodException;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 import org.w3c.dom.Node;
@@ -158,5 +160,25 @@ public class PodService {
     @Transactional
     public List<PDFFile> getBollette(List<Pod> elencoPod) {
         return podRepo.getBollette(elencoPod);
+    }
+
+    public void addSpread(String idPod, Double spread, int idSessione) {
+
+        int idUtente = sessionService.trovaUtentebBySessione(idSessione);
+        if (idUtente != podRepo.findById(idPod).getUtente().getId()) {
+            throw new NotYourPodException("Non puoi modificare il pod di un altro utente");
+        }
+
+        podRepo.aggiungiSpread(idPod, spread);
+    }
+
+    public void modificaSedeNazione(String idPod, String sede, String nazione, int idSessione) {
+
+        int idUtente = sessionService.trovaUtentebBySessione(idSessione);
+        if (idUtente != podRepo.findById(idPod).getUtente().getId()) {
+            throw new NotYourPodException("Non puoi modificare il pod di un altro utente");
+        }
+
+        podRepo.modificaSedeNazione(idPod, sede, nazione);
     }
 }

@@ -122,6 +122,24 @@ public class BollettaPod extends PanacheEntityBase {
     @Column(name = "tot_attiva_perdite")
     private Double totAttivaPerdite;
 
+    @Column(name = "quota_variabile_trasporti")
+    private Double quotaVariabileTrasporti;
+
+    @Column(name = "quota_fissa_trasporti")
+    private Double quotaFissaTrasporti;
+
+    @Column(name = "quota_potenza_trasporti")
+    private Double quotaPotenzaTrasporti;
+
+    @Column(name = "quota_energia_oneri")
+    private Double quotaEnergiaOneri;
+
+    @Column(name = "quota_fissa_oneri")
+    private Double quotaFissaOneri;
+
+    @Column(name = "quota_potenza_oneri")
+    private Double quotaPotenzaOneri;
+
     // GETTER e SETTER
 
     public Integer getId() {
@@ -418,5 +436,53 @@ public class BollettaPod extends PanacheEntityBase {
 
     public void setTotAttivaPerdite(Double totAttivaPerdite) {
         this.totAttivaPerdite = totAttivaPerdite;
+    }
+
+    public Double getQuotaVariabileTrasporti() {
+        return quotaVariabileTrasporti;
+    }
+
+    public void setQuotaVariabileTrasporti(Double quotaVariabileTrasporti) {
+        this.quotaVariabileTrasporti = quotaVariabileTrasporti;
+    }
+
+    public Double getQuotaFissaTrasporti() {
+        return quotaFissaTrasporti;
+    }
+
+    public void setQuotaFissaTrasporti(Double quotaFissaTrasporti) {
+        this.quotaFissaTrasporti = quotaFissaTrasporti;
+    }
+
+    public Double getQuotaPotenzaTrasporti() {
+        return quotaPotenzaTrasporti;
+    }
+
+    public void setQuotaPotenzaTrasporti(Double quotaPotenzaTrasporti) {
+        this.quotaPotenzaTrasporti = quotaPotenzaTrasporti;
+    }
+
+    public Double getQuotaEnergiaOneri() {
+        return quotaEnergiaOneri;
+    }
+
+    public void setQuotaEnergiaOneri(Double quotaEnergiaOneri) {
+        this.quotaEnergiaOneri = quotaEnergiaOneri;
+    }
+
+    public Double getQuotaFissaOneri() {
+        return quotaFissaOneri;
+    }
+
+    public void setQuotaFissaOneri(Double quotaFissaOneri) {
+        this.quotaFissaOneri = quotaFissaOneri;
+    }
+
+    public Double getQuotaPotenzaOneri() {
+        return quotaPotenzaOneri;
+    }
+
+    public void setQuotaPotenzaOneri(Double quotaPotenzaOneri) {
+        this.quotaPotenzaOneri = quotaPotenzaOneri;
     }
 }
