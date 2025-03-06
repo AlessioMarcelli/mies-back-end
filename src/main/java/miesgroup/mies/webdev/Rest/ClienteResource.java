@@ -326,6 +326,7 @@ public class ClienteResource {
                     .build();
         }
     }
+
     @Path("/sendWeeklyEmail")
     @POST
     @Produces(MediaType.TEXT_PLAIN)

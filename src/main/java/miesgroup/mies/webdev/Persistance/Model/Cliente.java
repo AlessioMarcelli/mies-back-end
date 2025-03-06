@@ -3,8 +3,6 @@ package miesgroup.mies.webdev.Persistance.Model;
 import io.quarkus.hibernate.orm.panache.PanacheEntityBase;
 import jakarta.persistence.*;
 
-import java.util.Objects;
-
 
 @Entity
 @Table(name = "utente")
@@ -58,7 +56,7 @@ public class Cliente extends PanacheEntityBase {
     private Float fatturatoAnnuo;
 
     @Column(name = "checkEmail")
-    private boolean checkEmail;
+    private Boolean checkEmail;
 
     public Cliente() {
     }
@@ -152,12 +150,20 @@ public class Cliente extends PanacheEntityBase {
         this.codiceAteco = codiceAteco;
     }
 
-    public Boolean isEnergivori() {
+    public Boolean getEnergivori() {
         return energivori;
     }
 
-    public boolean isCheckEmail() {
+    public void setId(Integer id) {
+        this.id = id;
+    }
+
+    public Boolean getCheckEmail() {
         return checkEmail;
+    }
+
+    public void setCheckEmail(Boolean checkEmail) {
+        this.checkEmail = checkEmail;
     }
 
     public void setCheckEmail(boolean checkEmail) {

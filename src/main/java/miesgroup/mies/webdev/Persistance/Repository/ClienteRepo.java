@@ -121,8 +121,9 @@ public class ClienteRepo implements PanacheRepositoryBase<Cliente, Integer> {
             default:
                 return false; // Campo non valido
         }
-        return rowsAffected > 0; // Ritorna true se almeno una riga è stata aggiornata
+        return true;
     }
+
     public boolean checkEmailStatus(int idUtente, boolean checkEmail) {
         String checkQuery = "SELECT checkEmail FROM utente WHERE Id_Utente = ?";
         String updateQuery = "UPDATE utente SET checkEmail = ? WHERE Id_Utente = ?";
@@ -154,6 +155,7 @@ public class ClienteRepo implements PanacheRepositoryBase<Cliente, Integer> {
         }
         return false; // Operazione fallita
     }
+
     public Boolean getCheckEmailStatus(int idUtente) {
         String query = "SELECT checkEmail FROM utente WHERE Id_Utente = ?";
 
@@ -174,51 +176,51 @@ public class ClienteRepo implements PanacheRepositoryBase<Cliente, Integer> {
 
     public Map<String, Boolean> checkUserAlert(int idUtente, String futuresType) {
         String baseQuery = """
-        SELECT 
-            'MonthlyAlert' AS table_name, EXISTS (
-                SELECT 1 FROM MonthlyAlert WHERE Id_Utente = ? LIMIT 1
-            ) AS has_record
-        UNION ALL
-        SELECT 
-            'QuarterlyAlert' AS table_name, EXISTS (
-                SELECT 1 FROM QuarterlyAlert WHERE Id_Utente = ? LIMIT 1
-            ) AS has_record
-        UNION ALL
-        SELECT 
-            'YearlyAlert' AS table_name, EXISTS (
-                SELECT 1 FROM YearlyAlert WHERE Id_Utente = ? LIMIT 1
-            ) AS has_record;
-    """;
+                    SELECT 
+                        'MonthlyAlert' AS table_name, EXISTS (
+                            SELECT 1 FROM MonthlyAlert WHERE Id_Utente = ? LIMIT 1
+                        ) AS has_record
+                    UNION ALL
+                    SELECT 
+                        'QuarterlyAlert' AS table_name, EXISTS (
+                            SELECT 1 FROM QuarterlyAlert WHERE Id_Utente = ? LIMIT 1
+                        ) AS has_record
+                    UNION ALL
+                    SELECT 
+                        'YearlyAlert' AS table_name, EXISTS (
+                            SELECT 1 FROM YearlyAlert WHERE Id_Utente = ? LIMIT 1
+                        ) AS has_record;
+                """;
 
         Map<String, Boolean> resultMap = new HashMap<>();
 
         // Filtra la query in base al valore di futuresType
         String query = switch (futuresType) {
             case "Yearly" -> """
-            SELECT 
-                'YearlyAlert' AS table_name, EXISTS (
-                    SELECT 1 FROM YearlyAlert WHERE Id_Utente = ? LIMIT 1
-                ) AS has_record;
-        """;
+                        SELECT 
+                            'YearlyAlert' AS table_name, EXISTS (
+                                SELECT 1 FROM YearlyAlert WHERE Id_Utente = ? LIMIT 1
+                            ) AS has_record;
+                    """;
             case "Quarterly" -> """
-            SELECT 
-                'QuarterlyAlert' AS table_name, EXISTS (
-                    SELECT 1 FROM QuarterlyAlert WHERE Id_Utente = ? LIMIT 1
-                ) AS has_record;
-        """;
+                        SELECT 
+                            'QuarterlyAlert' AS table_name, EXISTS (
+                                SELECT 1 FROM QuarterlyAlert WHERE Id_Utente = ? LIMIT 1
+                            ) AS has_record;
+                    """;
             case "Monthly" -> """
-            SELECT 
-                'MonthlyAlert' AS table_name, EXISTS (
-                    SELECT 1 FROM MonthlyAlert WHERE Id_Utente = ? LIMIT 1
-                ) AS has_record;
-        """;
+                        SELECT 
+                            'MonthlyAlert' AS table_name, EXISTS (
+                                SELECT 1 FROM MonthlyAlert WHERE Id_Utente = ? LIMIT 1
+                            ) AS has_record;
+                    """;
             case "All" -> baseQuery; // Esegue il controllo su tutte le tabelle
             case "General" -> """
-            SELECT 
-                'GeneralAlert' AS table_name, EXISTS (
-                    SELECT 1 FROM GeneralAlert WHERE Id_Utente = ? LIMIT 1
-                )  AS has_record;
-        """;
+                        SELECT 
+                            'GeneralAlert' AS table_name, EXISTS (
+                                SELECT 1 FROM GeneralAlert WHERE Id_Utente = ? LIMIT 1
+                            )  AS has_record;
+                    """;
             default -> throw new IllegalArgumentException("Tipo di futures non valido: " + futuresType);
         };
 
@@ -322,7 +324,7 @@ public class ClienteRepo implements PanacheRepositoryBase<Cliente, Integer> {
 
         try (Connection connection = dataSource.getConnection()) {
 
-            if ("All".equals(futuresType)){
+            if ("All".equals(futuresType)) {
                 // Se il futuresType è "All", dobbiamo controllare tutte le tabelle
                 boolean monthlyExists = alertExistence.get("MonthlyAlert");
                 boolean quarterlyExists = alertExistence.get("QuarterlyAlert");
@@ -447,36 +449,36 @@ public class ClienteRepo implements PanacheRepositoryBase<Cliente, Integer> {
         System.out.println("Id_Utente: " + idUtente);
 
         String generalAlertQuery = """
-        SELECT 
-            'GeneralAlert' AS table_name, 
-            EXISTS (
-                SELECT 1 FROM GeneralAlert WHERE Id_Utente = ? LIMIT 1
-            ) AS has_record;
-    """;
+                    SELECT 
+                        'GeneralAlert' AS table_name, 
+                        EXISTS (
+                            SELECT 1 FROM GeneralAlert WHERE Id_Utente = ? LIMIT 1
+                        ) AS has_record;
+                """;
 
         String monthlyAlertQuery = """
-        SELECT 
-            'MonthlyAlert' AS table_name, 
-            EXISTS (
-                SELECT 1 FROM MonthlyAlert WHERE Id_Utente = ? LIMIT 1
-            ) AS has_record;
-    """;
+                    SELECT 
+                        'MonthlyAlert' AS table_name, 
+                        EXISTS (
+                            SELECT 1 FROM MonthlyAlert WHERE Id_Utente = ? LIMIT 1
+                        ) AS has_record;
+                """;
 
         String quarterlyAlertQuery = """
-        SELECT 
-            'QuarterlyAlert' AS table_name, 
-            EXISTS (
-                SELECT 1 FROM QuarterlyAlert WHERE Id_Utente = ? LIMIT 1
-            ) AS has_record;
-    """;
+                    SELECT 
+                        'QuarterlyAlert' AS table_name, 
+                        EXISTS (
+                            SELECT 1 FROM QuarterlyAlert WHERE Id_Utente = ? LIMIT 1
+                        ) AS has_record;
+                """;
 
         String yearlyAlertQuery = """
-        SELECT 
-            'YearlyAlert' AS table_name, 
-            EXISTS (
-                SELECT 1 FROM YearlyAlert WHERE Id_Utente = ? LIMIT 1
-            ) AS has_record;
-    """;
+                    SELECT 
+                        'YearlyAlert' AS table_name, 
+                        EXISTS (
+                            SELECT 1 FROM YearlyAlert WHERE Id_Utente = ? LIMIT 1
+                        ) AS has_record;
+                """;
 
         try (Connection connection = dataSource.getConnection()) {
             System.out.println("Database connection established.");
@@ -592,15 +594,14 @@ public class ClienteRepo implements PanacheRepositoryBase<Cliente, Integer> {
     }
 
 
-
     public List<Cliente> getClientsCheckEmail() {
         System.out.println("Starting method: getClientsWithCheckEmail");
 
         String query = """
-            SELECT Username, Email, Id_Utente
-            FROM utente
-            WHERE checkEmail = 1
-        """;
+                    SELECT Username, Email, Id_Utente
+                    FROM utente
+                    WHERE checkEmail = 1
+                """;
 
         List<Cliente> clients = new ArrayList<>();
 
