@@ -57,6 +57,8 @@ public class Cliente extends PanacheEntityBase {
     @Column(name = "fatturato_annuo")
     private Float fatturatoAnnuo;
 
+    @Column(name = "checkEmail")
+    private boolean checkEmail;
 
     public Cliente() {
     }
@@ -152,6 +154,14 @@ public class Cliente extends PanacheEntityBase {
 
     public Boolean isEnergivori() {
         return energivori;
+    }
+
+    public boolean isCheckEmail() {
+        return checkEmail;
+    }
+
+    public void setCheckEmail(boolean checkEmail) {
+        this.checkEmail = checkEmail;
     }
 
     public void setEnergivori(Boolean energivori) {

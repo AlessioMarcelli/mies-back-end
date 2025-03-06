@@ -4,6 +4,7 @@ import jakarta.inject.Inject;
 import jakarta.ws.rs.*;
 import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
+import miesgroup.mies.webdev.Persistance.Model.Future;
 import miesgroup.mies.webdev.Rest.Model.Futures;
 import miesgroup.mies.webdev.Persistance.Repository.FuturesRepo;  // Aggiungi il repository per il DB
 import miesgroup.mies.webdev.Service.FuturesService;
@@ -30,7 +31,7 @@ public class FuturesResource {
             @QueryParam("type") String type) {    // Tipo di future: "year", "quarter" o "month"
 
         // Chiamata al servizio che interroga il database in base ai parametri
-        List<Futures> futuresList = futuresService.getFutures(date, type);
+        List<Future> futuresList = futuresService.getFutures(date, type);
 
         if (futuresList.isEmpty()) {
             return Response.status(Response.Status.NOT_FOUND).entity("Dati non trovati per la selezione fornita.").build();
@@ -47,7 +48,7 @@ public class FuturesResource {
             @QueryParam("type") String type) {    // Tipo di future: "year", "quarter" o "month"
 
         // Chiamata al servizio che interroga il database in base ai parametri
-        List<Futures> futuresList = futuresService.getFuturesYear(date, type);
+        List<Future> futuresList = futuresService.getFuturesYear(date);
 
         if (futuresList.isEmpty()) {
             return Response.status(Response.Status.NOT_FOUND).entity("Dati non trovati per la selezione fornita.").build();
@@ -64,7 +65,7 @@ public class FuturesResource {
             @QueryParam("type") String type) {    // Tipo di future: "year", "quarter" o "month"
 
         // Chiamata al servizio che interroga il database in base ai parametri
-        List<Futures> futuresList = futuresService.getFuturesQuarter(date, type);
+        List<Future> futuresList = futuresService.getFuturesQuarter(date);
 
         if (futuresList.isEmpty()) {
             return Response.status(Response.Status.NOT_FOUND).entity("Dati non trovati per la selezione fornita.").build();
@@ -81,7 +82,7 @@ public class FuturesResource {
             @QueryParam("type") String type) {    // Tipo di future: "year", "quarter" o "month"
 
         // Chiamata al servizio che interroga il database in base ai parametri
-        List<Futures> futuresList = futuresService.getFuturesYear(date, type);
+        List<Future> futuresList = futuresService.getFuturesYear(date);
 
         if (futuresList.isEmpty()) {
             return Response.status(Response.Status.NOT_FOUND).entity("Dati non trovati per la selezione fornita.").build();
