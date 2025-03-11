@@ -1,11 +1,10 @@
-package miesgroup.mies.webdev.Persistance.Repository;
+package miesgroup.mies.webdev.Repository;
 
 import io.quarkus.hibernate.orm.panache.PanacheRepositoryBase;
 import jakarta.enterprise.context.ApplicationScoped;
-import miesgroup.mies.webdev.Persistance.Model.AlertData;
-import miesgroup.mies.webdev.Persistance.Model.Cliente;
-import miesgroup.mies.webdev.Rest.Model.Futures;
-import miesgroup.mies.webdev.Persistance.Model.Pod;
+import miesgroup.mies.webdev.Model.AlertData;
+import miesgroup.mies.webdev.Model.Cliente;
+import miesgroup.mies.webdev.Model.Pod;
 import miesgroup.mies.webdev.Service.LoggerService;
 
 import javax.sql.DataSource;

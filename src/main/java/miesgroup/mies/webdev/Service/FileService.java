@@ -2,11 +2,14 @@ package miesgroup.mies.webdev.Service;//package miesgroup.mies.webdev.Service;
 
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.transaction.Transactional;
-import miesgroup.mies.webdev.Persistance.Model.BollettaPod;
-import miesgroup.mies.webdev.Persistance.Model.PDFFile;
-import miesgroup.mies.webdev.Persistance.Model.Periodo;
-import miesgroup.mies.webdev.Persistance.Repository.BollettaRepo;
-import miesgroup.mies.webdev.Persistance.Repository.FileRepo;
+import miesgroup.mies.webdev.Model.BollettaPod;
+import miesgroup.mies.webdev.Model.PDFFile;
+import miesgroup.mies.webdev.Model.Periodo;
+import miesgroup.mies.webdev.Model.Pod;
+import miesgroup.mies.webdev.Repository.BollettaRepo;
+import miesgroup.mies.webdev.Repository.ClienteRepo;
+import miesgroup.mies.webdev.Repository.FileRepo;
+import miesgroup.mies.webdev.Repository.PodRepo;
 import org.apache.pdfbox.pdmodel.PDDocument;
 import org.apache.pdfbox.text.PDFTextStripper;
 
@@ -16,7 +19,6 @@ import javax.xml.parsers.ParserConfigurationException;
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.time.LocalDate;
-import java.time.YearMonth;
 import java.time.format.DateTimeFormatter;
 import java.time.format.TextStyle;
 import java.util.*;
@@ -49,12 +51,16 @@ public class FileService {
     private final BollettaRepo bollettaRepo;
     private final BollettaService bollettaService;
     private final SessionService sessionService;
+    private final PodRepo podRepo;
+    private final ClienteRepo clienteRepo;
 
-    public FileService(FileRepo fileRepo, BollettaRepo bollettaRepo, BollettaService bollettaService, SessionService sessionService) {
+    public FileService(FileRepo fileRepo, BollettaRepo bollettaRepo, BollettaService bollettaService, SessionService sessionService, PodRepo podRepo, ClienteRepo clienteRepo) {
         this.fileRepo = fileRepo;
         this.bollettaRepo = bollettaRepo;
         this.bollettaService = bollettaService;
         this.sessionService = sessionService;
+        this.podRepo = podRepo;
+        this.clienteRepo = clienteRepo;
     }
 
     @Transactional
@@ -130,7 +136,6 @@ public class FileService {
             Periodo periodo = extractPeriodo(document);
 
             if (lettureMese.isEmpty()) {
-                System.err.println("Nessuna lettura valida trovata.");
                 return null;
             }
 
@@ -146,7 +151,7 @@ public class FileService {
 
 
     @Transactional
-    public void verificaA2A(String nomeB) throws SQLException {
+    public void verificaA2APiuMesi(String nomeB) throws SQLException {
         List<BollettaPod> b = bollettaRepo.find("nomeBolletta", nomeB).list();
         for (BollettaPod bollettaPod : b) {
             bollettaService.A2AVerifica(bollettaPod);
@@ -275,7 +280,6 @@ public class FileService {
 
                 // 1) Interrompe il parsing se trova un titolo che indica fine sezione
                 if (stopParsingKeywords.stream().anyMatch(lineText::contains)) {
-                    System.out.println("🚨 Interruzione del parsing: trovata riga '" + lineText + "'");
                     break;
                 }
 
@@ -284,7 +288,7 @@ public class FileService {
                 String meseEstratto = estraiMese(lineText);
                 if (meseEstratto != null) {
                     meseCorrente = meseEstratto;
-                    System.out.println("📅 Mese corrente: " + meseCorrente);
+
                 }
 
                 // 3) Identificare la categoria corrente
@@ -350,7 +354,6 @@ public class FileService {
                     if (righeSenzaEuro >= 10 &&
                             !lineText.matches(".*(QUOTA|Componente|Corrispettivi|€/kWh|€/kW/mese|€/cliente/mese|QUOTA VARIABILE).*")) {
 
-                        System.out.println("🔄 Reset categoria corrente dopo 10 righe senza €");
                         categoriaCorrente = null;
                         controlloAttivo = false;
                         righeSenzaEuro = 0;
@@ -388,7 +391,6 @@ public class FileService {
             speseFinali.put(mese, categorieSomma);
         }
 
-        System.out.println("📊 Spese finali: " + speseFinali);
         return speseFinali;
     }
 
@@ -602,5 +604,177 @@ public class FileService {
     @Transactional
     public byte[] getXmlData(int id) {
         return fileRepo.getFile(id);
+    }
+
+    public List<BollettaPod> getDati(int idSessione) {
+        Pod p = podRepo.find("utente", clienteRepo.findById(sessionService.trovaUtentebBySessione(idSessione))).firstResult();
+        return bollettaRepo.find("idPod", p.getId()).list();
+    }
+
+    @Transactional
+    public void verificaA2APostRicalcoli(BollettaPod bolletta) {
+        bollettaService.A2AVerifica(bolletta);
+    }
+
+
+    @Transactional
+    public void controlloRicalcoliInBolletta(byte[] xmlData, String idPod, String nomeB, Integer idSessione) {
+        try {
+            DocumentBuilderFactory factory = DocumentBuilderFactory.newInstance();
+            DocumentBuilder builder = factory.newDocumentBuilder();
+            Document document = builder.parse(new ByteArrayInputStream(xmlData));
+
+            Map<String, Map<String, Double>> ricalcoliPerMese = extractRicalcoliPerMese(document);
+            Periodo periodo = extractPeriodo(document);
+
+            if (ricalcoliPerMese.isEmpty()) {
+                return;
+            }
+
+            // Recupera l'anno di riferimento dal periodo
+            String annoRicalcolo = periodo.getAnno();  // Es. "2023"
+
+            // Recupera le bollette esistenti per la sessione attuale
+            List<BollettaPod> bolletteEsistenti = getDati(idSessione);
+
+            // Itera sui ricalcoli trovati
+            for (Map.Entry<String, Map<String, Double>> entry : ricalcoliPerMese.entrySet()) {
+                String meseRicalcolo = entry.getKey();  // Es: "giugno"
+                Map<String, Double> valoriRicalcolati = entry.getValue();
+
+                // Trova una bolletta esistente per lo stesso mese e anno
+                Optional<BollettaPod> bollettaEsistenteOpt = bolletteEsistenti.stream()
+                        .filter(b -> b.getMese().equalsIgnoreCase(meseRicalcolo) &&
+                                b.getAnno().equals(annoRicalcolo) &&
+                                b.getIdPod().equals(idPod))
+                        .findFirst();
+
+                if (bollettaEsistenteOpt.isPresent()) {
+                    // Se la bolletta esiste, aggiorniamo i suoi valori
+                    BollettaPod bollettaEsistente = bollettaEsistenteOpt.get();
+                    aggiornaBollettaConRicalcoli(bollettaEsistente, valoriRicalcolati);
+                    bollettaRepo.updateBolletta(bollettaEsistente);
+                    verificaA2APostRicalcoli(bollettaEsistente);
+                } else {
+                    // Se la bolletta non esiste, salviamo i ricalcoli come nuova voce
+                    bollettaRepo.saveRicalcoliToDatabase(ricalcoliPerMese, idPod, nomeB, periodo);
+                }
+            }
+        } catch (ParserConfigurationException | IOException | SAXException e) {
+            e.printStackTrace();
+        }
+    }
+
+
+    private void aggiornaBollettaConRicalcoli(BollettaPod bolletta, Map<String, Double> valoriRicalcolati) {
+        if (valoriRicalcolati.containsKey("Ricalcolo Materia Energia")) {
+            bolletta.setSpeseEnergia(valoriRicalcolati.get("Ricalcolo Materia Energia"));
+        }
+        if (valoriRicalcolati.containsKey("Ricalcolo Trasporto e Gestione Contatore")) {
+            bolletta.setTrasporti(valoriRicalcolati.get("Ricalcolo Trasporto e Gestione Contatore"));
+        }
+        if (valoriRicalcolati.containsKey("Ricalcolo Oneri di Sistema")) {
+            bolletta.setOneri(valoriRicalcolati.get("Ricalcolo Oneri di Sistema"));
+        }
+        if (valoriRicalcolati.containsKey("Ricalcolo Imposte")) {
+            bolletta.setImposte(valoriRicalcolati.get("Ricalcolo Imposte"));
+        }
+    }
+
+
+    private Map<String, Map<String, Double>> extractRicalcoliPerMese(Document document) {
+        // Struttura dati intermedia: mese -> (categoria -> lista di valori)
+        Map<String, Map<String, List<Double>>> ricalcoliPerMese = new HashMap<>();
+
+        String categoriaCorrente = null;
+        String meseCorrente = null; // Campo per il mese/periodo in parsing
+        boolean controlloAttivo = false;
+        int righeSenzaEuro = 0;
+
+        // Parola chiave per interrompere definitivamente il parsing
+        String stopParsingKeyword = "TOTALE FORNITURA ENERGIA ELETTRICA E IMPOSTE";
+
+        NodeList lineNodes = document.getElementsByTagName("Line");
+        for (int i = 0; i < lineNodes.getLength(); i++) {
+            Node lineNode = lineNodes.item(i);
+            if (lineNode.getNodeType() == Node.ELEMENT_NODE) {
+                String lineText = lineNode.getTextContent().trim();
+
+                // 1) Interrompe il parsing definitivamente se trova la parola chiave
+                if (lineText.contains(stopParsingKeyword)) {
+                    break;
+                }
+
+                // 2) Controlla se la riga contiene informazioni sul mese
+                String meseEstratto = estraiMese(lineText);
+                if (meseEstratto != null) {
+                    meseCorrente = meseEstratto;
+                }
+
+                // 3) Identificare la categoria corrente (RICALCOLI)
+                if (lineText.contains("RICALCOLO PER RETTIFICA SPESA PER LA MATERIA ENERGIA")) {
+                    categoriaCorrente = "Ricalcolo Materia Energia";
+                    controlloAttivo = false;
+                    righeSenzaEuro = 0;
+                    continue;
+                }
+                if (lineText.contains("RICALCOLO PER RETTIFICA SPESA PER IL TRASPORTO E LA GESTIONE")) {
+                    categoriaCorrente = "Ricalcolo Trasporto e Gestione Contatore";
+                    controlloAttivo = false;
+                    righeSenzaEuro = 0;
+                    continue;
+                }
+                if (lineText.contains("RICALCOLO PER RETTIFICA SPESA PER ONERI DI SISTEMA")) {
+                    categoriaCorrente = "Ricalcolo Oneri di Sistema";
+                    controlloAttivo = false;
+                    righeSenzaEuro = 0;
+                    continue;
+                }
+                if (lineText.contains("RICALCOLO PER RETTIFICA IMPOSTE")) {
+                    categoriaCorrente = "Ricalcolo Imposte";
+                    controlloAttivo = false;
+                    righeSenzaEuro = 0;
+                    continue;
+                }
+
+                // 4) Se la categoria è attiva e troviamo un valore monetario (€), lo estraiamo
+                if (categoriaCorrente != null && lineText.contains("€")) {
+                    Double valore = extractEuroValue(lineText);
+                    if (valore != null) {
+                        // Se non è stato ancora impostato un mese, assegniamo un valore di default
+                        if (meseCorrente == null) {
+                            meseCorrente = "MeseSconosciuto";
+                        }
+
+                        // Aggiunge il valore nella struttura (mese -> categoria -> valori)
+                        ricalcoliPerMese
+                                .computeIfAbsent(meseCorrente, k -> new HashMap<>())
+                                .computeIfAbsent(categoriaCorrente, k -> new ArrayList<>())
+                                .add(valore);
+
+                        controlloAttivo = true;
+                        righeSenzaEuro = 0;
+                    }
+                } else if (controlloAttivo) {
+                    // Se abbiamo attivato il controllo e la riga non ha €, incrementiamo il contatore
+                    righeSenzaEuro++;
+
+                    // Se sono passate troppe righe senza €, resettiamo la categoria
+                    if (righeSenzaEuro >= 10 &&
+                            !lineText.matches(".*(QUOTA|Componente|Corrispettivi|€/kWh|€/kW/mese|€/cliente/mese|QUOTA VARIABILE).*")) {
+
+                        categoriaCorrente = null;
+                        controlloAttivo = false;
+                        righeSenzaEuro = 0;
+                    }
+                } else {
+                    // Se troviamo un'altra riga con €, resettiamo il contatore per evitare reset prematuri
+                    righeSenzaEuro = 0;
+                }
+            }
+        }
+
+        // Una volta terminato il parsing, andiamo a processare e sommare i dati
+        return processSpesePerMese(ricalcoliPerMese);
     }
 }

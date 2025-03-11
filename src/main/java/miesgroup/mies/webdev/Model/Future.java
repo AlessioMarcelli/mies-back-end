@@ -1,4 +1,4 @@
-package miesgroup.mies.webdev.Persistance.Model;
+package miesgroup.mies.webdev.Model;
 
 import java.time.LocalDate;
 

@@ -4,10 +4,10 @@ import jakarta.ws.rs.*;
 import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.NewCookie;
 import jakarta.ws.rs.core.Response;
-import miesgroup.mies.webdev.Persistance.Model.Cliente;
-import miesgroup.mies.webdev.Persistance.Model.Sessione;
-import miesgroup.mies.webdev.Persistance.Repository.ClienteRepo;
-import miesgroup.mies.webdev.Persistance.Repository.SessionRepo;
+import miesgroup.mies.webdev.Model.Cliente;
+import miesgroup.mies.webdev.Model.Sessione;
+import miesgroup.mies.webdev.Repository.ClienteRepo;
+import miesgroup.mies.webdev.Repository.SessionRepo;
 import miesgroup.mies.webdev.Rest.Model.ClienteResponse;
 import miesgroup.mies.webdev.Rest.Model.LoginRequest;
 import miesgroup.mies.webdev.Service.AutenticationService;
@@ -76,6 +76,9 @@ public class AutenticationResource {
             NewCookie newSessionCookie = new NewCookie.Builder("SESSION_COOKIE")
                     .value(String.valueOf(sessione))
                     .path("/")
+                    .sameSite(NewCookie.SameSite.LAX)
+                    .secure(false)
+                    .httpOnly(true)
                     .build();
 
             return Response.ok()

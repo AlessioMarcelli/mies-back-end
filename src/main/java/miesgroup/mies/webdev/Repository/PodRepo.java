@@ -1,10 +1,10 @@
-package miesgroup.mies.webdev.Persistance.Repository;
+package miesgroup.mies.webdev.Repository;
 
 import io.quarkus.hibernate.orm.panache.PanacheRepositoryBase;
 import jakarta.enterprise.context.ApplicationScoped;
-import miesgroup.mies.webdev.Persistance.Model.Cliente;
-import miesgroup.mies.webdev.Persistance.Model.PDFFile;
-import miesgroup.mies.webdev.Persistance.Model.Pod;
+import miesgroup.mies.webdev.Model.Cliente;
+import miesgroup.mies.webdev.Model.PDFFile;
+import miesgroup.mies.webdev.Model.Pod;
 import miesgroup.mies.webdev.Rest.Exception.PodNotFound;
 
 import javax.sql.DataSource;
@@ -26,8 +26,7 @@ public class PodRepo implements PanacheRepositoryBase<Pod, String> {
 
     public List<Pod> findAll(int id_utente) {
         Cliente c = clienteRepo.findById(id_utente);
-        List<Pod> elenco = listAll();
-        return elenco;
+        return list("utente", c);
     }
 
 

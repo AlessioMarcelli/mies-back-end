@@ -1,8 +1,8 @@
-package miesgroup.mies.webdev.Persistance.Repository;
+package miesgroup.mies.webdev.Repository;
 
 import io.quarkus.hibernate.orm.panache.PanacheRepositoryBase;
 import jakarta.enterprise.context.ApplicationScoped;
-import miesgroup.mies.webdev.Persistance.Model.Fixing;
+import miesgroup.mies.webdev.Model.Fixing;
 
 import java.util.List;
 

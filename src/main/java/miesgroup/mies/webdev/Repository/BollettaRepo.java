@@ -1,13 +1,15 @@
-package miesgroup.mies.webdev.Persistance.Repository;
+package miesgroup.mies.webdev.Repository;
 
 
 import io.quarkus.hibernate.orm.panache.PanacheRepositoryBase;
 import jakarta.enterprise.context.ApplicationScoped;
-import miesgroup.mies.webdev.Persistance.Model.BollettaPod;
-import miesgroup.mies.webdev.Persistance.Model.Costi;
-import miesgroup.mies.webdev.Persistance.Model.Pod;
+import miesgroup.mies.webdev.Model.BollettaPod;
+import miesgroup.mies.webdev.Model.Costi;
+import miesgroup.mies.webdev.Model.Periodo;
+import miesgroup.mies.webdev.Model.Pod;
 
 import java.util.List;
+import java.util.Map;
 
 @ApplicationScoped
 public class BollettaRepo implements PanacheRepositoryBase<BollettaPod, Integer> {
@@ -208,7 +210,7 @@ public class BollettaRepo implements PanacheRepositoryBase<BollettaPod, Integer>
     }
 
     public void updateQuoteTrasporto(Double quotaVariabileT, Double quotaFissaT, Double quotaPotenzaT, String nomeBolletta, String mese) {
-        update("SET quotaVariabileT = ?1, quotaFissaT = ?2, quotaPotenzaT = ?3 WHERE nomeBolletta = ?4 AND mese = ?5",
+        update("SET quotaVariabileTrasporti = ?1, quotaFissaTrasporti = ?2, quotaPotenzaTrasporti = ?3 WHERE nomeBolletta = ?4 AND mese = ?5",
                 quotaVariabileT, quotaFissaT, quotaPotenzaT, nomeBolletta, mese);
     }
 
@@ -216,4 +218,61 @@ public class BollettaRepo implements PanacheRepositoryBase<BollettaPod, Integer>
         update("SET quotaEnergiaOneri = ?1, quotaFissaOneri = ?2, quotaPotenzaOneri = ?3 WHERE nomeBolletta = ?4 AND mese = ?5",
                 quotaEnergiaOneri, quotaFissaOneri, quotaPotenzaOneri, nomeBolletta, mese);
     }
+
+    public void updateBolletta(BollettaPod bollettaEsistente) {
+        update("speseEnergia = ?1, trasport = ?2, oneri = ?3, imposte = ?4 " +
+                        "WHERE nomeBolletta = ?5 AND mese = ?6 AND anno = ?7",
+                bollettaEsistente.getSpeseEnergia(),
+                bollettaEsistente.getTrasporti(),
+                bollettaEsistente.getOneri(),
+                bollettaEsistente.getImposte(),
+                bollettaEsistente.getNomeBolletta(),
+                bollettaEsistente.getMese(),
+                bollettaEsistente.getAnno());
+    }
+
+    public void saveRicalcoliToDatabase(Map<String, Map<String, Double>> ricalcoliPerMese, String idPod, String nomeB, Periodo periodo) {
+        for (Map.Entry<String, Map<String, Double>> entry : ricalcoliPerMese.entrySet()) {
+            String mese = entry.getKey();
+            Map<String, Double> ricalcoli = entry.getValue();
+            BollettaPod bolletta = new BollettaPod();
+
+            bolletta.setNomeBolletta(nomeB);
+            bolletta.setMese(mese);
+            bolletta.setAnno(periodo.getAnno());
+            bolletta.setIdPod(idPod);
+
+            // Impostazione diretta con controllo null
+            bolletta.setF1P(ricalcoli.get("f1") != null ? ricalcoli.get("f1") : 0.0);
+            bolletta.setF2P(ricalcoli.get("f2") != null ? ricalcoli.get("f2") : 0.0);
+            bolletta.setF3P(ricalcoli.get("f3") != null ? ricalcoli.get("f3") : 0.0);
+            bolletta.setTotAttiva(ricalcoli.get("totAttiva") != null ? ricalcoli.get("totAttiva") : 0.0);
+            bolletta.setTotReattiva(ricalcoli.get("totReattiva") != null ? ricalcoli.get("totReattiva") : 0.0);
+            bolletta.setPiccoKwh(ricalcoli.get("piccoKwh") != null ? ricalcoli.get("piccoKwh") : 0.0);
+            bolletta.setFuoriPiccoKwh(ricalcoli.get("fuoriPiccoKwh") != null ? ricalcoli.get("fuoriPiccoKwh") : 0.0);
+            bolletta.setSpeseEnergia(ricalcoli.get("speseEnergia") != null ? ricalcoli.get("speseEnergia") : 0.0);
+            bolletta.setTrasporti(ricalcoli.get("trasporti") != null ? ricalcoli.get("trasporti") : 0.0);
+            bolletta.setOneri(ricalcoli.get("oneri") != null ? ricalcoli.get("oneri") : 0.0);
+            bolletta.setImposte(ricalcoli.get("imposte") != null ? ricalcoli.get("imposte") : 0.0);
+            bolletta.setVerificaTrasporti(ricalcoli.get("verificaTrasporti") != null ? ricalcoli.get("verificaTrasporti") : 0.0);
+            bolletta.setVerificaOneri(ricalcoli.get("verificaOneri") != null ? ricalcoli.get("verificaOneri") : 0.0);
+            bolletta.setVerificaImposte(ricalcoli.get("verificaImposte") != null ? ricalcoli.get("verificaImposte") : 0.0);
+            bolletta.setVerificaPicco(ricalcoli.get("verificaPicco") != null ? ricalcoli.get("verificaPicco") : 0.0);
+            bolletta.setVerificaFuoriPicco(ricalcoli.get("verificaFuoriPicco") != null ? ricalcoli.get("verificaFuoriPicco") : 0.0);
+            bolletta.setTotAttivaPerdite(ricalcoli.get("totAttivaPerdite") != null ? ricalcoli.get("totAttivaPerdite") : 0.0);
+            bolletta.setGeneration(ricalcoli.get("generation") != null ? ricalcoli.get("generation") : 0.0);
+            bolletta.setDispacciamento(ricalcoli.get("dispacciamento") != null ? ricalcoli.get("dispacciamento") : 0.0);
+            bolletta.setPenali33(ricalcoli.get("penali33") != null ? ricalcoli.get("penali33") : 0.0);
+            bolletta.setPenali75(ricalcoli.get("penali75") != null ? ricalcoli.get("penali75") : 0.0);
+            bolletta.setQuotaVariabileTrasporti(ricalcoli.get("quotaVariabileTrasporti") != null ? ricalcoli.get("quotaVariabileTrasporti") : 0.0);
+            bolletta.setQuotaFissaTrasporti(ricalcoli.get("quotaFissaTrasporti") != null ? ricalcoli.get("quotaFissaTrasporti") : 0.0);
+            bolletta.setQuotaPotenzaTrasporti(ricalcoli.get("quotaPotenzaTrasporti") != null ? ricalcoli.get("quotaPotenzaTrasporti") : 0.0);
+            bolletta.setQuotaEnergiaOneri(ricalcoli.get("quotaEnergiaOneri") != null ? ricalcoli.get("quotaEnergiaOneri") : 0.0);
+            bolletta.setQuotaFissaOneri(ricalcoli.get("quotaFissaOneri") != null ? ricalcoli.get("quotaFissaOneri") : 0.0);
+            bolletta.setQuotaPotenzaOneri(ricalcoli.get("quotaPotenzaOneri") != null ? ricalcoli.get("quotaPotenzaOneri") : 0.0);
+
+            persist(bolletta);
+        }
+    }
+
 }

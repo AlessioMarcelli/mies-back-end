@@ -1,7 +1,7 @@
-package miesgroup.mies.webdev.Persistance.Repository;
+package miesgroup.mies.webdev.Repository;
 
 import jakarta.enterprise.context.ApplicationScoped;
-import miesgroup.mies.webdev.Persistance.Model.Future;
+import miesgroup.mies.webdev.Model.Future;
 
 import java.text.SimpleDateFormat;
 import java.sql.Date;

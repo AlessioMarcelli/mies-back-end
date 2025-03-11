@@ -3,8 +3,8 @@ package miesgroup.mies.webdev.Rest;
 import jakarta.ws.rs.*;
 import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
-import miesgroup.mies.webdev.Persistance.Model.Cliente;
-import miesgroup.mies.webdev.Persistance.Model.Costi;
+import miesgroup.mies.webdev.Model.Cliente;
+import miesgroup.mies.webdev.Model.Costi;
 import miesgroup.mies.webdev.Rest.Model.FormData;
 import miesgroup.mies.webdev.Service.CostiService;
 import miesgroup.mies.webdev.Service.SessionService;
@@ -13,7 +13,6 @@ import org.jboss.resteasy.annotations.providers.multipart.MultipartForm;
 import java.io.ByteArrayOutputStream;
 import java.io.InputStream;
 import java.sql.SQLException;
-import java.util.ArrayList;
 import java.util.List;
 
 @Path("/costi")
@@ -29,9 +28,8 @@ public class CostiResource {
     @GET
     @Consumes(MediaType.APPLICATION_JSON)
     @Produces(MediaType.APPLICATION_JSON)
-    public List<Costi> getCosti() throws SQLException {
+    public List<Costi> getCosti() {
         return costiService.getAllCosti();
-
     }
 
     @POST

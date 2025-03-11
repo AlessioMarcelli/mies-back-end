@@ -2,13 +2,13 @@ package miesgroup.mies.webdev.Service;
 
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.transaction.Transactional;
-import jakarta.ws.rs.core.Response;
-import miesgroup.mies.webdev.Persistance.Model.Cliente;
-import miesgroup.mies.webdev.Persistance.Model.PDFFile;
-import miesgroup.mies.webdev.Persistance.Model.Pod;
-import miesgroup.mies.webdev.Persistance.Repository.ClienteRepo;
-import miesgroup.mies.webdev.Persistance.Repository.PodRepo;
-import miesgroup.mies.webdev.Persistance.Repository.SessionRepo;
+import miesgroup.mies.webdev.Model.Cliente;
+import miesgroup.mies.webdev.Model.PDFFile;
+import miesgroup.mies.webdev.Model.Pod;
+import miesgroup.mies.webdev.Repository.ClienteRepo;
+import miesgroup.mies.webdev.Repository.FixingRepo;
+import miesgroup.mies.webdev.Repository.PodRepo;
+import miesgroup.mies.webdev.Repository.SessionRepo;
 import miesgroup.mies.webdev.Rest.Exception.NotYourPodException;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
@@ -32,12 +32,14 @@ public class PodService {
     private final SessionService sessionService;
     private final SessionRepo sessionRepo;
     private final ClienteRepo clienteRepo;
+    private final FixingRepo fixingRepo;
 
-    public PodService(PodRepo podRepo, SessionService sessionService, SessionRepo sessionRepo, ClienteRepo clienteRepo) {
+    public PodService(PodRepo podRepo, SessionService sessionService, SessionRepo sessionRepo, ClienteRepo clienteRepo, FixingRepo fixingRepo) {
         this.podRepo = podRepo;
         this.sessionService = sessionService;
         this.sessionRepo = sessionRepo;
         this.clienteRepo = clienteRepo;
+        this.fixingRepo = fixingRepo;
     }
 
 

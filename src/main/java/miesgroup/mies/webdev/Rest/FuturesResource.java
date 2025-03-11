@@ -4,9 +4,7 @@ import jakarta.inject.Inject;
 import jakarta.ws.rs.*;
 import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
-import miesgroup.mies.webdev.Persistance.Model.Future;
-import miesgroup.mies.webdev.Rest.Model.Futures;
-import miesgroup.mies.webdev.Persistance.Repository.FuturesRepo;  // Aggiungi il repository per il DB
+import miesgroup.mies.webdev.Model.Future;
 import miesgroup.mies.webdev.Service.FuturesService;
 
 import java.sql.SQLException;

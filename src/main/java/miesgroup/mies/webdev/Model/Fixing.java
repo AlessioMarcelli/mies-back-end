@@ -1,11 +1,10 @@
-package miesgroup.mies.webdev.Persistance.Model;
+package miesgroup.mies.webdev.Model;
 
 import io.quarkus.hibernate.orm.panache.PanacheEntityBase;
 import jakarta.json.bind.annotation.JsonbDateFormat;
 import jakarta.persistence.*;
 
 import java.time.LocalDate;
-import java.util.Date;
 
 
 @Entity

@@ -3,7 +3,7 @@ package miesgroup.mies.webdev.Rest;
 import jakarta.ws.rs.*;
 import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
-import miesgroup.mies.webdev.Persistance.Model.PDFFile;
+import miesgroup.mies.webdev.Model.PDFFile;
 import miesgroup.mies.webdev.Rest.Model.FileUploadForm;
 import miesgroup.mies.webdev.Service.FileService;
 import miesgroup.mies.webdev.Service.PodService;
@@ -16,6 +16,7 @@ import org.w3c.dom.Document;
 import javax.xml.parsers.ParserConfigurationException;
 import javax.xml.transform.TransformerException;
 import java.io.IOException;
+import java.util.Map;
 
 @Path("/files")
 public class BollettaResource {
@@ -29,14 +30,14 @@ public class BollettaResource {
 
     }
 
-    @Path("/xml/{id}")
-    @GET
-    @Produces(MediaType.APPLICATION_XML)
-    public Response getXml(@PathParam("id") int id) throws IOException, ParserConfigurationException {
-        byte[] xmlData = fileService.getXmlData(id);
-        Document xmlDoc = fileService.convertPdfToXml(xmlData);
-        return Response.ok(xmlDoc, MediaType.APPLICATION_XML).build();
-    }
+//    @Path("/xml/{id}")
+//    @GET
+//    @Produces(MediaType.APPLICATION_XML)
+//    public Response getXml(@PathParam("id") int id) throws IOException, ParserConfigurationException {
+//        byte[] xmlData = fileService.getXmlData(id);
+//        Document xmlDoc = fileService.convertPdfToXml(xmlData);
+//        return Response.ok(xmlDoc, MediaType.APPLICATION_XML).build();
+//    }
 
 
     @Path("/upload")
@@ -74,12 +75,15 @@ public class BollettaResource {
             }
 
             // 6. effettua i vari calcoli per verificare la correttezza dei dati
-            fileService.verificaA2A(nomeB);
+            fileService.verificaA2APiuMesi(nomeB);
 
-            // 6. Associa l'ID del POD con l'ID del file caricato
+            // 7. verifica di possibili ricalcoli
+            fileService.controlloRicalcoliInBolletta(xmlData, idPod, nomeB, idSessione);
+
+            // 8. Associa l'ID del POD con l'ID del file caricato
             fileService.abbinaPod(idFile, idPod);
 
-            // 7. Restituisci una risposta di successo
+            // 9. Restituisci una risposta di successo
             return Response.status(Response.Status.OK)
                     .entity("<message>File caricato e processato con successo.</message>")
                     .build();
@@ -97,6 +101,20 @@ public class BollettaResource {
             // Gestione di errori generici o imprevisti
             return Response.status(Response.Status.INTERNAL_SERVER_ERROR)
                     .entity("<error>Si è verificato un errore inaspettato: " + e.getMessage() + "</error>")
+                    .build();
+        }
+    }
+
+    @Path("/dati")
+    @GET
+    @Consumes(MediaType.APPLICATION_JSON)
+    @Produces(MediaType.APPLICATION_JSON)
+    public Response getDati(@CookieParam("SESSION_COOKIE") int idSessione) {
+        try {
+            return Response.ok(fileService.getDati(idSessione)).build();
+        } catch (Exception e) {
+            return Response.status(Response.Status.INTERNAL_SERVER_ERROR)
+                    .entity("<error>" + e.getMessage() + "</error>")
                     .build();
         }
     }
@@ -120,5 +138,16 @@ public class BollettaResource {
                 .build();
     }
 
-}
+    @Path("/env")
+    @GET
+    @Produces(MediaType.APPLICATION_JSON)
+    public Map<String, String> getEnvVars() {
+        return Map.of(
+                "MAILER_HOST", System.getenv("MAILER_HOST"),
+                "MAILER_PORT", System.getenv("MAILER_PORT"),
+                "MAILER_PASSWORD", System.getenv("MAILER_PASSWORD")
+        );
 
+    }
+
+}

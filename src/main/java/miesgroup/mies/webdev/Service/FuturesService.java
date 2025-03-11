@@ -2,9 +2,8 @@ package miesgroup.mies.webdev.Service;
 
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
-import miesgroup.mies.webdev.Persistance.Model.Future;
-import miesgroup.mies.webdev.Persistance.Repository.FuturesRepo;
-import miesgroup.mies.webdev.Rest.Model.Futures;
+import miesgroup.mies.webdev.Model.Future;
+import miesgroup.mies.webdev.Repository.FuturesRepo;
 
 import java.sql.SQLException;
 import java.util.List;

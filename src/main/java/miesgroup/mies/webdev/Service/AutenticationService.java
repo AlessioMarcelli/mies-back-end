@@ -2,9 +2,9 @@ package miesgroup.mies.webdev.Service;
 
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.transaction.Transactional;
-import miesgroup.mies.webdev.Persistance.Model.Cliente;
-import miesgroup.mies.webdev.Persistance.Repository.ClienteRepo;
-import miesgroup.mies.webdev.Persistance.Repository.SessionRepo;
+import miesgroup.mies.webdev.Model.Cliente;
+import miesgroup.mies.webdev.Repository.ClienteRepo;
+import miesgroup.mies.webdev.Repository.SessionRepo;
 import miesgroup.mies.webdev.Service.Exception.ClienteCreationException;
 import miesgroup.mies.webdev.Service.Exception.SessionCreationException;
 import miesgroup.mies.webdev.Service.Exception.WrongUsernameOrPasswordException;

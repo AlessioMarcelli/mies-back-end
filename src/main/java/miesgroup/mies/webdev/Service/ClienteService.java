@@ -1,12 +1,11 @@
 package miesgroup.mies.webdev.Service;
 
 import jakarta.enterprise.context.ApplicationScoped;
-import miesgroup.mies.webdev.Persistance.Model.AlertData;
+import miesgroup.mies.webdev.Model.AlertData;
 import jakarta.transaction.Transactional;
-import miesgroup.mies.webdev.Persistance.Model.Cliente;
-import miesgroup.mies.webdev.Persistance.Repository.ClienteRepo;
+import miesgroup.mies.webdev.Model.Cliente;
+import miesgroup.mies.webdev.Repository.ClienteRepo;
 import miesgroup.mies.webdev.Rest.Model.ClienteResponse;
-import miesgroup.mies.webdev.Rest.Model.UpdateUtente;
 
 import java.util.List;
 import java.util.Map;

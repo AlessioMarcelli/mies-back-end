@@ -1,4 +1,4 @@
-package miesgroup.mies.webdev.Persistance.Model;
+package miesgroup.mies.webdev.Model;
 
 import io.quarkus.hibernate.orm.panache.PanacheEntityBase;
 import jakarta.persistence.*;
@@ -12,13 +12,13 @@ public class Pod extends PanacheEntityBase {
     private String id;
 
     @Column(name = "Tensione_Alimentazione", nullable = false)
-    private double tensioneAlimentazione;
+    private Double tensioneAlimentazione;
 
     @Column(name = "Potenza_Impegnata", nullable = false)
-    private double potenzaImpegnata;
+    private Double potenzaImpegnata;
 
     @Column(name = "Potenza_Disponibile", nullable = false)
-    private double potenzaDisponibile;
+    private Double potenzaDisponibile;
 
     @ManyToOne
     @JoinColumn(name = "id_utente", nullable = false) // Foreign key verso `utente`
@@ -38,6 +38,9 @@ public class Pod extends PanacheEntityBase {
 
     @Column(name= "spread")
     private Double spread;
+
+    @Column(name= "costo_orario")
+    private Double costoOrario;
 
     // GETTER e SETTER
 
@@ -119,5 +122,13 @@ public class Pod extends PanacheEntityBase {
 
     public void setSpread(Double spread) {
         this.spread = spread;
+    }
+
+    public Double getCostoOrario() {
+        return costoOrario;
+    }
+
+    public void setCostoOrario(Double costoOrario) {
+        this.costoOrario = costoOrario;
     }
 }

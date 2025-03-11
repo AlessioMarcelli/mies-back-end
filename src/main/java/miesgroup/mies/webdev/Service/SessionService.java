@@ -2,8 +2,8 @@ package miesgroup.mies.webdev.Service;
 
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.transaction.Transactional;
-import miesgroup.mies.webdev.Persistance.Model.Cliente;
-import miesgroup.mies.webdev.Persistance.Repository.SessionRepo;
+import miesgroup.mies.webdev.Model.Cliente;
+import miesgroup.mies.webdev.Repository.SessionRepo;
 
 @ApplicationScoped
 public class SessionService {

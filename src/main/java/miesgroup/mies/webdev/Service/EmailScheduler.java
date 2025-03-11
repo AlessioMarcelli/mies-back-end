@@ -3,15 +3,15 @@ package miesgroup.mies.webdev.Service;
 import io.quarkus.mailer.Mail;
 import io.quarkus.mailer.Mailer;
 import jakarta.enterprise.context.ApplicationScoped;
-import io.quarkus.scheduler.Scheduled;
+
 import java.time.LocalDate;
 import java.time.temporal.TemporalAdjusters;
 import java.util.*;
 
 import jakarta.inject.Inject;
-import miesgroup.mies.webdev.Persistance.Model.AlertData;
-import miesgroup.mies.webdev.Persistance.Model.Cliente;
-import miesgroup.mies.webdev.Persistance.Model.Future;
+import miesgroup.mies.webdev.Model.AlertData;
+import miesgroup.mies.webdev.Model.Cliente;
+import miesgroup.mies.webdev.Model.Future;
 import org.eclipse.microprofile.config.inject.ConfigProperty;
 
 @ApplicationScoped

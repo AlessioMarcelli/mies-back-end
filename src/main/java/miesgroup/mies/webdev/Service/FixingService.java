@@ -3,12 +3,11 @@ package miesgroup.mies.webdev.Service;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.transaction.Transactional;
 import jakarta.persistence.PersistenceException;
-import miesgroup.mies.webdev.Persistance.Model.Cliente;
-import miesgroup.mies.webdev.Persistance.Model.Fixing;
-import miesgroup.mies.webdev.Persistance.Repository.ClienteRepo;
-import miesgroup.mies.webdev.Persistance.Repository.FixingRepo;
+import miesgroup.mies.webdev.Model.Cliente;
+import miesgroup.mies.webdev.Model.Fixing;
+import miesgroup.mies.webdev.Repository.ClienteRepo;
+import miesgroup.mies.webdev.Repository.FixingRepo;
 import miesgroup.mies.webdev.Rest.Model.FixingResponse;
-import miesgroup.mies.webdev.Service.SessionService;
 
 import java.util.List;
 import java.util.Optional;

@@ -3,7 +3,7 @@ package miesgroup.mies.webdev.Rest;
 import jakarta.ws.rs.*;
 import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
-import miesgroup.mies.webdev.Persistance.Model.Fixing;
+import miesgroup.mies.webdev.Model.Fixing;
 import miesgroup.mies.webdev.Service.FixingService;
 
 import java.util.List;

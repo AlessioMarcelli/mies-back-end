@@ -2,9 +2,8 @@ package miesgroup.mies.webdev.Service;
 
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.transaction.Transactional;
-import miesgroup.mies.webdev.Persistance.Model.BollettaPod;
-import miesgroup.mies.webdev.Persistance.Repository.BollettaRepo;
-import miesgroup.mies.webdev.Persistance.Repository.CostiRepo;
+import miesgroup.mies.webdev.Model.BollettaPod;
+import miesgroup.mies.webdev.Repository.BollettaRepo;
 
 import java.math.BigDecimal;
 import java.math.RoundingMode;
@@ -40,7 +39,6 @@ public class BollettaService {
             double potenzaImpegnata = Optional.ofNullable(bollettaRepo.getPotenzaImpegnata(b.getIdPod()))
                     .orElse(0.0);
             if (potenzaImpegnata <= 0) {
-                System.err.println("Errore: Potenza Impegnata non trovata per " + b.getNomeBolletta());
                 return;
             }
 
