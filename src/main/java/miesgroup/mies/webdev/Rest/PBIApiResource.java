@@ -1,5 +1,6 @@
 package miesgroup.mies.webdev.Rest;
 
+import jakarta.inject.Inject;
 import jakarta.ws.rs.GET;
 import jakarta.ws.rs.Path;
 import jakarta.ws.rs.Produces;
@@ -12,16 +13,20 @@ import java.util.Map;
 @Path("/api/pbitoken")
 public class PBIApiResource {
 
-    private final AzureADService azureADService;
-
-    public PBIApiResource(AzureADService azureADService) {
-        this.azureADService = azureADService;
-    }
+    @Inject
+    AzureADService azureADService;
 
     @GET
     @Produces(MediaType.APPLICATION_JSON)
     public Response getPBIAccessToken() {
-        String accessToken = azureADService.getPowerBIAccessToken();
-        return Response.ok(Map.of("token", accessToken)).build();
+        try {
+            String accessToken = azureADService.getPowerBIAccessToken();
+            return Response.ok(Map.of("token", accessToken)).build();
+        } catch (Exception e) {
+            e.printStackTrace();
+            return Response.status(Response.Status.INTERNAL_SERVER_ERROR)
+                    .entity(Map.of("error", "Failed to get Power BI access token", "details", e.getMessage()))
+                    .build();
+        }
     }
 }
