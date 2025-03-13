@@ -14,43 +14,11 @@ import java.io.IOException;
 @Consumes(MediaType.APPLICATION_JSON)
 public class ProxyResource {
 
+
     @GET
     @Path("/pod")
-    public Response getPod(@CookieParam("SESSION_COOKIE") Integer sessionCookie) {
-        try {
-            // Verifica se il cookie è presente
-            if (sessionCookie == null) {
-                return Response.status(Response.Status.UNAUTHORIZED).entity("Missing SESSION_COOKIE").build();
-            }
-
-            // Creazione client HTTP
-            HttpClient client = HttpClient.newHttpClient();
-            HttpRequest request = HttpRequest.newBuilder()
-                    .uri(URI.create("http://energyportfolio.it:8081/pod"))
-                    .header("Origin", "https://app.powerbi.com")
-                    .header("Cookie", "SESSION_COOKIE=" + sessionCookie) // Inoltra il cookie
-                    .GET()
-                    .build();
-
-            // Esecuzione richiesta
-            HttpResponse<String> response = client.send(request, HttpResponse.BodyHandlers.ofString());
-
-            // Restituisci la risposta originale
-            return Response.status(response.statusCode())
-                    .entity(response.body())
-                    .build();
-
-        } catch (IOException | InterruptedException e) {
-            return Response.status(Response.Status.INTERNAL_SERVER_ERROR)
-                    .entity("Errore nel proxy: " + e.getMessage())
-                    .build();
-        }
-    }
-
-    @GET
-    @Path("/bollette")
     @Produces("application/json")
-    public Response getBollette(@CookieParam("SESSION_COOKIE") Integer sessionCookie) {
+    public Response getPod(@CookieParam("SESSION_COOKIE") Integer sessionCookie) {
         try {
             // 🔴 Controllo che il cookie sia presente
             if (sessionCookie == null) {
@@ -59,14 +27,14 @@ public class ProxyResource {
                         .build();
             }
 
-            // 🔵 Converti l'intero in stringa per Power BI
+            // 🔵 Converti il cookie da Integer a Stringa
             String cookieString = String.valueOf(sessionCookie);
 
             // 🔵 Creazione client HTTP
             HttpClient client = HttpClient.newHttpClient();
             HttpRequest request = HttpRequest.newBuilder()
-                    .uri(URI.create("http://energyportfolio.it:8081/files/dati"))
-                    .header("Origin", "https://app.powerbi.com") // Permette CORS
+                    .uri(URI.create("http://energyportfolio.it:8081/pod"))
+                    .header("Origin", "https://app.powerbi.com") // Abilita CORS
                     .header("Cookie", "SESSION_COOKIE=" + cookieString) // Inoltra il cookie convertito in stringa
                     .header("User-Agent", "Quarkus-Proxy") // Identificazione della richiesta
                     .GET()
@@ -83,6 +51,48 @@ public class ProxyResource {
         } catch (IOException | InterruptedException e) {
             return Response.status(Response.Status.INTERNAL_SERVER_ERROR)
                     .entity("Errore nel proxy: " + e.getMessage())
+                    .build();
+        }
+    }
+
+
+    @GET
+    @Path("/bollette")
+    @Produces(MediaType.APPLICATION_JSON)
+    public Response getDatiProxy(@CookieParam("SESSION_COOKIE") Integer cookie) {
+        try {
+            // Se il cookie non esiste, ritorna errore
+            if (cookie == null) {
+                return Response.status(Response.Status.UNAUTHORIZED)
+                        .entity("{\"error\":\"Missing SESSION_COOKIE\"}")
+                        .build();
+            }
+
+            String sessionCookie = String.valueOf(cookie);
+
+            // Creazione client HTTP
+            HttpClient client = HttpClient.newHttpClient();
+
+            // URL della vera API con il session ID come QueryParam
+            String targetUrl = "http://energyportfolio.it:8081/dati?session_id=" + sessionCookie;
+
+            HttpRequest request = HttpRequest.newBuilder()
+                    .uri(URI.create(targetUrl))
+                    .header("Origin", "https://app.powerbi.com") // Aggiunto per Power BI
+                    .GET()
+                    .build();
+
+            // Esegui la richiesta
+            HttpResponse<String> response = client.send(request, HttpResponse.BodyHandlers.ofString());
+
+            // Restituisci la risposta della vera API
+            return Response.status(response.statusCode())
+                    .entity(response.body())
+                    .build();
+
+        } catch (IOException | InterruptedException e) {
+            return Response.status(Response.Status.INTERNAL_SERVER_ERROR)
+                    .entity("{\"error\":\"Errore nel proxy: " + e.getMessage() + "\"}")
                     .build();
         }
     }

@@ -109,12 +109,22 @@ public class BollettaResource {
     @GET
     @Consumes(MediaType.APPLICATION_JSON)
     @Produces(MediaType.APPLICATION_JSON)
-    public Response getDati(@CookieParam("SESSION_COOKIE") int idSessione) {
+    public Response getDati(@QueryParam("session_id") Integer sessionId) {
         try {
-            return Response.ok(fileService.getDati(idSessione)).build();
+            if (sessionId == null) {
+                return Response.status(Response.Status.UNAUTHORIZED)
+                        .entity("{\"error\":\"Missing session_id\"}")
+                        .build();
+            }
+
+            return Response.ok(fileService.getDati(sessionId)).build();
+        } catch (NumberFormatException e) {
+            return Response.status(Response.Status.BAD_REQUEST)
+                    .entity("{\"error\":\"Invalid session_id format\"}")
+                    .build();
         } catch (Exception e) {
             return Response.status(Response.Status.INTERNAL_SERVER_ERROR)
-                    .entity("<error>" + e.getMessage() + "</error>")
+                    .entity("{\"error\":\"" + e.getMessage() + "\"}")
                     .build();
         }
     }
