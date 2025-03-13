@@ -74,7 +74,7 @@ public class ProxyResource {
             HttpClient client = HttpClient.newHttpClient();
 
             // URL della vera API con il session ID come QueryParam
-            String targetUrl = "http://energyportfolio.it:8081/dati?session_id=" + sessionCookie;
+            String targetUrl = "http://energyportfolio.it:8081/files/dati?session_id=" + sessionCookie;
 
             HttpRequest request = HttpRequest.newBuilder()
                     .uri(URI.create(targetUrl))
