@@ -2,6 +2,7 @@ package miesgroup.mies.webdev.Rest;
 
 import jakarta.ws.rs.*;
 import jakarta.ws.rs.core.*;
+
 import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
@@ -48,26 +49,33 @@ public class ProxyResource {
 
     @GET
     @Path("/bollette")
+    @Produces("application/json")
     public Response getBollette(@CookieParam("SESSION_COOKIE") Integer sessionCookie) {
         try {
-            // Verifica se il cookie è presente
+            // 🔴 Controllo che il cookie sia presente
             if (sessionCookie == null) {
-                return Response.status(Response.Status.UNAUTHORIZED).entity("Missing SESSION_COOKIE").build();
+                return Response.status(Response.Status.UNAUTHORIZED)
+                        .entity("Missing SESSION_COOKIE")
+                        .build();
             }
 
-            // Creazione client HTTP
+            // 🔵 Converti l'intero in stringa per Power BI
+            String cookieString = String.valueOf(sessionCookie);
+
+            // 🔵 Creazione client HTTP
             HttpClient client = HttpClient.newHttpClient();
             HttpRequest request = HttpRequest.newBuilder()
                     .uri(URI.create("http://energyportfolio.it:8081/files/dati"))
-                    .header("Origin", "https://app.powerbi.com")
-                    .header("Cookie", "SESSION_COOKIE=" + sessionCookie) // Inoltra il cookie
+                    .header("Origin", "https://app.powerbi.com") // Permette CORS
+                    .header("Cookie", "SESSION_COOKIE=" + cookieString) // Inoltra il cookie convertito in stringa
+                    .header("User-Agent", "Quarkus-Proxy") // Identificazione della richiesta
                     .GET()
                     .build();
 
-            // Esecuzione richiesta
+            // 🟢 Esecuzione richiesta
             HttpResponse<String> response = client.send(request, HttpResponse.BodyHandlers.ofString());
 
-            // Restituisci la risposta originale
+            // 🟢 Restituisci la risposta originale
             return Response.status(response.statusCode())
                     .entity(response.body())
                     .build();
