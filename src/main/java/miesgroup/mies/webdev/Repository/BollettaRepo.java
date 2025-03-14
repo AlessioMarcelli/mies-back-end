@@ -220,7 +220,7 @@ public class BollettaRepo implements PanacheRepositoryBase<BollettaPod, Integer>
     }
 
     public void updateBolletta(BollettaPod bollettaEsistente) {
-        update("speseEnergia = ?1, trasport = ?2, oneri = ?3, imposte = ?4 " +
+        update("speseEnergia = ?1, trasporti = ?2, oneri = ?3, imposte = ?4 " +
                         "WHERE nomeBolletta = ?5 AND mese = ?6 AND anno = ?7",
                 bollettaEsistente.getSpeseEnergia(),
                 bollettaEsistente.getTrasporti(),

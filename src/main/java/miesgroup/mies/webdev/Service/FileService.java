@@ -607,8 +607,16 @@ public class FileService {
     }
 
     public List<BollettaPod> getDati(int idSessione) {
-        Pod p = podRepo.find("utente", clienteRepo.findById(sessionService.trovaUtentebBySessione(idSessione))).firstResult();
-        return bollettaRepo.find("idPod", p.getId()).list();
+        List<Pod> p = podRepo.find("utente", clienteRepo.findById(sessionService.trovaUtentebBySessione(idSessione))).list();
+        List<BollettaPod> bollette = new ArrayList<>();
+        for (Pod pod : p) {
+            bollette.addAll(bollettaRepo.find("idPod", pod.getId()).list());
+        }
+        return bollette;
+    }
+
+    public List<BollettaPod> getDatiRicalcoli(int idSessione, String idPod) {
+        return bollettaRepo.find("idPod", idPod).list();
     }
 
     @Transactional
@@ -635,7 +643,7 @@ public class FileService {
             String annoRicalcolo = periodo.getAnno();  // Es. "2023"
 
             // Recupera le bollette esistenti per la sessione attuale
-            List<BollettaPod> bolletteEsistenti = getDati(idSessione);
+            List<BollettaPod> bolletteEsistenti = getDatiRicalcoli(idSessione, idPod);
 
             // Itera sui ricalcoli trovati
             for (Map.Entry<String, Map<String, Double>> entry : ricalcoliPerMese.entrySet()) {

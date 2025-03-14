@@ -56,5 +56,8 @@ public class SessionRepo implements PanacheRepositoryBase<Sessione, Integer> {
         return clienteRepo.findById(idUtente);
     }
 
+    public Optional<Sessione> getSessionById(Integer sessionCookie) {
+        return find("id", sessionCookie).firstResultOptional();
+    }
 }
 
