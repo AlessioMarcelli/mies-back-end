@@ -157,6 +157,7 @@ public class BollettaService {
 
             bollettaRepo.updateVerificaPicco(arrotonda(piccoKwh * costoPicco), b.getNomeBolletta(), b.getMese());
             bollettaRepo.updateVerificaFuoriPicco(arrotonda(fuoriPiccoKwh * costoFuoriPicco), b.getNomeBolletta(), b.getMese());
+            System.out.println("Verifica completata per " + b.getNomeBolletta() + "verifica picco" + arrotonda(piccoKwh * costoPicco) + "verifica fuori picco" + arrotonda(fuoriPiccoKwh * costoFuoriPicco));
         } catch (Exception e) {
             System.err.println("Errore: " + e.getMessage());
         }

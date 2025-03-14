@@ -28,8 +28,24 @@ public class CostiResource {
     @GET
     @Consumes(MediaType.APPLICATION_JSON)
     @Produces(MediaType.APPLICATION_JSON)
-    public List<Costi> getCosti() {
-        return costiService.getAllCosti();
+    public Response getCosti(@CookieParam("SESSION_COOKIE") Integer idSessione) {
+        Cliente c = sessionService.trovaUtenteCategoryBySessione(idSessione);
+        if (c.getTipologia().equals("Admin")) {
+            return Response.ok(costiService.getAllCosti(idSessione)).build();
+        } else {
+            return Response.status(Response.Status.FORBIDDEN).build();
+        }
+    }
+
+    @GET
+    @Consumes(MediaType.APPLICATION_JSON)
+    @Produces(MediaType.APPLICATION_JSON)
+    public Response getCostiProxy(@QueryParam("session_id") Integer idSessione) {
+        if (idSessione != null) {
+            return Response.ok(costiService.getAllCosti(idSessione)).build();
+        } else {
+            return Response.status(Response.Status.FORBIDDEN).build();
+        }
     }
 
     @POST

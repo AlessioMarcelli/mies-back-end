@@ -20,8 +20,15 @@ public class PodResource {
 
     @GET
     @Produces(MediaType.APPLICATION_JSON)
-    public List<Pod> allPod(@CookieParam("SESSION_COOKIE") int id_sessione) {
-        return podService.tutti(id_sessione);
+    public List<Pod> allPod(@CookieParam("SESSION_COOKIE") Integer sessionId) {
+        return podService.tutti(sessionId);
+    }
+
+    @GET
+    @Produces(MediaType.APPLICATION_JSON)
+    @Path("/dati")
+    public List<Pod> allPodProxy(@QueryParam("session_id") Integer sessionId) {
+        return podService.tutti(sessionId);
     }
 
     @GET

@@ -37,7 +37,10 @@ public class CostiService {
 
 
     @Transactional
-    public List<Costi> getAllCosti() {
+    public List<Costi> getAllCosti(Integer idSessione) {
+        if (idSessione == null) {
+            throw new IllegalArgumentException("ID sessione mancante");
+        }
         return costiRepo.getAllCosti();
     }
 
@@ -70,7 +73,7 @@ public class CostiService {
     // Metodo che genera il file Excel
     @Transactional
     public ByteArrayOutputStream generateExcelFile() throws Exception {
-        List<Costi> costiList = getAllCosti();
+        List<Costi> costiList = costiRepo.getAllCosti();
 
         try (XSSFWorkbook workbook = new XSSFWorkbook(); ByteArrayOutputStream out = new ByteArrayOutputStream()) {
             XSSFSheet sheet = workbook.createSheet("Costi");
@@ -128,7 +131,7 @@ public class CostiService {
                 throw new IllegalArgumentException("Il foglio 'Costi' non esiste nel file Excel.");
             }
 
-            List<Costi> existingCosti = getAllCosti();
+            List<Costi> existingCosti = costiRepo.getAllCosti();
             int emptyRowCount = 0; // Contatore di righe vuote consecutive
 
             for (Row row : sheet) {
