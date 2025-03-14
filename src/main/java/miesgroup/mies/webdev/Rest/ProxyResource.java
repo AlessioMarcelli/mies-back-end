@@ -25,31 +25,41 @@ public class ProxyResource {
     @Produces(MediaType.APPLICATION_JSON)
     public Response getPod() {
         try {
-            // 🔵 Recuperiamo il valore del cookie dalla classe SessionController
+            // Recuperiamo il valore del cookie dalla classe SessionControl
             String sessionCookie = sessionController.getSessionValue();
 
-            // 🔴 Se il valore è null o vuoto, restituiamo un errore
+            System.out.println("Session ID: " + sessionCookie);
+
+            // Se il valore è null o vuoto, restituiamo un errore
             if (sessionCookie == null || sessionCookie.isEmpty()) {
                 return Response.status(Response.Status.UNAUTHORIZED)
-                        .entity("{\"error\":\"Missing SESSION_COOKIE\"}")
+                        .entity("{\"error\":\"Missing SESSION_COOKIE porco dio\"}")
                         .build();
             }
 
-            String url = "http://energyportfolio.it:8081/pod/dati?session_id=" + sessionCookie;
-
-            // 🔵 Creazione client HTTP
+            // Creazione client HTTP
             HttpClient client = HttpClient.newHttpClient();
+
+            // URL della vera API (con session ID come header)
+            String targetUrl = "http://energyportfolio.it:8081/pod/dati?session_id=" + sessionCookie;
+
             HttpRequest request = HttpRequest.newBuilder()
-                    .uri(URI.create(url))
-                    .header("Origin", "https://app.powerbi.com") // Abilita CORS
-                    .header("X-Session-Id", sessionCookie) // Inoltra il cookie
+                    .uri(URI.create(targetUrl))
+                    .header("Origin", "https://app.powerbi.com") // Aggiunto per compatibilità Power BI
+                    .header("X-Session-Id", sessionCookie) // Passiamo il valore come HEADER
                     .GET()
                     .build();
 
-            // 🟢 Esecuzione richiesta
+            // Eseguiamo la richiesta
             HttpResponse<String> response = client.send(request, HttpResponse.BodyHandlers.ofString());
 
-            // 🟢 Restituiamo la risposta della vera API
+            // Log per debugging
+            System.out.println("Request to: " + targetUrl);
+            System.out.println("Session ID: " + sessionCookie);
+            System.out.println("Response Code: " + response.statusCode());
+            System.out.println("Response Body: " + response.body());
+
+            // Restituiamo la risposta della vera API
             return Response.status(response.statusCode())
                     .entity(response.body())
                     .build();
@@ -116,7 +126,7 @@ public class ProxyResource {
     @GET
     @Path("/costi")
     @Produces(MediaType.APPLICATION_JSON)
-    public Response getCostiProxy() {
+    public Response getCosti() {
         try {
             // Recuperiamo il valore del cookie dalla classe SessionControl
             String sessionCookie = sessionController.getSessionValue();
