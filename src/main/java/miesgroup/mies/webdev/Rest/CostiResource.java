@@ -40,6 +40,7 @@ public class CostiResource {
     @GET
     @Consumes(MediaType.APPLICATION_JSON)
     @Produces(MediaType.APPLICATION_JSON)
+    @Path("/dati")
     public Response getCostiProxy(@QueryParam("session_id") Integer idSessione) {
         if (idSessione != null) {
             return Response.ok(costiService.getAllCosti(idSessione)).build();

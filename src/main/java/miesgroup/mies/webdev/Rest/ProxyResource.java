@@ -42,8 +42,7 @@ public class ProxyResource {
             HttpRequest request = HttpRequest.newBuilder()
                     .uri(URI.create(url))
                     .header("Origin", "https://app.powerbi.com") // Abilita CORS
-                    .header("Cookie", "SESSION_COOKIE=" + sessionCookie) // Inoltra il cookie
-                    .header("User-Agent", "Quarkus-Proxy") // Identificazione della richiesta
+                    .header("X-Session-Id", sessionCookie) // Inoltra il cookie
                     .GET()
                     .build();
 
@@ -63,11 +62,10 @@ public class ProxyResource {
     }
 
 
-
     @GET
     @Path("/bollette")
     @Produces(MediaType.APPLICATION_JSON)
-    public Response getDatiProxy() {
+    public Response getBollette() {
         try {
             // Recuperiamo il valore del cookie dalla classe SessionControl
             String sessionCookie = sessionController.getSessionValue();
