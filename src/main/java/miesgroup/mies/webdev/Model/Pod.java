@@ -2,6 +2,7 @@ package miesgroup.mies.webdev.Model;
 
 import io.quarkus.hibernate.orm.panache.PanacheEntityBase;
 import jakarta.persistence.*;
+import org.hibernate.annotations.ColumnDefault;
 
 @Entity
 @Table(name = "pod") // Nome corretto della tabella nel database
@@ -24,11 +25,14 @@ public class Pod extends PanacheEntityBase {
     @JoinColumn(name = "id_utente", nullable = false) // Foreign key verso `utente`
     private Cliente utente;
 
-    @Column(name = "Sede")
+    @Column(name = "sede")
     private String sede;
 
-    @Column(name = "Nazione")
+    @Column(name = "citta")
     private String nazione;
+
+    @Column(name = "cap")
+    private String cap;
 
     @Column(name = "Tipo_Tensione", nullable = false)
     private String tipoTensione;
@@ -37,10 +41,8 @@ public class Pod extends PanacheEntityBase {
     private String fornitore;
 
     @Column(name= "spread")
+    @ColumnDefault("0.0")
     private Double spread;
-
-    @Column(name= "costo_orario")
-    private Double costoOrario;
 
     // GETTER e SETTER
 
@@ -124,11 +126,12 @@ public class Pod extends PanacheEntityBase {
         this.spread = spread;
     }
 
-    public Double getCostoOrario() {
-        return costoOrario;
+    public String getCap() {
+        return cap;
     }
 
-    public void setCostoOrario(Double costoOrario) {
-        this.costoOrario = costoOrario;
+    public void setCap(String cap) {
+        this.cap = cap;
     }
+
 }

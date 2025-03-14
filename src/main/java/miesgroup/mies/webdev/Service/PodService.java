@@ -49,6 +49,10 @@ public class PodService {
         String id_pod = "";
         int id_utente = sessionService.trovaUtentebBySessione(sessione);
         String fornitore = "";
+        // Divide l'indirizzo in sede, CAP e città
+        String sede = "";
+        String cap = "";
+        String citta = "";
         boolean esiste = false;
         try {
             DocumentBuilderFactory factory = DocumentBuilderFactory.newInstance();
@@ -104,6 +108,34 @@ public class PodService {
                                 }
                             }
                         }
+
+                        if (lineText.contains("Indirizzo di fornitura")) {
+                            Node LineNode = lineNodes.item(i + 1);
+                            if (LineNode != null && LineNode.getNodeType() == Node.ELEMENT_NODE) {
+                                Element LineElement = (Element) LineNode;
+                                String indirizzo = LineElement.getTextContent().trim(); // Ottiene l'indirizzo
+
+
+                                String[] parts = indirizzo.split(" - ");
+                                if (parts.length == 2) {
+                                    sede = parts[0].trim();
+                                    String capCitta = parts[1].trim();
+
+                                    // Divide CAP e Città basandosi sul primo spazio
+                                    String[] capCittaParts = capCitta.split(" ", 2);
+                                    cap = capCittaParts[0];
+                                    citta = capCittaParts.length > 1 ? capCittaParts[1] : "";
+                                } else {
+                                    System.out.println("❌ Errore: Formato dell'indirizzo non valido.");
+                                }
+
+                                // Stampa i risultati per verifica
+                                System.out.println("📌 Sede: " + sede);
+                                System.out.println("📌 CAP: " + cap);
+                                System.out.println("📌 Città: " + citta);
+                            }
+                        }
+
                     } else {
                         esiste = true;
                         id_pod = podRepo.verificaSePodEsiste(id_pod, id_utente);
@@ -111,7 +143,7 @@ public class PodService {
                     }
                 }
             }
-            creaPod(extractedValues, id_utente, id_pod, fornitore);
+            creaPod(extractedValues, id_utente, id_pod, fornitore, citta, cap, sede);
         } catch (SAXException | IOException | ParserConfigurationException e) {
             e.printStackTrace();
         }
@@ -120,7 +152,7 @@ public class PodService {
 
 
     @Transactional
-    public void creaPod(ArrayList<Double> extractedValues, int id_utente, String id_pod, String fornitore) {
+    public void creaPod(ArrayList<Double> extractedValues, int id_utente, String id_pod, String fornitore, String citta, String cap, String sede) {
         Cliente c = clienteRepo.findById(id_utente);
         Pod pod = new Pod();
         pod.setUtente(c);
@@ -129,6 +161,9 @@ public class PodService {
         pod.setTensioneAlimentazione(extractedValues.get(0));
         pod.setPotenzaImpegnata(extractedValues.get(1));
         pod.setPotenzaDisponibile(extractedValues.get(2));
+        pod.setSede(sede);
+        pod.setNazione(citta);
+        pod.setCap(cap);
         if (pod.getTensioneAlimentazione() <= 1000.0) {
             pod.setTipoTensione("Bassa");
         } else if (pod.getTensioneAlimentazione() > 1000.0 && pod.getTensioneAlimentazione() <= 35000.0) {
