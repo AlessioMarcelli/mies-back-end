@@ -20,10 +20,12 @@ import java.util.Optional;
 public class ClienteRepo implements PanacheRepositoryBase<Cliente, Integer> {
     private final DataSource dataSource;
     private final LoggerService loggerService;
+    private final PodRepo podRepo;
 
-    public ClienteRepo(DataSource dataSources, LoggerService loggerService) {
+    public ClienteRepo(DataSource dataSources, LoggerService loggerService, PodRepo podRepo) {
         this.dataSource = dataSources;
         this.loggerService = loggerService;
+        this.podRepo = podRepo;
     }
 
 
@@ -631,6 +633,11 @@ public class ClienteRepo implements PanacheRepositoryBase<Cliente, Integer> {
         return clients;
     }
 
+    public Cliente getClienteByPod(String idPod) {
+        Pod p = podRepo.find("id", idPod).firstResult();
+        if (p == null) {
+            return null;
+        }
+        return p.getUtente();
+    }
 }
-
-

@@ -17,88 +17,157 @@ public class BollettaPod extends PanacheEntityBase {
     @Column(name = "id_pod", nullable = false)
     private String idPod;
 
-    @Column(name = "Nome_Bolletta", nullable = false)
+    @Column(name = "nome_bolletta", nullable = false)
     private String nomeBolletta;
 
-    @Column(name = "F1_Attiva")
+    @Column(name = "f1_attiva")
     private Double f1A;
 
-    @Column(name = "F2_Attiva")
+    @Column(name = "f2_attiva")
     private Double f2A;
 
-    @Column(name = "F3_Attiva")
+    @Column(name = "f3_attiva")
     private Double f3A;
 
-    @Column(name = "F1_Reattiva")
+    @Column(name = "f1_reattiva")
     private Double f1R;
 
-    @Column(name = "F2_Reattiva")
+    @Column(name = "f2_reattiva")
     private Double f2R;
 
-    @Column(name = "F3_Reattiva")
+    @Column(name = "f3_reattiva")
     private Double f3R;
 
-    @Column(name = "F1_Potenza")
+    @Column(name = "f1_potenza")
     private Double f1P;
 
-    @Column(name = "F2_Potenza")
+    @Column(name = "f2_potenza")
     private Double f2P;
 
-    @Column(name = "F3_Potenza")
+    @Column(name = "f3_potenza")
     private Double f3P;
 
-    @Column(name = "TOT_Attiva")
+    @Column(name = "f0_€")
+    private Double f0Euro;
+
+    @Column(name = "f1_€")
+    private Double f1Euro;
+
+    @Column(name = "f2_€")
+    private Double f2Euro;
+
+    @Column(name = "f3_€")
+    private Double f3Euro;
+
+    @Column(name = "f1_perdite_€")
+    private Double f1PerditeEuro;
+
+    @Column(name = "f2_perdite_€")
+    private Double f2PerditeEuro;
+
+    @Column(name = "f3_perdite_€")
+    private Double f3PerditeEuro;
+
+    @Column(name = "f0_kwh")
+    private Double f0Kwh;
+
+    @Column(name = "f1_kwh")
+    private Double f1Kwh;
+
+    @Column(name = "f2_kwh")
+    private Double f2Kwh;
+
+    @Column(name = "f3_kwh")
+    private Double f3Kwh;
+
+    @Column(name = "f1_perdite_kwh")
+    private Double f1PerditeKwh;
+
+    @Column(name = "f2_perdite_kwh")
+    private Double f2PerditeKwh;
+
+    @Column(name = "f3_perdite_kwh")
+    private Double f3PerditeKwh;
+
+    @Column(name = "verifica_spesa_materia_energia")
+    private Double verificaSpesaMateriaEnergia;
+
+    @Column(name = "verifica_f1")
+    private Double verificaF1;
+
+    @Column(name = "verifica_f2")
+    private Double verificaF2;
+
+    @Column(name = "verifica_f3")
+    private Double verificaF3;
+
+    @Column(name = "verifica_f1_perdite")
+    private Double verificaF1Perdite;
+
+    @Column(name = "verifica_f2_perdite")
+    private Double verificaF2Perdite;
+
+    @Column(name = "verifica_f3_perdite")
+    private Double verificaF3Perdite;
+
+    @Column(name = "verifica_f0")
+    private Double verificaF0;
+
+    @Column(name = "tot_attiva")
     private Double totAttiva;
 
-    @Column(name = "TOT_Reattiva")
+    @Column(name = "tot_reattiva")
     private Double totReattiva;
 
-    @Column(name = "Spese_Energia")
+    @Column(name = "spese_energia")
     private Double speseEnergia;
 
-    @Column(name = "Spese_Trasporto")
+    @Column(name = "spese_trasporto")
     private Double trasporti;
 
-    @Column(name = "Oneri")
+    @Column(name = "oneri")
     private Double oneri;
 
-    @Column(name = "Imposte")
+    @Column(name = "imposte")
     private Double imposte;
 
-    @Column(name = "Generation")
+    @Column(name = "generation")
     private Double generation;
 
-    @Column(name = "Dispacciamento")
+    @Column(name = "dispacciamento")
     private Double dispacciamento;
 
-    @Column(name = "Penali33")
+    @Column(name = "verifica_dispacciamento")
+    private Double verificaDispacciamento;
+
+    @Column(name = "penali33")
     private Double penali33;
 
-    @Column(name = "Penali75")
+    @Column(name = "penali75")
     private Double penali75;
 
     @Column(name = "Altro")
     private Double altro;
 
-    @Column(name = "Periodo_Inizio", nullable = false)
+    @Column(name = "periodo_inizio", nullable = false)
     private Date periodoInizio;
 
-    @Column(name = "Periodo_Fine", nullable = false)
+    @Column(name = "periodo_fine", nullable = false)
     private Date periodoFine;
 
-    @Column(name = "Anno", nullable = false)
+    @Column(name = "anno", nullable = false)
     private String anno;
 
-    @Column(name = "Mese")
+    @Column(name = "mese")
     private String mese;
 
-    @Column(name = "Verifica_Oneri")
+    @Column(name = "verifica_oneri")
     private Double verificaOneri;
 
-    @Column(name = "Verifica_Trasporti")
+    @Column(name = "verifica_trasporti")
     private Double verificaTrasporti;
 
-    @Column(name = "Verifica_Imposte")
+    @Column(name = "verifica_imposte")
     private Double verificaImposte;
 
     @Column(name = "picco_kwh")
@@ -302,6 +371,14 @@ public class BollettaPod extends PanacheEntityBase {
         this.dispacciamento = dispacciamento;
     }
 
+    public Double getVerificaDispacciamento() {
+        return verificaDispacciamento;
+    }
+
+    public void setVerificaDispacciamento(Double dispacciamento) {
+        this.verificaDispacciamento = dispacciamento;
+    }
+
     public Double getPenali33() {
         return penali33;
     }
@@ -484,5 +561,181 @@ public class BollettaPod extends PanacheEntityBase {
 
     public void setQuotaPotenzaOneri(Double quotaPotenzaOneri) {
         this.quotaPotenzaOneri = quotaPotenzaOneri;
+    }
+
+    public Double getF0Euro() {
+        return f0Euro;
+    }
+
+    public void setF0Euro(Double f0Euro) {
+        this.f0Euro = f0Euro;
+    }
+
+    public Double getF1Euro() {
+        return f1Euro;
+    }
+
+    public void setF1Euro(Double f1Euro) {
+        this.f1Euro = f1Euro;
+    }
+
+    public Double getF2Euro() {
+        return f2Euro;
+    }
+
+    public void setF2Euro(Double f2Euro) {
+        this.f2Euro = f2Euro;
+    }
+
+    public Double getF3Euro() {
+        return f3Euro;
+    }
+
+    public void setF3Euro(Double f3Euro) {
+        this.f3Euro = f3Euro;
+    }
+
+    public Double getF1PerditeEuro() {
+        return f1PerditeEuro;
+    }
+
+    public void setF1PerditeEuro(Double f1PerditeEuro) {
+        this.f1PerditeEuro = f1PerditeEuro;
+    }
+
+    public Double getF2PerditeEuro() {
+        return f2PerditeEuro;
+    }
+
+    public void setF2PerditeEuro(Double f2PerditeEuro) {
+        this.f2PerditeEuro = f2PerditeEuro;
+    }
+
+    public Double getF3PerditeEuro() {
+        return f3PerditeEuro;
+    }
+
+    public void setF3PerditeEuro(Double f3PerditeEuro) {
+        this.f3PerditeEuro = f3PerditeEuro;
+    }
+
+    public Double getF0Kwh() {
+        return f0Kwh;
+    }
+
+    public void setF0Kwh(Double f0Kwh) {
+        this.f0Kwh = f0Kwh;
+    }
+
+    public Double getF1Kwh() {
+        return f1Kwh;
+    }
+
+    public void setF1Kwh(Double f1Kwh) {
+        this.f1Kwh = f1Kwh;
+    }
+
+    public Double getF2Kwh() {
+        return f2Kwh;
+    }
+
+    public void setF2Kwh(Double f2Kwh) {
+        this.f2Kwh = f2Kwh;
+    }
+
+    public Double getF3Kwh() {
+        return f3Kwh;
+    }
+
+    public void setF3Kwh(Double f3Kwh) {
+        this.f3Kwh = f3Kwh;
+    }
+
+    public Double getF1PerditeKwh() {
+        return f1PerditeKwh;
+    }
+
+    public void setF1PerditeKwh(Double f1PerditeKwh) {
+        this.f1PerditeKwh = f1PerditeKwh;
+    }
+
+    public Double getF2PerditeKwh() {
+        return f2PerditeKwh;
+    }
+
+    public void setF2PerditeKwh(Double f2PerditeKwh) {
+        this.f2PerditeKwh = f2PerditeKwh;
+    }
+
+    public Double getF3PerditeKwh() {
+        return f3PerditeKwh;
+    }
+
+    public void setF3PerditeKwh(Double f3PerditeKwh) {
+        this.f3PerditeKwh = f3PerditeKwh;
+    }
+
+    public Double getVerificaSpesaMateriaEnergia() {
+        return verificaSpesaMateriaEnergia;
+    }
+
+    public void setVerificaSpesaMateriaEnergia(Double verificaSpesaMateriaEnergia) {
+        this.verificaSpesaMateriaEnergia = verificaSpesaMateriaEnergia;
+    }
+
+    public Double getVerificaF1() {
+        return verificaF1;
+    }
+
+    public void setVerificaF1(Double verificaF1) {
+        this.verificaF1 = verificaF1;
+    }
+
+    public Double getVerificaF2() {
+        return verificaF2;
+    }
+
+    public void setVerificaF2(Double verificaF2) {
+        this.verificaF2 = verificaF2;
+    }
+
+    public Double getVerificaF3() {
+        return verificaF3;
+    }
+
+    public void setVerificaF3(Double verificaF3) {
+        this.verificaF3 = verificaF3;
+    }
+
+    public Double getVerificaF1Perdite() {
+        return verificaF1Perdite;
+    }
+
+    public void setVerificaF1Perdite(Double verificaF1Perdite) {
+        this.verificaF1Perdite = verificaF1Perdite;
+    }
+
+    public Double getVerificaF2Perdite() {
+        return verificaF2Perdite;
+    }
+
+    public void setVerificaF2Perdite(Double verificaF2Perdite) {
+        this.verificaF2Perdite = verificaF2Perdite;
+    }
+
+    public Double getVerificaF3Perdite() {
+        return verificaF3Perdite;
+    }
+
+    public void setVerificaF3Perdite(Double verificaF3Perdite) {
+        this.verificaF3Perdite = verificaF3Perdite;
+    }
+
+    public Double getVerificaF0() {
+        return verificaF0;
+    }
+
+    public void setVerificaF0(Double verificaF0) {
+        this.verificaF0 = verificaF0;
     }
 }

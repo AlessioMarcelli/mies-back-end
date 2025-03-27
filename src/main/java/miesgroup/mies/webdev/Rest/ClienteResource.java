@@ -11,10 +11,14 @@ import jakarta.ws.rs.core.Response;
 import miesgroup.mies.webdev.Model.AlertData;
 import miesgroup.mies.webdev.Model.AlertResponse;
 import miesgroup.mies.webdev.Model.Cliente;
+import miesgroup.mies.webdev.Model.CostoEnergia;
 import miesgroup.mies.webdev.Service.ClienteService;
+import miesgroup.mies.webdev.Service.CostoEnergiaService;
 import miesgroup.mies.webdev.Service.EmailScheduler;
 import miesgroup.mies.webdev.Service.SessionService;
 
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Map;
 
 @Path("/cliente")
@@ -22,6 +26,7 @@ public class ClienteResource {
 
     private final ClienteService clienteService;
     private final SessionService sessionService;
+    private final CostoEnergiaService costoEnergiaService;
 
     @Inject
     Mailer mailer;
@@ -29,9 +34,10 @@ public class ClienteResource {
     @Inject
     EmailScheduler emailScheduler;
 
-    public ClienteResource(ClienteService clienteService, SessionService sessionService) {
+    public ClienteResource(ClienteService clienteService, SessionService sessionService, CostoEnergiaService costoEnergiaService) {
         this.clienteService = clienteService;
         this.sessionService = sessionService;
+        this.costoEnergiaService = costoEnergiaService;
     }
 
     // Recupera il cliente basato sul sessionId
@@ -234,7 +240,7 @@ public class ClienteResource {
                     corpoEmail += "Livello massimo: " + maximumLevels[i] + (checkModalities[i] ? "%" : "") + "\n";
                     corpoEmail += "Frequenza: " + frequencies[i] + "\n\n";
                 }
-                clienteService.updateDataFuturesAlert(idUtente,futuresType, maximumLevels, minimumLevels,frequencies,checkModalities, checkEmail);
+                clienteService.updateDataFuturesAlert(idUtente, futuresType, maximumLevels, minimumLevels, frequencies, checkModalities, checkEmail);
 
             } else {
                 double[] minimumLevel = new double[]{
@@ -264,8 +270,8 @@ public class ClienteResource {
                 corpoEmail += "Livello minimo: " + minimumLevel[0] + (checkModality[0] ? "%" : "") + "\n";
                 corpoEmail += "Livello massimo: " + maximumLevel[0] + (checkModality[0] ? "%" : "") + "\n";
                 corpoEmail += "Frequenza: " + frequency[0] + "\n";
-                System.out.println(idUtente+ " " +futuresType+ " " + maximumLevel[0]+ " " + minimumLevel[0]+ " " +frequency[0]+ " " +checkModality[0]);
-                clienteService.updateDataFuturesAlert(idUtente,futuresType, maximumLevel, minimumLevel,frequency,checkModality, checkEmail);
+                System.out.println(idUtente + " " + futuresType + " " + maximumLevel[0] + " " + minimumLevel[0] + " " + frequency[0] + " " + checkModality[0]);
+                clienteService.updateDataFuturesAlert(idUtente, futuresType, maximumLevel, minimumLevel, frequency, checkModality, checkEmail);
 
             }
             System.out.println(corpoEmail + " " + cliente.getEmail());
@@ -394,6 +400,62 @@ public class ClienteResource {
         sb.append("</table>\n\n");
 
         return sb.toString();
+    }
+
+    @GET
+    @Path("/costi-energia")
+    @Produces(MediaType.APPLICATION_JSON)
+    public Response getCostiEnergia(@CookieParam("SESSION_COOKIE") int sessionId) {
+        Integer idUtente = sessionService.trovaUtentebBySessione(sessionId);
+
+        if (idUtente == null || idUtente == 0) {
+            return Response.status(Response.Status.UNAUTHORIZED)
+                    .entity("Sessione non valida")
+                    .build();
+        }
+
+        List<CostoEnergia> costi = costoEnergiaService.getCostiEnergia(idUtente);
+
+        if (costi == null) {
+            return Response.status(Response.Status.NOT_FOUND)
+                    .entity("Cliente non trovato")
+                    .build();
+        }
+
+        return Response.ok(costi).build();
+    }
+
+    @POST
+    @Path("/costi-energia/add")
+    @Consumes(MediaType.APPLICATION_JSON)
+    @Produces(MediaType.APPLICATION_JSON)
+    public Response insertCostoEnergia(@CookieParam("SESSION_COOKIE") int sessionId, List<CostoEnergia> costiEnergia) {
+        Integer idUtente = sessionService.trovaUtentebBySessione(sessionId);
+
+        if (idUtente == null || idUtente == 0) {
+            return Response.status(Response.Status.UNAUTHORIZED)
+                    .entity("Sessione non valida")
+                    .build();
+        }
+
+        Cliente cliente = clienteService.getCliente(idUtente);
+
+        for (CostoEnergia costoEnergia : costiEnergia) {
+            // Associa il cliente
+            costoEnergia.setCliente(cliente);
+
+            // Verifica i campi obbligatori
+            if (costoEnergia.getNomeCosto() == null || costoEnergia.getCostoEuro() == null) {
+                return Response.status(Response.Status.BAD_REQUEST)
+                        .entity("Nome costo e costo in euro sono obbligatori per ogni elemento")
+                        .build();
+            }
+
+            // Chiamata al metodo persistOrUpdate
+            costoEnergiaService.persistOrUpdateCostoEnergia(costoEnergia);
+        }
+
+        return Response.ok().build();
     }
 
 }

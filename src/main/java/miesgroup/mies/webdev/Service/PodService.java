@@ -110,30 +110,59 @@ public class PodService {
                         }
 
                         if (lineText.contains("Indirizzo di fornitura")) {
-                            Node LineNode = lineNodes.item(i + 1);
-                            if (LineNode != null && LineNode.getNodeType() == Node.ELEMENT_NODE) {
-                                Element LineElement = (Element) LineNode;
-                                String indirizzo = LineElement.getTextContent().trim(); // Ottiene l'indirizzo
+                            // Costruiamo un StringBuilder per accodare più righe
+                            StringBuilder addressBuilder = new StringBuilder();
 
+                            // Partiamo dalla riga successiva
+                            int nextIndex = i + 1;
+                            while (nextIndex < lineNodes.getLength()) {
+                                Node nextNode = lineNodes.item(nextIndex);
+                                if (nextNode != null && nextNode.getNodeType() == Node.ELEMENT_NODE) {
+                                    String nextLineText = nextNode.getTextContent().trim();
 
-                                String[] parts = indirizzo.split(" - ");
-                                if (parts.length == 2) {
-                                    sede = parts[0].trim();
-                                    String capCitta = parts[1].trim();
+                                    // Se la prossima riga è vuota o contiene una parola chiave che indica un'altra sezione,
+                                    // interrompiamo la lettura dell'indirizzo.
+                                    if (nextLineText.isEmpty()
+                                            || nextLineText.contains("Tipologia cliente")) {
+                                        break;
+                                    }
 
-                                    // Divide CAP e Città basandosi sul primo spazio
-                                    String[] capCittaParts = capCitta.split(" ", 2);
-                                    cap = capCittaParts[0];
-                                    citta = capCittaParts.length > 1 ? capCittaParts[1] : "";
-                                } else {
-                                    System.out.println("❌ Errore: Formato dell'indirizzo non valido.");
+                                    // Altrimenti, accodiamo questa riga all'indirizzo
+                                    if (addressBuilder.length() > 0) {
+                                        addressBuilder.append(" ");
+                                    }
+                                    addressBuilder.append(nextLineText);
+
+                                    // Incrementiamo l'indice, così da saltare effettivamente queste righe
+                                    // (se vuoi processarle anche in altro modo, puoi omettere questo passaggio)
+                                    i = nextIndex;
                                 }
-
-                                // Stampa i risultati per verifica
-                                System.out.println("📌 Sede: " + sede);
-                                System.out.println("📌 CAP: " + cap);
-                                System.out.println("📌 Città: " + citta);
+                                nextIndex++;
                             }
+
+                            // Ora abbiamo un indirizzo "multi-riga" dentro addressBuilder
+                            String indirizzo = addressBuilder.toString().trim();
+                            System.out.println("Indirizzo completo: " + indirizzo);
+
+                            // A questo punto puoi effettuare lo split come facevi prima
+                            // Per esempio:
+                            String[] parts = indirizzo.split(" - ");
+                            if (parts.length == 2) {
+                                sede = parts[0].trim();
+                                String capCitta = parts[1].trim();
+
+                                // Divide CAP e Città basandosi sul primo spazio
+                                String[] capCittaParts = capCitta.split(" ", 2);
+                                cap = capCittaParts[0];
+                                citta = (capCittaParts.length > 1) ? capCittaParts[1] : "";
+                            } else {
+                                System.out.println("❌ Errore: Formato dell'indirizzo non valido.");
+                            }
+
+                            // Stampa i risultati per verifica
+                            System.out.println("📌 Sede: " + sede);
+                            System.out.println("📌 CAP: " + cap);
+                            System.out.println("📌 Città: " + citta);
                         }
 
                     } else {

@@ -41,8 +41,8 @@ public class BollettaRepo implements PanacheRepositoryBase<BollettaPod, Integer>
         return pod.getTipoTensione();
     }
 
-    public void updateDispacciamentoA2A(double dispacciamento, String nome, String mese) {
-        update("SET dispacciamento = ?1 WHERE nomeBolletta = ?2 AND mese = ?3", dispacciamento, nome, mese);
+    public void updateVerificaDispacciamentoA2A(double verificaDispacciamento, String nome, String mese) {
+        update("SET verificaDispacciamento = ?1 WHERE nomeBolletta = ?2 AND mese = ?3", verificaDispacciamento, nome, mese);
     }
 
 
@@ -155,13 +155,13 @@ public class BollettaRepo implements PanacheRepositoryBase<BollettaPod, Integer>
         return f2;
     }
 
-    public Double getPiccoKwh(String nomeBolletta, String mese) {
-        BollettaPod b = find("nomeBolletta = ?1 AND mese = ?2", nomeBolletta, mese).firstResult();
+    public Double getPiccoKwh(String nomeBolletta, String mese, String anno) {
+        BollettaPod b = find("nomeBolletta = ?1 AND mese = ?2 AND anno = ?3", nomeBolletta, mese, anno).firstResult();
         return b.getPiccoKwh();
     }
 
-    public Double getFuoriPiccoKwh(String nomeBolletta, String mese) {
-        BollettaPod b = find("nomeBolletta = ?1 AND mese = ?2", nomeBolletta, mese).firstResult();
+    public Double getFuoriPiccoKwh(String nomeBolletta, String mese, String anno) {
+        BollettaPod b = find("nomeBolletta = ?1 AND mese = ?2 AND anno = ?3", nomeBolletta, mese, anno).firstResult();
         return b.getFuoriPiccoKwh();
     }
 
@@ -261,7 +261,7 @@ public class BollettaRepo implements PanacheRepositoryBase<BollettaPod, Integer>
             bolletta.setVerificaFuoriPicco(ricalcoli.get("verificaFuoriPicco") != null ? ricalcoli.get("verificaFuoriPicco") : 0.0);
             bolletta.setTotAttivaPerdite(ricalcoli.get("totAttivaPerdite") != null ? ricalcoli.get("totAttivaPerdite") : 0.0);
             bolletta.setGeneration(ricalcoli.get("generation") != null ? ricalcoli.get("generation") : 0.0);
-            bolletta.setDispacciamento(ricalcoli.get("dispacciamento") != null ? ricalcoli.get("dispacciamento") : 0.0);
+            bolletta.setVerificaDispacciamento(ricalcoli.get("dispacciamento") != null ? ricalcoli.get("dispacciamento") : 0.0);
             bolletta.setPenali33(ricalcoli.get("penali33") != null ? ricalcoli.get("penali33") : 0.0);
             bolletta.setPenali75(ricalcoli.get("penali75") != null ? ricalcoli.get("penali75") : 0.0);
             bolletta.setQuotaVariabileTrasporti(ricalcoli.get("quotaVariabileTrasporti") != null ? ricalcoli.get("quotaVariabileTrasporti") : 0.0);
@@ -275,4 +275,35 @@ public class BollettaRepo implements PanacheRepositoryBase<BollettaPod, Integer>
         }
     }
 
+    public void updateVerificaMateriaEnergia(Double spesaMateriaEnergia, String nomeBolletta, String mese) {
+        update("SET verificaSpesaMateriaEnergia = ?1 WHERE nomeBolletta = ?2 AND mese = ?3", spesaMateriaEnergia, nomeBolletta, mese);
+    }
+
+    public void updateCostoF0(Double f0Tot, String nomeBolletta, String mese) {
+        update("SET verificaF0 = ?1 WHERE nomeBolletta = ?2 AND mese = ?3", f0Tot, nomeBolletta, mese);
+    }
+
+    public void updateCostoF1(Double f1Tot, String nomeBolletta, String mese) {
+        update("SET verificaF1 = ?1 WHERE nomeBolletta = ?2 AND mese = ?3", f1Tot, nomeBolletta, mese);
+    }
+
+    public void updateCostoF2(Double f2Tot, String nomeBolletta, String mese) {
+        update("SET verificaF2 = ?1 WHERE nomeBolletta = ?2 AND mese = ?3", f2Tot, nomeBolletta, mese);
+    }
+
+    public void updateCostoF3(Double f3Tot, String nomeBolletta, String mese) {
+        update("SET verificaF3 = ?1 WHERE nomeBolletta = ?2 AND mese = ?3", f3Tot, nomeBolletta, mese);
+    }
+
+    public void updateCostoF1Perdite(Double f1PerditeTot, String nomeBolletta, String mese) {
+        update("SET verificaF1Perdite = ?1 WHERE nomeBolletta = ?2 AND mese = ?3", f1PerditeTot, nomeBolletta, mese);
+    }
+
+    public void updateCostoF2Perdite(Double f2PerditeTot, String nomeBolletta, String mese) {
+        update("SET verificaF2Perdite = ?1 WHERE nomeBolletta = ?2 AND mese = ?3", f2PerditeTot, nomeBolletta, mese);
+    }
+
+    public void updateCostoF3Perdite(Double f3PerditeTot, String nomeBolletta, String mese) {
+        update("SET verificaF3Perdite = ?1 WHERE nomeBolletta = ?2 AND mese = ?3", f3PerditeTot, nomeBolletta, mese);
+    }
 }

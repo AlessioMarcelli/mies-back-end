@@ -53,6 +53,7 @@ public class ClienteService {
     public Map<String, Boolean> checkAlertStates(int idUtente) {
         return clienteRepo.checkAlertStates(idUtente);
     }
+
     public Map<String, Boolean> deleteUserAlert(int idUtente, String futuresType) {
         return clienteRepo.deleteUserAlert(idUtente, futuresType);
     }
@@ -60,8 +61,12 @@ public class ClienteService {
     public boolean updateDataFuturesAlert(int idUtente, String futuresType, double[] maxPriceValue, double[] minPriceValue, String[] frequency, boolean[] checkModality, boolean checkEmail) {
         return clienteRepo.updateDataFuturesAlert(idUtente, futuresType, maxPriceValue, minPriceValue, frequency, checkModality, checkEmail);
     }
+
     public List<Cliente> getClientsCheckEmail() {
         return clienteRepo.getClientsCheckEmail();
     }
 
+    public Cliente getClienteByPod(String idPod) {
+        return clienteRepo.getClienteByPod(idPod);
+    }
 }

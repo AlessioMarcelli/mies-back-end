@@ -30,14 +30,14 @@ public class BollettaResource {
 
     }
 
-//    @Path("/xml/{id}")
-//    @GET
-//    @Produces(MediaType.APPLICATION_XML)
-//    public Response getXml(@PathParam("id") int id) throws IOException, ParserConfigurationException {
-//        byte[] xmlData = fileService.getXmlData(id);
-//        Document xmlDoc = fileService.convertPdfToXml(xmlData);
-//        return Response.ok(xmlDoc, MediaType.APPLICATION_XML).build();
-//    }
+    @Path("/xml/{id}")
+    @GET
+    @Produces(MediaType.APPLICATION_XML)
+    public Response getXml(@PathParam("id") int id) throws IOException, ParserConfigurationException {
+        byte[] xmlData = fileService.getXmlData(id);
+        Document xmlDoc = fileService.convertPdfToXml(xmlData);
+        return Response.ok(xmlDoc, MediaType.APPLICATION_XML).build();
+    }
 
 
     @Path("/upload")

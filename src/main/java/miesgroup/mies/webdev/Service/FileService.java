@@ -133,13 +133,14 @@ public class FileService {
             Map<String, Map<String, Map<String, Integer>>> lettureMese = extractLetture(document);
             Map<String, Map<String, Map<String, Double>>> piccoEFuoriPiccoPerMese = extractPiccoFuoriPicco(document);
             Map<String, Map<String, Double>> spesePerMese = extractSpesePerMese(document);
+            Map<String, Map<String, Double>> kWhPerMese = extractKwhPerMese(document);
             Periodo periodo = extractPeriodo(document);
 
             if (lettureMese.isEmpty()) {
                 return null;
             }
 
-            fileRepo.saveDataToDatabase(lettureMese, spesePerMese, idPod, nomeBolletta, piccoEFuoriPiccoPerMese, periodo);
+            fileRepo.saveDataToDatabase(lettureMese, spesePerMese, idPod, nomeBolletta, piccoEFuoriPiccoPerMese, periodo, kWhPerMese);
 
             return nomeBolletta;
 
@@ -260,13 +261,17 @@ public class FileService {
         // Struttura dati intermedia: mese -> (categoria -> lista di valori)
         Map<String, Map<String, List<Double>>> spesePerMese = new HashMap<>();
 
+        // Set per tracciare le macro-categorie già inizializzate (per evitare reinizializzazioni)
         Set<String> categorieGiaViste = new HashSet<>();
-        String categoriaCorrente = null;
-        String meseCorrente = null; // Campo per il mese/periodo in parsing
+        String categoriaCorrente = "";
+        String sottoCategoria = "";
+        // Flag per indicare che siamo nella sezione "Materia Energia"
+        boolean sezioneCorretta = false;
+        String meseCorrente = null;
         boolean controlloAttivo = false;
         int righeSenzaEuro = 0;
 
-        // Parole chiave per interrompere il parsing
+        // Parole chiave per interrompere il parsing (fine sezione)
         Set<String> stopParsingKeywords = Set.of(
                 "TOTALE FORNITURA ENERGIA ELETTRICA E IMPOSTE",
                 "RICALCOLO"
@@ -278,25 +283,33 @@ public class FileService {
             if (lineNode.getNodeType() == Node.ELEMENT_NODE) {
                 String lineText = lineNode.getTextContent().trim();
 
-                // 1) Interrompe il parsing se trova un titolo che indica fine sezione
+                // 0) Se la riga contiene "picco" o "Corrispettivi di dispacciamento Del.",
+                // resetta sottoCategoria e le flag per permettere il ripristino delle nuove categorie
+                if (lineText.contains("picco")) {
+                    sottoCategoria = "";
+                    categoriaCorrente = "";
+                    sezioneCorretta = false;
+                    continue; // Procede con la riga successiva
+                }
+
+                // 1) Interrompe il parsing se trova una parola chiave di stop
                 if (stopParsingKeywords.stream().anyMatch(lineText::contains)) {
                     break;
                 }
 
                 // 2) Controlla se la riga contiene informazioni sul mese
-                //    (NB: qui dovrai adattare la logica di estrazione al formato delle tue bollette)
                 String meseEstratto = estraiMese(lineText);
                 if (meseEstratto != null) {
                     meseCorrente = meseEstratto;
-
                 }
 
-                // 3) Identificare la categoria corrente
+                // 3) Identifica le macro-categorie principali
                 if (lineText.contains("SPESA PER LA MATERIA ENERGIA")) {
                     categoriaCorrente = "Materia Energia";
                     categorieGiaViste.add(categoriaCorrente);
                     controlloAttivo = false;
                     righeSenzaEuro = 0;
+                    sezioneCorretta = false; // reset per la sotto-categoria
                     continue;
                 }
                 if (lineText.contains("SPESA PER ONERI DI SISTEMA")) {
@@ -304,6 +317,7 @@ public class FileService {
                     categorieGiaViste.add(categoriaCorrente);
                     controlloAttivo = false;
                     righeSenzaEuro = 0;
+                    // Non serve sottoCategoria per queste categorie
                     continue;
                 }
                 if (lineText.contains("SPESA PER IL TRASPORTO E LA GESTIONE DEL CONTATORE")) {
@@ -321,53 +335,231 @@ public class FileService {
                     continue;
                 }
 
-                // 4) Se la categoria è attiva e troviamo un valore monetario (€), lo estraiamo
-                if (categoriaCorrente != null && lineText.contains("€")) {
+                // 3.1) Se siamo nella sezione "Materia Energia", distinguiamo le sottocategorie
+                if ("Materia Energia".equals(categoriaCorrente) || sezioneCorretta) {
+                    sezioneCorretta = true; // attiva la modalità di parsing della sezione
+                    String lowerLine = lineText.toLowerCase();
+                    // Prima controlla le perdite (case insensitive)
+                    if (lowerLine.contains("perdite di rete f1")) {
+                        sottoCategoria = "Perdite F1";
+                    } else if (lowerLine.contains("perdite di rete f2")) {
+                        sottoCategoria = "Perdite F2";
+                    } else if (lowerLine.contains("perdite di rete f3")) {
+                        sottoCategoria = "Perdite F3";
+                    }
+                    // Poi controlla le fasce specifiche
+                    else if (lowerLine.contains("materia energia f1")) {
+                        sottoCategoria = "Materia energia F1";
+                    } else if (lowerLine.contains("materia energia f2")) {
+                        sottoCategoria = "Materia energia F2";
+                    } else if (lowerLine.contains("materia energia f3")) {
+                        sottoCategoria = "Materia energia F3";
+                    } else if (lowerLine.contains("materia energia")) {
+                        sottoCategoria = "Materia energia F0";
+                    } else if (lowerLine.contains("corrispettivi di dispacciamento del")) {
+                        sottoCategoria = "dispacciamento";
+                    }
+                }
+
+                //TODO:implementare auto somma delle penalità per impostare altro
+
+                // 4) Se la riga contiene "€" ed è associata a una categoria, estrai il valore
+                if ((!sottoCategoria.isEmpty() || !categoriaCorrente.isEmpty()) && lineText.contains("€")) {
                     Double valore = extractEuroValue(lineText);
                     if (valore != null) {
-                        // Assicura che il primo valore venga sommato correttamente
+                        // Utilizza sottoCategoria se è presente, altrimenti usa categoriaCorrente
+                        String chiave = !sottoCategoria.isEmpty() ? sottoCategoria : categoriaCorrente;
+                        // Inizializza il controllo se è il primo valore per la macro-categoria
                         if (categorieGiaViste.contains(categoriaCorrente)) {
                             categorieGiaViste.remove(categoriaCorrente);
                             controlloAttivo = true;
                             righeSenzaEuro = 0;
                         }
-
-                        // Se non è stato ancora impostato un mese, assegniamo un mese di default
                         if (meseCorrente == null) {
                             meseCorrente = "MeseSconosciuto";
                         }
-
-                        // Aggiunge il valore nella struttura (mese -> categoria -> valori)
                         spesePerMese
                                 .computeIfAbsent(meseCorrente, k -> new HashMap<>())
-                                .computeIfAbsent(categoriaCorrente, k -> new ArrayList<>())
+                                .computeIfAbsent(chiave, k -> new ArrayList<>())
                                 .add(valore);
-
                         controlloAttivo = true;
                         righeSenzaEuro = 0;
+                        // Dopo l'inserimento, puoi decidere di resettare sottoCategoria se non ti serve per le righe successive:
+                        // sottoCategoria = "";
                     }
                 } else if (controlloAttivo) {
-                    // Se abbiamo attivato il controllo e la riga non ha €, incrementiamo il contatore
                     righeSenzaEuro++;
-
-                    // Se sono passate 10 righe senza €, resettiamo la categoria (no parse di nuove spese)
                     if (righeSenzaEuro >= 10 &&
                             !lineText.matches(".*(QUOTA|Componente|Corrispettivi|€/kWh|€/kW/mese|€/cliente/mese|QUOTA VARIABILE).*")) {
-
-                        categoriaCorrente = null;
+                        categoriaCorrente = "";
                         controlloAttivo = false;
                         righeSenzaEuro = 0;
+                        sottoCategoria = "";
+                        sezioneCorretta = false;
                     }
                 } else {
-                    // Se troviamo un'altra riga con €, resettiamo il contatore per evitare reset prematuri
                     righeSenzaEuro = 0;
                 }
             }
         }
-
-        // Una volta terminato il parsing, andiamo a processare e sommare i dati
+        System.out.println("Estrazione costi (spese): " + spesePerMese);
         return processSpesePerMese(spesePerMese);
     }
+
+
+    private Map<String, Map<String, Double>> extractKwhPerMese(Document document) {
+        // Struttura dati: mese -> (sotto-categoria -> lista di valori kWh)
+        Map<String, Map<String, List<Double>>> kwhPerMese = new HashMap<>();
+
+        // Set per tracciare le macro-categorie già inizializzate (usato per inizializzare la sezione una sola volta)
+        Set<String> categorieGiaViste = new HashSet<>();
+        // Variabili per la gestione delle categorie e sottocategorie
+        String categoriaCorrente = "";
+        String sottoCategoria = "";
+        boolean sezioneCorretta = false;
+        String meseCorrente = null;
+        boolean controlloAttivo = false;
+        int righeSenzaKwh = 0;
+
+        // Parole chiave per interrompere il parsing (fine sezione)
+        Set<String> stopParsingKeywords = Set.of(
+                "Corrispettivi di dispacciamento Del.",
+                "picco"
+        );
+
+        NodeList lineNodes = document.getElementsByTagName("Line");
+        for (int i = 0; i < lineNodes.getLength(); i++) {
+            Node lineNode = lineNodes.item(i);
+            if (lineNode.getNodeType() == Node.ELEMENT_NODE) {
+                String lineText = lineNode.getTextContent().trim();
+
+                // 1) Se la riga contiene una parola chiave di stop, interrompe il parsing
+                if (stopParsingKeywords.stream().anyMatch(lineText::contains)) {
+                    break;
+                }
+
+                // 2) Controlla se la riga contiene informazioni sul mese
+                String meseEstratto = estraiMese(lineText);
+                if (meseEstratto != null) {
+                    meseCorrente = meseEstratto;
+                }
+
+                // 3) Identifica la macro-categoria "SPESA PER LA MATERIA ENERGIA"
+                if (lineText.contains("SPESA PER LA MATERIA ENERGIA")) {
+                    categoriaCorrente = "Materia Energia";
+                    categorieGiaViste.add(categoriaCorrente);
+                    controlloAttivo = false;
+                    righeSenzaKwh = 0;
+                    sezioneCorretta = false; // reset della flag per la sotto-categoria
+                    continue;
+                }
+
+                // 3.1) Se siamo nella sezione "Materia Energia", distinguiamo le sottocategorie
+                // Attiviamo la modalità "sezioneCorretta" per le righe successive
+                if ("Materia Energia".equals(categoriaCorrente) || sezioneCorretta) {
+                    sezioneCorretta = true;
+                    String lowerLine = lineText.toLowerCase();
+                    // Controlla prima le perdite, poi le fasce specifiche
+                    if (lowerLine.contains("perdite di rete f1")) {
+                        sottoCategoria = "Perdite F1";
+                    } else if (lowerLine.contains("perdite di rete f2")) {
+                        sottoCategoria = "Perdite F2";
+                    } else if (lowerLine.contains("perdite di rete f3")) {
+                        sottoCategoria = "Perdite F3";
+                    } else if (lowerLine.contains("materia energia f1")) {
+                        sottoCategoria = "Materia energia F1";
+                    } else if (lowerLine.contains("materia energia f2")) {
+                        sottoCategoria = "Materia energia F2";
+                    } else if (lowerLine.contains("materia energia f3")) {
+                        sottoCategoria = "Materia energia F3";
+                    } else if (lowerLine.contains("materia energia")) {
+                        sottoCategoria = "Materia energia F0";
+                    }
+                }
+
+                // 4) Se la riga contiene "kWh" ed è stata determinata una sotto-categoria, estrai il valore
+                if (!sottoCategoria.isEmpty() && lineText.contains("kWh")) {
+                    Double kwhValue = extractKwhValue(lineText);
+                    if (kwhValue != null) {
+                        // Se è il primo valore per la macro-categoria, rimuoviamo la voce da categorieGiaViste per evitare inizializzazioni ripetute
+                        if (categorieGiaViste.contains(categoriaCorrente)) {
+                            categorieGiaViste.remove(categoriaCorrente);
+                            controlloAttivo = true;
+                            righeSenzaKwh = 0;
+                        }
+                        // Se il mese non è stato ancora impostato, usa un default
+                        if (meseCorrente == null) {
+                            meseCorrente = "MeseSconosciuto";
+                        }
+                        // Salva il valore kWh nella mappa usando la sotto-categoria come chiave
+                        kwhPerMese
+                                .computeIfAbsent(meseCorrente, k -> new HashMap<>())
+                                .computeIfAbsent(sottoCategoria, k -> new ArrayList<>())
+                                .add(kwhValue);
+                        controlloAttivo = true;
+                        righeSenzaKwh = 0;
+                    }
+                } else if (controlloAttivo) {
+                    // Se la riga non contiene "kWh" ma siamo in modalità controllo, incrementa il contatore
+                    righeSenzaKwh++;
+                    if (righeSenzaKwh >= 10 &&
+                            !lineText.matches(".*(QUOTA|Componente|Corrispettivi|€/kWh|€/kW/mese|€/cliente/mese|QUOTA VARIABILE).*")) {
+                        categoriaCorrente = "";
+                        controlloAttivo = false;
+                        righeSenzaKwh = 0;
+                        sottoCategoria = "";
+                        sezioneCorretta = false;
+                    }
+                } else {
+                    righeSenzaKwh = 0;
+                }
+            }
+        }
+        System.out.println("Estrazione kwh: " + kwhPerMese);
+        return processKwhPerMese(kwhPerMese);
+    }
+
+    // Metodo di supporto per sommare i valori kWh per mese e categoria
+    private Map<String, Map<String, Double>> processKwhPerMese(Map<String, Map<String, List<Double>>> kwhPerMese) {
+        Map<String, Map<String, Double>> result = new HashMap<>();
+        for (Map.Entry<String, Map<String, List<Double>>> entryMese : kwhPerMese.entrySet()) {
+            String mese = entryMese.getKey();
+            Map<String, Double> catToSum = new HashMap<>();
+            for (Map.Entry<String, List<Double>> entryCat : entryMese.getValue().entrySet()) {
+                String categoria = entryCat.getKey();
+                double somma = entryCat.getValue().stream().mapToDouble(Double::doubleValue).sum();
+                catToSum.put(categoria, somma);
+            }
+            result.put(mese, catToSum);
+        }
+        return result;
+    }
+
+    private Double extractKwhValue(String text) {
+        // La regex seguente cerca numeri nel formato tipico italiano, es:
+        // "229.226,00 kWh" oppure "484,00 kWh"
+        Pattern pattern = Pattern.compile("([0-9]{1,3}(?:\\.[0-9]{3})*(?:,[0-9]{1,2})?)\\s*kWh");
+        Matcher matcher = pattern.matcher(text);
+        Double lastMatch = null;
+        while (matcher.find()) {
+            String match = matcher.group(1);
+            // Rimuove i separatori delle migliaia (punti) e sostituisce la virgola con un punto
+            match = match.replace(".", "").replace(",", ".");
+            try {
+                lastMatch = Double.parseDouble(match);
+            } catch (NumberFormatException e) {
+                System.err.println("Errore nel parsing del valore kWh: " + match);
+            }
+        }
+        if (lastMatch != null) {
+            System.out.println("✅ Valore kWh estratto: " + lastMatch);
+            return lastMatch;
+        } else {
+            System.out.println("❌ Nessun valore kWh trovato in: " + text);
+            return null;
+        }
+    }
+
 
     /**
      * Metodo che, data la struttura dati con chiave (mese, categoria), somma i valori
