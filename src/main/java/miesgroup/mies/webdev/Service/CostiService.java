@@ -21,8 +21,9 @@ public class CostiService {
         this.costiRepo = costiRepo;
     }
 
+
     @Transactional
-    public boolean createCosto(String descrizione, String categoria, String unitaMisura, Integer trimestre, String anno, float valore, String tipoTensione, String classeAgevolazione) throws SQLException {
+    public boolean createCosto(String descrizione, String categoria, String unitaMisura, Integer trimestre, String anno, Double valore, String tipoTensione, String classeAgevolazione) throws SQLException {
         Costi costo = new Costi();
         costo.setDescrizione(descrizione);
         costo.setCategoria(categoria);
@@ -56,7 +57,7 @@ public class CostiService {
     }
 
     @Transactional
-    public boolean updateCosto(int id, String descrizione, String categoria, String unitaMisura, int trimestre, String anno, float costo, String intervalloPotenza, String classeAgevolazione) {
+    public boolean updateCosto(int id, String descrizione, String categoria, String unitaMisura, int trimestre, String anno, Double costo, String intervalloPotenza, String classeAgevolazione) {
         Costi c = new Costi();
         c.setId(id);
         c.setDescrizione(descrizione);
@@ -171,7 +172,7 @@ public class CostiService {
                 String annoRiferimento = getCellValue(row.getCell(8));
 
                 int trimestre = trimestreStr.isEmpty() ? 0 : (int) Double.parseDouble(trimestreStr);
-                float costo = costoStr.isEmpty() ? 0.0f : Float.parseFloat(costoStr);
+                Double costo = costoStr.isEmpty() ? 0.0f : Double.parseDouble(costoStr);
 
                 if (!existsInList(existingCosti, descrizione, unitaMisura, trimestre, annoStr, costo, categoria, intervalloPotenza, classeAgevolazione, annoRiferimento)) {
                     Costi dettaglioCosto = new Costi();
@@ -195,14 +196,14 @@ public class CostiService {
     }
 
 
-    private boolean existsInList(List<Costi> existingCosti, String descrizione, String unitaMisura, int trimestre, String anno, float costo, String categoria, String intervalloPotenza, String classeAgevolazione, String annoRiferimento) {
+    private boolean existsInList(List<Costi> existingCosti, String descrizione, String unitaMisura, int trimestre, String anno, Double costo, String categoria, String intervalloPotenza, String classeAgevolazione, String annoRiferimento) {
         for (Costi costoEsistente : existingCosti) {
             if (
                     areEqual(costoEsistente.getDescrizione(), descrizione) &&
                             areEqual(costoEsistente.getUnitaMisura(), unitaMisura) &&
                             costoEsistente.getTrimestre() == trimestre &&
                             areEqual(costoEsistente.getAnno(), anno) &&
-                            Float.compare(costoEsistente.getCosto(), costo) == 0 && // Confronto sicuro per float
+                            Double.compare(costoEsistente.getCosto(), costo) == 0 && // Confronto sicuro per float
                             areEqual(costoEsistente.getCategoria(), categoria) &&
                             areEqual(costoEsistente.getIntervalloPotenza(), intervalloPotenza) &&
                             areEqual(costoEsistente.getClasseAgevolazione(), classeAgevolazione) &&
@@ -249,4 +250,8 @@ public class CostiService {
         }
     }
 
+
+    public List<Costi> getArticoli(String anno, String mese, String categoria, String rangePotenza) {
+        return costiRepo.getArticoli(anno, mese, categoria, rangePotenza);
+    }
 }

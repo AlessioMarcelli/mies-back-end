@@ -4,11 +4,14 @@ import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.transaction.Transactional;
 import miesgroup.mies.webdev.Model.BollettaPod;
 import miesgroup.mies.webdev.Model.Cliente;
+import miesgroup.mies.webdev.Model.Costi;
+import miesgroup.mies.webdev.Model.Pod;
 import miesgroup.mies.webdev.Repository.BollettaRepo;
 import miesgroup.mies.webdev.Repository.CostoEnergiaRepo;
 
 import java.math.BigDecimal;
 import java.math.RoundingMode;
+import java.util.List;
 import java.util.Optional;
 
 @ApplicationScoped
@@ -17,12 +20,16 @@ public class BollettaService {
     private final BollettaRepo bollettaRepo;
     private final ClienteService clienteService;
     private final CostoEnergiaService costoEnergiaService;
+    private final CostoArticoloService costoArticoloService;
+    private final CostiService costiService;
 
 
-    public BollettaService(BollettaRepo bollettaRepo, ClienteService clienteService, CostoEnergiaService costoEnergiaService) {
+    public BollettaService(BollettaRepo bollettaRepo, ClienteService clienteService, CostoEnergiaService costoEnergiaService, CostoArticoloService costoArticoloService, CostiService costiService) {
         this.bollettaRepo = bollettaRepo;
         this.clienteService = clienteService;
         this.costoEnergiaService = costoEnergiaService;
+        this.costoArticoloService = costoArticoloService;
+        this.costiService = costiService;
     }
 
     @Transactional
@@ -219,6 +226,22 @@ public class BollettaService {
 
             bollettaRepo.updateVerificaMateriaEnergia(spesaMateriaEnergia, b.getNomeBolletta(), b.getMese());
 
+            // ──────────────────────────────────────────────
+            // 14. Calcolo del costo per ogni singolo articolo
+            // ──────────────────────────────────────────────
+
+            // Calcolo del costo per ogni articolo dei trasporti
+            List<Costi> articoliTrasporti = costiService.getArticoli(b.getAnno(), b.getMese(), "trasporti", rangePotenza);
+            costoArticoloService.calcolaCostiArticoli(articoliTrasporti, b, maggiorePotenza);
+
+            // Calcolo del costo per ogni articolo delle imposte
+            List<Costi> articoliImposte = costiService.getArticoli(b.getAnno(), b.getMese(), "imposte", rangePotenza);
+            costoArticoloService.calcolaCostiArticoli(articoliImposte, b, maggiorePotenza);
+
+            // Calcolo del costo per ogni articolo degli oneri
+            List<Costi> articoliOneri = costiService.getArticoli(b.getAnno(), b.getMese(), "oneri", rangePotenza);
+            costoArticoloService.calcolaCostiArticoli(articoliOneri, b, maggiorePotenza);
+
         } catch (Exception e) {
             System.err.println("Errore: " + e.getMessage());
         }
@@ -236,5 +259,9 @@ public class BollettaService {
     @Transactional
     public boolean A2AisPresent(String nomeBolletta, String idPod) {
         return bollettaRepo.A2AisPresent(nomeBolletta, idPod);
+    }
+
+    public List<BollettaPod> findBollettaPodByPods(List<Pod> pods) {
+        return bollettaRepo.findBollettaPodByPods(pods);
     }
 }

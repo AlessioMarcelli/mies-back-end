@@ -2,6 +2,7 @@ package miesgroup.mies.webdev.Service;
 
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.transaction.Transactional;
+import miesgroup.mies.webdev.Model.BollettaPod;
 import miesgroup.mies.webdev.Model.Cliente;
 import miesgroup.mies.webdev.Model.PDFFile;
 import miesgroup.mies.webdev.Model.Pod;
@@ -247,4 +248,5 @@ public class PodService {
 
         podRepo.modificaSedeNazione(idPod, sede, nazione);
     }
+
 }

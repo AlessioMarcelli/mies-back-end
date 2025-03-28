@@ -27,7 +27,7 @@ public class Costi extends PanacheEntityBase {
     private String anno;
 
     @Column(name = "Costo")
-    private Float costo;
+    private Double costo;
 
     @Column(name = "Categoria")
     private String categoria;
@@ -85,11 +85,11 @@ public class Costi extends PanacheEntityBase {
         this.anno = anno;
     }
 
-    public Float getCosto() {
+    public Double getCosto() {
         return costo;
     }
 
-    public void setCosto(Float costo) {
+    public void setCosto(Double costo) {
         this.costo = costo;
     }
 

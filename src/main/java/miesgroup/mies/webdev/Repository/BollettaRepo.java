@@ -306,4 +306,9 @@ public class BollettaRepo implements PanacheRepositoryBase<BollettaPod, Integer>
     public void updateCostoF3Perdite(Double f3PerditeTot, String nomeBolletta, String mese) {
         update("SET verificaF3Perdite = ?1 WHERE nomeBolletta = ?2 AND mese = ?3", f3PerditeTot, nomeBolletta, mese);
     }
+
+    public List<BollettaPod> findBollettaPodByPods(List<Pod> pods) {
+        List<String> podIds = pods.stream().map(Pod::getId).toList();
+        return list("idPod IN ?1", podIds);
+    }
 }

@@ -48,7 +48,7 @@ public class CostiRepo implements PanacheRepositoryBase<Costi, Integer> {
         }
 
         Costi costo = new Costi();
-        costo.setCosto(sommaCosto.get().floatValue());
+        costo.setCosto(sommaCosto.get());
         return costo;
     }
 
@@ -85,4 +85,14 @@ public class CostiRepo implements PanacheRepositoryBase<Costi, Integer> {
 
     }
 
+    public List<Costi> getArticoli(String anno, String mese, String categoria, String rangePotenza) {
+        int trimestre = switch (mese.toLowerCase()) {
+            case "gennaio", "febbraio", "marzo" -> 1;
+            case "aprile", "maggio", "giugno" -> 2;
+            case "luglio", "agosto", "settembre" -> 3;
+            default -> 4;
+        };
+
+        return find("categoria = ?1 AND (trimestre = ?2 OR anno =? 3) AND annoRiferimento = ?4 AND intervalloPotenza =? 5", categoria, trimestre, anno, anno, rangePotenza).list();
+    }
 }
