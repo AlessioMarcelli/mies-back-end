@@ -96,26 +96,44 @@ public class AutenticationResource {
         }
     }
 
-
     @DELETE
     @Path("/logout")
     public Response logout(@CookieParam("SESSION_COOKIE") int sessionId) {
-        autenticationService.logout(sessionId);
-        NewCookie sessionCookie = new NewCookie.Builder("SESSION_COOKIE").path("/").build();
-        return Response.ok()
-                .cookie(sessionCookie)
-                .build();
+        try {
+            autenticationService.logout(sessionId);
+            NewCookie sessionCookie = new NewCookie.Builder("SESSION_COOKIE")
+                    .path("/")
+                    .build();
+            return Response.ok()
+                    .cookie(sessionCookie)
+                    .build();
+        } catch (Exception e) {
+            // Log dell'errore (usa il logger del tuo progetto, qui ad esempio System.err)
+            System.err.println("Errore durante il logout: " + e.getMessage());
+            return Response.status(Response.Status.INTERNAL_SERVER_ERROR)
+                    .entity("Errore durante il logout")
+                    .build();
+        }
     }
 
     @GET
     @Path("/check")
     @Produces(MediaType.APPLICATION_JSON)
     public Response check(@CookieParam("SESSION_COOKIE") int sessionId) {
-        Integer sessione = sessionService.trovaUtentebBySessione(sessionId);
-        if (sessione != null) {
-            return Response.ok("sesione presente").build();
-        } else {
-            return Response.status(Response.Status.UNAUTHORIZED).build();
+        try {
+            Integer sessione = sessionService.trovaUtentebBySessione(sessionId);
+            if (sessione != null) {
+                return Response.ok("Sessione presente").build();
+            } else {
+                return Response.status(Response.Status.UNAUTHORIZED)
+                        .entity("Sessione non valida")
+                        .build();
+            }
+        } catch (Exception e) {
+            System.err.println("Errore durante il check della sessione: " + e.getMessage());
+            return Response.status(Response.Status.INTERNAL_SERVER_ERROR)
+                    .entity("Errore interno durante il controllo della sessione")
+                    .build();
         }
     }
 
@@ -123,13 +141,23 @@ public class AutenticationResource {
     @Path("/checkCategoria")
     @Produces(MediaType.APPLICATION_JSON)
     public Response checkCategoria(@CookieParam("SESSION_COOKIE") int sessionId) {
-        Cliente c = sessionService.trovaUtenteCategoryBySessione(sessionId);
-        ClienteResponse response = clienteSevice.parseResponse(c);
-        if (c == null) {
-            return Response.status(Response.Status.NOT_FOUND).build();
-        } else {
-            return Response.ok(response).build();
+        try {
+            Cliente c = sessionService.trovaUtenteCategoryBySessione(sessionId);
+            if (c == null) {
+                return Response.status(Response.Status.NOT_FOUND)
+                        .entity("Cliente non trovato")
+                        .build();
+            } else {
+                ClienteResponse response = clienteSevice.parseResponse(c);
+                return Response.ok(response).build();
+            }
+        } catch (Exception e) {
+            System.err.println("Errore durante il check della categoria: " + e.getMessage());
+            return Response.status(Response.Status.INTERNAL_SERVER_ERROR)
+                    .entity("Errore interno durante il controllo della categoria")
+                    .build();
         }
     }
+
 
 }

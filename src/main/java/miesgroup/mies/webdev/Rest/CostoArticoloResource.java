@@ -13,18 +13,16 @@ import java.util.List;
 @Path("/costo-articolo")
 public class CostoArticoloResource {
 
-    private final SessionService sessionService;
     private final CostoArticoloService costoArticoloService;
 
-    public CostoArticoloResource(SessionService sessionService, CostoArticoloService costoArticoloService) {
-        this.sessionService = sessionService;
+    public CostoArticoloResource(CostoArticoloService costoArticoloService) {
         this.costoArticoloService = costoArticoloService;
     }
 
     @GET
     @Consumes(MediaType.APPLICATION_JSON)
     @Produces(MediaType.APPLICATION_JSON)
-    public Response articoli(@CookieParam("SESSION_COOKIE") Integer idSessione) {
+    public Response articoli(@QueryParam("session_id") Integer idSessione) {
         try {
             // Recupera i costi articoli dal servizio
             List<CostoArticolo> costiArticoli = costoArticoloService.getCostoArticoli(idSessione);
@@ -46,7 +44,7 @@ public class CostoArticoloResource {
 
         } catch (Exception e) {
             // Altri errori imprevisti: restituiamo 500 (INTERNAL_SERVER_ERROR)
-            e.printStackTrace();
+            System.out.println("Errore: " + e.getMessage());
             return Response.status(Response.Status.INTERNAL_SERVER_ERROR)
                     .entity("Errore interno del server.")
                     .build();

@@ -406,23 +406,28 @@ public class ClienteResource {
     @Path("/costi-energia")
     @Produces(MediaType.APPLICATION_JSON)
     public Response getCostiEnergia(@CookieParam("SESSION_COOKIE") int sessionId) {
-        Integer idUtente = sessionService.trovaUtentebBySessione(sessionId);
+        try {
+            Integer idUtente = sessionService.trovaUtentebBySessione(sessionId);
+            if (idUtente == null || idUtente == 0) {
+                return Response.status(Response.Status.UNAUTHORIZED)
+                        .entity("Sessione non valida")
+                        .build();
+            }
 
-        if (idUtente == null || idUtente == 0) {
-            return Response.status(Response.Status.UNAUTHORIZED)
-                    .entity("Sessione non valida")
+            List<CostoEnergia> costi = costoEnergiaService.getCostiEnergia(idUtente);
+            if (costi == null || costi.isEmpty()) {
+                return Response.status(Response.Status.NOT_FOUND)
+                        .entity("Nessun costo trovato per il cliente")
+                        .build();
+            }
+
+            return Response.ok(costi).build();
+        } catch (Exception e) {
+            System.out.println("error: " + e.getMessage()); // Log dell'errore, in ambiente di produzione usa un logger
+            return Response.status(Response.Status.INTERNAL_SERVER_ERROR)
+                    .entity("Errore interno del server: " + e.getMessage())
                     .build();
         }
-
-        List<CostoEnergia> costi = costoEnergiaService.getCostiEnergia(idUtente);
-
-        if (costi == null) {
-            return Response.status(Response.Status.NOT_FOUND)
-                    .entity("Cliente non trovato")
-                    .build();
-        }
-
-        return Response.ok(costi).build();
     }
 
     @POST
@@ -430,32 +435,44 @@ public class ClienteResource {
     @Consumes(MediaType.APPLICATION_JSON)
     @Produces(MediaType.APPLICATION_JSON)
     public Response insertCostoEnergia(@CookieParam("SESSION_COOKIE") int sessionId, List<CostoEnergia> costiEnergia) {
-        Integer idUtente = sessionService.trovaUtentebBySessione(sessionId);
-
-        if (idUtente == null || idUtente == 0) {
-            return Response.status(Response.Status.UNAUTHORIZED)
-                    .entity("Sessione non valida")
-                    .build();
-        }
-
-        Cliente cliente = clienteService.getCliente(idUtente);
-
-        for (CostoEnergia costoEnergia : costiEnergia) {
-            // Associa il cliente
-            costoEnergia.setCliente(cliente);
-
-            // Verifica i campi obbligatori
-            if (costoEnergia.getNomeCosto() == null || costoEnergia.getCostoEuro() == null) {
-                return Response.status(Response.Status.BAD_REQUEST)
-                        .entity("Nome costo e costo in euro sono obbligatori per ogni elemento")
+        try {
+            Integer idUtente = sessionService.trovaUtentebBySessione(sessionId);
+            if (idUtente == null || idUtente == 0) {
+                return Response.status(Response.Status.UNAUTHORIZED)
+                        .entity("Sessione non valida")
                         .build();
             }
 
-            // Chiamata al metodo persistOrUpdate
-            costoEnergiaService.persistOrUpdateCostoEnergia(costoEnergia);
-        }
+            Cliente cliente = clienteService.getCliente(idUtente);
+            if (cliente == null) {
+                return Response.status(Response.Status.NOT_FOUND)
+                        .entity("Cliente non trovato")
+                        .build();
+            }
 
-        return Response.ok().build();
+            for (CostoEnergia costo : costiEnergia) {
+                // Associa il cliente al costo
+                costo.setCliente(cliente);
+
+                // Verifica che i campi obbligatori siano presenti
+                if (costo.getNomeCosto() == null || costo.getCostoEuro() == null) {
+                    return Response.status(Response.Status.BAD_REQUEST)
+                            .entity("Nome costo e costo in euro sono obbligatori per ogni elemento")
+                            .build();
+                }
+
+                // Persisti o aggiorna il costo
+                costoEnergiaService.persistOrUpdateCostoEnergia(costo);
+            }
+
+            return Response.ok().build();
+        } catch (Exception e) {
+            System.out.println(" Errore: " + e.getMessage()); // Log dell'errore
+            return Response.status(Response.Status.INTERNAL_SERVER_ERROR)
+                    .entity("Errore interno del server: " + e.getMessage())
+                    .build();
+        }
     }
+
 
 }
