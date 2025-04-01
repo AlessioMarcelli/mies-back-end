@@ -25,6 +25,9 @@ public class CostoArticolo extends PanacheEntityBase {
     @Column(name = "mese")
     private String mese;
 
+    @Column(name = "categoria_articolo")
+    private String categoriaArticolo;
+
     // Getters e Setters
     public Integer getId() { return id; }
     public void setId(Integer id) { this.id = id; }
@@ -40,4 +43,7 @@ public class CostoArticolo extends PanacheEntityBase {
 
     public String getMese() { return mese; }
     public void setMese(String mese) { this.mese = mese; }
+
+    public String getCategoriaArticolo() { return categoriaArticolo; }
+    public void setCategoriaArticolo(String categoriaArticolo) { this.categoriaArticolo = categoriaArticolo; }
 }

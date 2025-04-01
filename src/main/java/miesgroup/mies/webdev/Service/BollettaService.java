@@ -232,15 +232,17 @@ public class BollettaService {
 
             // Calcolo del costo per ogni articolo dei trasporti
             List<Costi> articoliTrasporti = costiService.getArticoli(b.getAnno(), b.getMese(), "trasporti", rangePotenza);
-            costoArticoloService.calcolaCostiArticoli(articoliTrasporti, b, maggiorePotenza);
+            costoArticoloService.calcolaCostiArticoli(articoliTrasporti, b, maggiorePotenza, "trasporti");
 
-            // Calcolo del costo per ogni articolo delle imposte
-            List<Costi> articoliImposte = costiService.getArticoli(b.getAnno(), b.getMese(), "imposte", rangePotenza);
-            costoArticoloService.calcolaCostiArticoli(articoliImposte, b, maggiorePotenza);
+            // Calcolo del costo per ogni articolo del dispacciamento
+/*
+            List<Costi> articoliImposte = costiService.getArticoli(b.getAnno(), b.getMese(), "dispacciamento", rangePotenza);
+            costoArticoloService.calcolaCostiArticoli(articoliImposte, b, maggiorePotenza, "dispacciamento");
+*/
 
             // Calcolo del costo per ogni articolo degli oneri
             List<Costi> articoliOneri = costiService.getArticoli(b.getAnno(), b.getMese(), "oneri", rangePotenza);
-            costoArticoloService.calcolaCostiArticoli(articoliOneri, b, maggiorePotenza);
+            costoArticoloService.calcolaCostiArticoli(articoliOneri, b, maggiorePotenza, "oneri");
 
         } catch (Exception e) {
             System.err.println("Errore: " + e.getMessage());

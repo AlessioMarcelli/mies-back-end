@@ -28,7 +28,7 @@ public class CostoArticoloService {
     }
 
 
-    public void calcolaCostiArticoli(List<Costi> articoliTrasporti, BollettaPod b, Double maggiorePotenza) {
+    public void calcolaCostiArticoli(List<Costi> articoliTrasporti, BollettaPod b, Double maggiorePotenza, String categoriaArticolo) {
         // Calcola i costi degli articoli
         articoliTrasporti.forEach(articolo -> {
             Double costoArticolo = switch (articolo.getUnitaMisura()) {
@@ -46,7 +46,7 @@ public class CostoArticoloService {
                 // Calcola il costo dell'articolo
             };
             // Salva il costo dell'articolo
-            costoArticoloRepo.aggiungiCostoArticolo(b, costoArticolo, articolo.getDescrizione());
+            costoArticoloRepo.aggiungiCostoArticolo(b, costoArticolo, articolo.getDescrizione(), categoriaArticolo);
         });
     }
 

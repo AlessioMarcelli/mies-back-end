@@ -3,10 +3,8 @@ package miesgroup.mies.webdev.Rest;
 import jakarta.ws.rs.*;
 import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
-import miesgroup.mies.webdev.Model.CostoArticolo;
 import miesgroup.mies.webdev.Rest.Model.CostoArticoloResponse;
 import miesgroup.mies.webdev.Service.CostoArticoloService;
-import miesgroup.mies.webdev.Service.SessionService;
 import org.hibernate.SessionException;
 
 import java.util.List;

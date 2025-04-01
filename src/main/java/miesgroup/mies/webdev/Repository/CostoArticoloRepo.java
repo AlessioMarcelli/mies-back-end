@@ -11,12 +11,13 @@ import java.util.List;
 public class CostoArticoloRepo implements PanacheRepositoryBase<CostoArticolo, Integer> {
 
 
-    public void aggiungiCostoArticolo(BollettaPod b, Double costoArticolo, String nomeArticolo) {
+    public void aggiungiCostoArticolo(BollettaPod b, Double costoArticolo, String nomeArticolo, String categoriaArticolo) {
         CostoArticolo costo = new CostoArticolo();
         costo.setCostoUnitario(costoArticolo);
         costo.setNomeArticolo(nomeArticolo);
         costo.setMese(b.getMese());
         costo.setBolletta(b);  // Associa la bolletta tramite la relazione
+        costo.setCategoriaArticolo(categoriaArticolo);
         costo.persist();
     }
 
