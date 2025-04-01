@@ -4,9 +4,11 @@ import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.ws.rs.NotFoundException;
 import miesgroup.mies.webdev.Model.*;
 import miesgroup.mies.webdev.Repository.CostoArticoloRepo;
+import miesgroup.mies.webdev.Rest.Model.CostoArticoloResponse;
 import org.hibernate.SessionException;
 
 import java.util.List;
+import java.util.stream.Collectors;
 
 @ApplicationScoped
 public class CostoArticoloService {
@@ -44,11 +46,11 @@ public class CostoArticoloService {
                 // Calcola il costo dell'articolo
             };
             // Salva il costo dell'articolo
-            costoArticoloRepo.aggiungiCostoArticolo(b, costoArticolo, articolo.getDescrizione() );
+            costoArticoloRepo.aggiungiCostoArticolo(b, costoArticolo, articolo.getDescrizione());
         });
     }
 
-    public List<CostoArticolo> getCostoArticoli(Integer idSessione) {
+    public List<CostoArticoloResponse> getCostoArticoli(Integer idSessione) {
         // 1) Verifica la sessione
         if (idSessione == null) {
             throw new SessionException("Sessione non valida");
@@ -69,7 +71,10 @@ public class CostoArticoloService {
         }
 
         // 4) Recupera i costi articoli associati alle bollette
-        return costoArticoloRepo.getCostiArticoli(bollettePods);
+        List<CostoArticolo> costoArticoli = costoArticoloRepo.getCostiArticoli(bollettePods);
+        return costoArticoli.stream()
+                .map(CostoArticoloResponse::new)
+                .toList();
     }
 
 }

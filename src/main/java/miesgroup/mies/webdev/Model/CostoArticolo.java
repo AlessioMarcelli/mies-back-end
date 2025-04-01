@@ -11,58 +11,33 @@ public class CostoArticolo extends PanacheEntityBase {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Integer id;
 
-    @Column(name = "nome_articolo")
+    @Column(name = "nome_articolo", nullable = false)
     private String nomeArticolo;
 
-    @Column(name = "costo_unitario")
+    @Column(name = "costo_unitario", nullable = false)
     private Double costoUnitario;
 
+    // Relazione ManyToOne: riferimento alla bolletta tramite la chiave primaria
     @ManyToOne
-    @JoinColumn(name = "nome_bolletta", referencedColumnName = "nome_bolletta")
-    private BollettaPod nomeBolletta;
+    @JoinColumn(name = "bolletta_id", nullable = false)
+    private BollettaPod bolletta;
 
     @Column(name = "mese")
     private String mese;
 
-    // GETTER e SETTER
+    // Getters e Setters
+    public Integer getId() { return id; }
+    public void setId(Integer id) { this.id = id; }
 
-    public Integer getId() {
-        return id;
-    }
+    public String getNomeArticolo() { return nomeArticolo; }
+    public void setNomeArticolo(String nomeArticolo) { this.nomeArticolo = nomeArticolo; }
 
-    public void setId(Integer id) {
-        this.id = id;
-    }
+    public Double getCostoUnitario() { return costoUnitario; }
+    public void setCostoUnitario(Double costoUnitario) { this.costoUnitario = costoUnitario; }
 
-    public String getNomeArticolo() {
-        return nomeArticolo;
-    }
+    public BollettaPod getBolletta() { return bolletta; }
+    public void setBolletta(BollettaPod bolletta) { this.bolletta = bolletta; }
 
-    public void setNomeArticolo(String nomeArticolo) {
-        this.nomeArticolo = nomeArticolo;
-    }
-
-    public Double getCostoUnitario() {
-        return costoUnitario;
-    }
-
-    public void setCostoUnitario(Double costoUnitario) {
-        this.costoUnitario = costoUnitario;
-    }
-
-    public BollettaPod getNomeBolletta() {
-        return nomeBolletta;
-    }
-
-    public void setNomeBolletta(BollettaPod idBolletta) {
-        this.nomeBolletta = idBolletta;
-    }
-
-    public String getMese() {
-        return mese;
-    }
-
-    public void setMese(String mese) {
-        this.mese = mese;
-    }
+    public String getMese() { return mese; }
+    public void setMese(String mese) { this.mese = mese; }
 }

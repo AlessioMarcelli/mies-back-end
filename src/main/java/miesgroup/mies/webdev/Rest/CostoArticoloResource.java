@@ -4,6 +4,7 @@ import jakarta.ws.rs.*;
 import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
 import miesgroup.mies.webdev.Model.CostoArticolo;
+import miesgroup.mies.webdev.Rest.Model.CostoArticoloResponse;
 import miesgroup.mies.webdev.Service.CostoArticoloService;
 import miesgroup.mies.webdev.Service.SessionService;
 import org.hibernate.SessionException;
@@ -25,7 +26,7 @@ public class CostoArticoloResource {
     public Response articoli(@QueryParam("session_id") Integer idSessione) {
         try {
             // Recupera i costi articoli dal servizio
-            List<CostoArticolo> costiArticoli = costoArticoloService.getCostoArticoli(idSessione);
+            List<CostoArticoloResponse> costiArticoli = costoArticoloService.getCostoArticoli(idSessione);
 
             // Se tutto ok, restituiamo 200 (OK) con la lista in JSON
             return Response.ok(costiArticoli).build();

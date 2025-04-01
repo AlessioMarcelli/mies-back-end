@@ -4,6 +4,7 @@ import io.quarkus.hibernate.orm.panache.PanacheEntityBase;
 import jakarta.persistence.*;
 
 import java.sql.Date;
+import java.util.List;
 
 @Entity
 @Table(name = "bolletta_pod") // Nome corretto della tabella nel database
@@ -13,6 +14,11 @@ public class BollettaPod extends PanacheEntityBase {
     @GeneratedValue(strategy = GenerationType.IDENTITY) // Auto-increment su MySQL
     @Column(name = "Id_Bolletta") // Nome corretto della colonna ID
     private Integer id;
+
+
+    // Mappatura OneToMany: una bolletta ha più articoli
+    @OneToMany(mappedBy = "bolletta", cascade = CascadeType.ALL)
+    private List<CostoArticolo> costiArticolo;
 
     @Column(name = "id_pod", nullable = false)
     private String idPod;
@@ -738,4 +744,8 @@ public class BollettaPod extends PanacheEntityBase {
     public void setVerificaF0(Double verificaF0) {
         this.verificaF0 = verificaF0;
     }
+
+    public List<CostoArticolo> getCostiArticolo() { return costiArticolo; }
+    public void setCostiArticolo(List<CostoArticolo> costiArticolo) { this.costiArticolo = costiArticolo; }
+
 }

@@ -58,7 +58,6 @@ public class FileRepo implements PanacheRepositoryBase<PDFFile, Integer> {
             Map<String, Map<String, Double>> spese,
             String idPod,
             String nomeBolletta,
-            Map<String, Map<String, Map<String, Double>>> piccoEFuoriPicco,
             Periodo periodo,
             Map<String, Map<String, Double>> kWhPerMese
     ) {
@@ -80,21 +79,10 @@ public class FileRepo implements PanacheRepositoryBase<PDFFile, Integer> {
             Double f2Potenza = getCategoriaConsumo(categorie, "Potenza", "F2");
             Double f3Potenza = getCategoriaConsumo(categorie, "Potenza", "F3");
 
+
             // Calcola totali attivi e reattivi
             Double totAttiva = (f1Attiva + f2Attiva + f3Attiva);
             Double totReattiva = (f1Reattiva + f2Reattiva + f3Reattiva);
-
-            // -----------------------------------------
-            // 2. Estrazione dei dati "Picco" e "Fuori Picco"
-            // -----------------------------------------
-            Map<String, Map<String, Double>> piccoData = piccoEFuoriPicco.getOrDefault(mese, new HashMap<>());
-            Map<String, Double> picco = piccoData.getOrDefault("Picco", new HashMap<>());
-            Map<String, Double> fuoriPicco = piccoData.getOrDefault("Fuori Picco", new HashMap<>());
-
-            Double consumoPicco = picco.getOrDefault("kWh", 0.0);
-            Double costoPicco = picco.getOrDefault("€", 0.0);
-            Double consumoFuoriPicco = fuoriPicco.getOrDefault("kWh", 0.0);
-            Double costoFuoriPicco = fuoriPicco.getOrDefault("€", 0.0);
 
             // -----------------------------------------
             // 3. Estrazione dei costi (valori in €) dalle spese
@@ -117,6 +105,8 @@ public class FileRepo implements PanacheRepositoryBase<PDFFile, Integer> {
             Double f1PerditeEuro = speseMese.getOrDefault("Perdite F1", 0.0);
             Double f2PerditeEuro = speseMese.getOrDefault("Perdite F2", 0.0);
             Double f3PerditeEuro = speseMese.getOrDefault("Perdite F3", 0.0);
+            Double costoPicco = speseMese.getOrDefault("Picco", 0.0);
+            Double costoFuoriPicco = speseMese.getOrDefault("Fuori Picco", 0.0);
 
             // -----------------------------------------
             // 4. Estrazione dei consumi in kWh
@@ -129,6 +119,9 @@ public class FileRepo implements PanacheRepositoryBase<PDFFile, Integer> {
             Double f1PerditeKwh = kwhMese.getOrDefault("Perdite F1", 0.0);
             Double f2PerditeKwh = kwhMese.getOrDefault("Perdite F2", 0.0);
             Double f3PerditeKwh = kwhMese.getOrDefault("Perdite F3", 0.0);
+            Double consumoPicco = kwhMese.getOrDefault("Picco", 0.0);
+            Double consumoFuoriPicco = kwhMese.getOrDefault("Fuori Picco", 0.0);
+
 
             // -----------------------------------------
             // 5. Creazione e salvataggio dell'entità BollettaPod
