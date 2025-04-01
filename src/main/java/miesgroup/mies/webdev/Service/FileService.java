@@ -10,6 +10,7 @@ import miesgroup.mies.webdev.Repository.BollettaRepo;
 import miesgroup.mies.webdev.Repository.ClienteRepo;
 import miesgroup.mies.webdev.Repository.FileRepo;
 import miesgroup.mies.webdev.Repository.PodRepo;
+import miesgroup.mies.webdev.Rest.Model.BollettaPodResponse;
 import org.apache.pdfbox.pdmodel.PDDocument;
 import org.apache.pdfbox.text.PDFTextStripper;
 
@@ -43,6 +44,7 @@ import java.time.ZoneId;
 
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+import java.util.stream.Collectors;
 
 @ApplicationScoped
 public class FileService {
@@ -785,14 +787,20 @@ public class FileService {
         return fileRepo.getFile(id);
     }
 
-    public List<BollettaPod> getDati(int idSessione) {
-        List<Pod> p = podRepo.find("utente", clienteRepo.findById(sessionService.trovaUtentebBySessione(idSessione))).list();
-        List<BollettaPod> bollette = new ArrayList<>();
-        for (Pod pod : p) {
-            bollette.addAll(bollettaRepo.find("idPod", pod.getId()).list());
-        }
-        return bollette;
+    @Transactional
+    public List<BollettaPodResponse> getDati(int idSessione) {
+        var utente = clienteRepo.findById(sessionService.trovaUtentebBySessione(idSessione));
+        var pods = podRepo.find("utente", utente).list();
+
+        return pods.stream()
+                .flatMap(pod ->
+                        bollettaRepo.find("idPod", pod.getId())
+                                .<BollettaPod>stream()) // specifica il tipo qui
+                .map(BollettaPodResponse::new)
+                .collect(Collectors.toList());
     }
+
+
 
     public List<BollettaPod> getDatiRicalcoli(int idSessione, String idPod) {
         return bollettaRepo.find("idPod", idPod).list();
