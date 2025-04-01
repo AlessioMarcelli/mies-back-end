@@ -5,6 +5,7 @@ import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
 import miesgroup.mies.webdev.Model.PDFFile;
 import miesgroup.mies.webdev.Model.Pod;
+import miesgroup.mies.webdev.Rest.Model.PodResponse;
 import miesgroup.mies.webdev.Rest.Model.UpdatePodRequest;
 import miesgroup.mies.webdev.Service.PodService;
 
@@ -20,14 +21,14 @@ public class PodResource {
 
     @GET
     @Produces(MediaType.APPLICATION_JSON)
-    public List<Pod> allPod(@CookieParam("SESSION_COOKIE") Integer sessionId) {
+    public List<PodResponse> allPod(@CookieParam("SESSION_COOKIE") Integer sessionId) {
         return podService.tutti(sessionId);
     }
 
     @GET
     @Produces(MediaType.APPLICATION_JSON)
     @Path("/dati")
-    public List<Pod> allPodProxy(@QueryParam("session_id") Integer sessionId) {
+    public List<PodResponse> allPodProxy(@QueryParam("session_id") Integer sessionId) {
         return podService.tutti(sessionId);
     }
 

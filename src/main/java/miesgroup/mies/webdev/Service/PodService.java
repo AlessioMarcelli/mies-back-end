@@ -2,7 +2,6 @@ package miesgroup.mies.webdev.Service;
 
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.transaction.Transactional;
-import miesgroup.mies.webdev.Model.BollettaPod;
 import miesgroup.mies.webdev.Model.Cliente;
 import miesgroup.mies.webdev.Model.PDFFile;
 import miesgroup.mies.webdev.Model.Pod;
@@ -11,6 +10,7 @@ import miesgroup.mies.webdev.Repository.FixingRepo;
 import miesgroup.mies.webdev.Repository.PodRepo;
 import miesgroup.mies.webdev.Repository.SessionRepo;
 import miesgroup.mies.webdev.Rest.Exception.NotYourPodException;
+import miesgroup.mies.webdev.Rest.Model.PodResponse;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 import org.w3c.dom.Node;
@@ -25,6 +25,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.stream.Collectors;
 
 @ApplicationScoped
 public class PodService {
@@ -205,9 +206,17 @@ public class PodService {
     }
 
     @Transactional
-    public List<Pod> tutti(int id_sessione) {
-        return podRepo.findAll(sessionRepo.find(id_sessione));
+    public List<PodResponse> tutti(int id_sessione) {
+        // Recupera la sessione e i POD associati
+        List<Pod> pods = podRepo.findAll(sessionRepo.find(id_sessione));
+
+        // Converte ogni Pod in un PodResponse usando il costruttore di PodResponse
+
+        return pods.stream()
+                .map(PodResponse::new)
+                .collect(Collectors.toList());
     }
+
 
     @Transactional
     public Pod getPod(String id, int id_utente) {
