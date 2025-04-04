@@ -205,6 +205,7 @@ public class FileService {
         boolean controlloAttivo = false;
         int righeSenzaEuro = 0;
         boolean ricercaAvanzata = false;
+        boolean categoriaAppenaTrovata = false;
 
         Set<String> stopParsingKeywords = Set.of(
                 "TOTALE FORNITURA ENERGIA ELETTRICA E IMPOSTE",
@@ -217,6 +218,7 @@ public class FileService {
             if (lineNode.getNodeType() != Node.ELEMENT_NODE) continue;
 
             String lineText = lineNode.getTextContent().trim();
+            String lowerLine = lineText.toLowerCase();
 
             // 🔴 Interruzione parsing
             if (stopParsingKeywords.stream().anyMatch(lineText::contains)) break;
@@ -235,6 +237,8 @@ public class FileService {
                 righeSenzaEuro = 0;
                 sezioneCorretta = false;
                 ricercaAvanzata = false;
+                categoriaAppenaTrovata = true;
+                continue;
             } else if (lineText.contains("SPESA PER ONERI DI SISTEMA")) {
                 categoriaCorrente = "Oneri di Sistema";
                 categorieGiaViste.add(categoriaCorrente);
@@ -242,6 +246,7 @@ public class FileService {
                 righeSenzaEuro = 0;
                 sottoCategoria = "";
                 sezioneCorretta = false;
+                continue;
             } else if (lineText.contains("SPESA PER IL TRASPORTO E LA GESTIONE DEL CONTATORE")) {
                 categoriaCorrente = "Trasporto e Gestione Contatore";
                 categorieGiaViste.add(categoriaCorrente);
@@ -249,6 +254,7 @@ public class FileService {
                 righeSenzaEuro = 0;
                 sottoCategoria = "";
                 sezioneCorretta = false;
+                continue;
             } else if (lineText.contains("TOTALE IMPOSTE")) {
                 categoriaCorrente = "Totale Imposte";
                 categorieGiaViste.add(categoriaCorrente);
@@ -256,19 +262,20 @@ public class FileService {
                 righeSenzaEuro = 0;
                 sottoCategoria = "";
                 sezioneCorretta = false;
-            } else if (lineText.toLowerCase().contains("penalit")) {
+                continue;
+            } else if (lowerLine.contains("penalit")) {
                 categoriaCorrente = "Altro";
                 categorieGiaViste.add(categoriaCorrente);
                 controlloAttivo = false;
                 righeSenzaEuro = 0;
                 sottoCategoria = "";
                 sezioneCorretta = false;
+                continue;
             }
 
-            // 📍 Sotto-categorie (solo se siamo in "Materia Energia")
-            if ("Materia Energia".equals(categoriaCorrente) || sezioneCorretta && ricercaAvanzata) {
+            // 📍 Sotto-categorie (solo se siamo in "Materia Energia" e in modalità avanzata)
+            if ("Materia Energia".equals(categoriaCorrente) || (sezioneCorretta && ricercaAvanzata)) {
                 sezioneCorretta = true;
-                String lowerLine = lineText.toLowerCase();
 
                 if (lowerLine.contains("perdite di rete f1")) {
                     sottoCategoria = "Perdite F1";
@@ -297,16 +304,21 @@ public class FileService {
             if ((categoriaCorrente != null && !categoriaCorrente.isEmpty()) && lineText.contains("€")) {
                 Double valore = extractEuroValue(lineText);
                 if (valore != null) {
-                    String chiave = !sottoCategoria.isEmpty() ? sottoCategoria : categoriaCorrente;
+                    String chiave;
+
+                    // 👇 Se è la prima riga della categoria principale
+                    if (categoriaAppenaTrovata) {
+                        chiave = categoriaCorrente;
+                        categoriaAppenaTrovata = false;
+                        ricercaAvanzata = true; // Attiva le sotto-categorie da qui in poi
+                    } else {
+                        chiave = !sottoCategoria.isEmpty() ? sottoCategoria : categoriaCorrente;
+                    }
 
                     if (categorieGiaViste.contains(categoriaCorrente)) {
                         categorieGiaViste.remove(categoriaCorrente);
                         controlloAttivo = true;
                         righeSenzaEuro = 0;
-                    }
-
-                    if (categoriaCorrente.equals("Materia Energia")) {
-                        ricercaAvanzata = true;
                     }
 
                     if (meseCorrente == null) meseCorrente = "MeseSconosciuto";
@@ -336,6 +348,7 @@ public class FileService {
         System.out.println("Estrazione spese: " + spesePerMese);
         return processSpesePerMese(spesePerMese);
     }
+
 
 
     private Map<String, Map<String, Double>> extractKwhPerMese(Document document) {

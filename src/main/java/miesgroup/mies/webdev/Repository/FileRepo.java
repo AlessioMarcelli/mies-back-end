@@ -96,7 +96,7 @@ public class FileRepo implements PanacheRepositoryBase<PDFFile, Integer> {
             Double altro = speseMese.getOrDefault("Altro", 0.0);
 
             // Nuove variabili per i costi specifici (in euro)
-            Double f0Euro = speseMese.getOrDefault("Materia energia F0", 0.0);
+            Double f0Euro = speseMese.getOrDefault("Materia Energia", 0.0);
             Double f1Euro = speseMese.getOrDefault("Materia energia F1", 0.0);
             Double f2Euro = speseMese.getOrDefault("Materia energia F2", 0.0);
             Double f3Euro = speseMese.getOrDefault("Materia energia F3", 0.0);
