@@ -88,14 +88,12 @@ public class FileRepo implements PanacheRepositoryBase<PDFFile, Integer> {
             // 3. Estrazione dei costi (valori in €) dalle spese
             // -----------------------------------------
             Map<String, Double> speseMese = spese.getOrDefault(mese, new HashMap<>());
-            System.out.println("Spese per " + mese + ": " + speseMese);
 
-            Double spesaEnergia = speseMese.getOrDefault("Materia Energia", 0.0);
             Double spesaTrasporto = speseMese.getOrDefault("Trasporto e Gestione Contatore", 0.0);
             Double oneri = speseMese.getOrDefault("Oneri di Sistema", 0.0);
             Double imposte = speseMese.getOrDefault("Totale Imposte", 0.0);
             Double dispacciamento = speseMese.getOrDefault("dispacciamento", 0.0);
-            Double penalita = speseMese.getOrDefault("penalità", 0.0);
+            Double altro = speseMese.getOrDefault("Altro", 0.0);
 
             // Nuove variabili per i costi specifici (in euro)
             Double f0Euro = speseMese.getOrDefault("Materia energia F0", 0.0);
@@ -108,6 +106,7 @@ public class FileRepo implements PanacheRepositoryBase<PDFFile, Integer> {
             Double costoPicco = speseMese.getOrDefault("Picco", 0.0);
             Double costoFuoriPicco = speseMese.getOrDefault("Fuori Picco", 0.0);
 
+            Double spesaEnergia = f0Euro + f1Euro + f2Euro + f3Euro + f1PerditeEuro + f2PerditeEuro + f3PerditeEuro + costoPicco + costoFuoriPicco + dispacciamento;
             // -----------------------------------------
             // 4. Estrazione dei consumi in kWh
             // -----------------------------------------
@@ -121,6 +120,7 @@ public class FileRepo implements PanacheRepositoryBase<PDFFile, Integer> {
             Double f3PerditeKwh = kwhMese.getOrDefault("Perdite F3", 0.0);
             Double consumoPicco = kwhMese.getOrDefault("Picco", 0.0);
             Double consumoFuoriPicco = kwhMese.getOrDefault("Fuori Picco", 0.0);
+            Double penalitaKvar = kwhMese.getOrDefault("Altro", 0.0);
 
 
             // -----------------------------------------
@@ -155,7 +155,7 @@ public class FileRepo implements PanacheRepositoryBase<PDFFile, Integer> {
             bolletta.setOneri(oneri);
             bolletta.setImposte(imposte);
             bolletta.setDispacciamento(dispacciamento);
-            bolletta.setAltro(penalita); // penalità o altri costi aggregati
+            bolletta.setAltro(altro); // penalità o altri costi aggregati
 
             // Costi specifici per consumo (in €)
             bolletta.setF0Euro(f0Euro);

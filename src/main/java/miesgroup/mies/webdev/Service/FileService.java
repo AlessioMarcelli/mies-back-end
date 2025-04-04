@@ -161,69 +161,6 @@ public class FileService {
 
     }
 
-    private static Map<String, Map<String, Map<String, Double>>> extractPiccoFuoriPicco(Document document) {
-        Map<String, Map<String, Map<String, Double>>> piccoEFuoriPicco = new HashMap<>();
-        String categoriaCorrente = null;
-        boolean attesaPicco = false; // Flag per capire se stiamo aspettando "picco" dopo "fuori"
-
-        NodeList lineNodes = document.getElementsByTagName("Line");
-        for (int i = 0; i < lineNodes.getLength(); i++) {
-            Node lineNode = lineNodes.item(i);
-            if (lineNode.getNodeType() == Node.ELEMENT_NODE) {
-                String lineText = lineNode.getTextContent().trim();
-
-                // Caso in cui troviamo "Corrispettivo mercato capacità ore picco"
-                if (lineText.contains("Corrispettivo mercato capacità ore picco")) {
-                    categoriaCorrente = "Picco";
-                    attesaPicco = false;
-                    continue;
-                }
-
-                // Caso in cui troviamo "Corrispettivo mercato capacità ore fuori"
-                if (lineText.contains("Corrispettivo mercato capacità ore fuori")) {
-                    categoriaCorrente = null;
-                    attesaPicco = true; // Flag per attendere la parola "picco" nella riga successiva
-                    continue;
-                }
-
-                // Se la riga successiva contiene solo "picco", completa la categoria "Fuori Picco"
-                if (attesaPicco && lineText.equalsIgnoreCase("picco")) {
-                    categoriaCorrente = "Fuori Picco";
-                    attesaPicco = false;
-                    continue;
-                }
-
-                // Se troviamo una riga con "€/kWh" ed è associata a una categoria
-                if (categoriaCorrente != null && lineText.contains("€/kWh")) {
-                    ArrayList<Date> dates = extractDates(lineText);
-                    Double valoreKWh = extractKWhFromLine(lineText);
-                    Double costoEuro = extractEuroValue(lineText);
-
-                    if (dates.size() == 2 && valoreKWh != null && costoEuro != null) {
-                        String mese = DateUtils.getMonthFromDateLocalized(dates.get(1));
-
-                        // Creiamo la struttura della mappa se non esiste
-                        piccoEFuoriPicco.putIfAbsent(mese, new HashMap<>());
-                        Map<String, Map<String, Double>> categorie = piccoEFuoriPicco.get(mese);
-                        categorie.putIfAbsent(categoriaCorrente, new HashMap<>());
-
-                        // Salviamo i valori di consumo e costo
-                        Map<String, Double> valori = categorie.get(categoriaCorrente);
-                        valori.put("kWh", valoreKWh);
-                        valori.put("€", costoEuro);
-                    }
-                }
-
-                // Se troviamo una riga senza "€/kWh" e non è una nuova categoria, resettiamo la categoria corrente
-                if (!lineText.contains("€/kWh") && !lineText.toLowerCase().contains("corrispettivo mercato capacità")) {
-                    categoriaCorrente = null;
-                }
-            }
-        }
-        return piccoEFuoriPicco;
-    }
-
-
     private Periodo extractPeriodo(Document document) {
         NodeList lineNodes = document.getElementsByTagName("Line");
 
@@ -267,6 +204,7 @@ public class FileService {
         String meseCorrente = null;
         boolean controlloAttivo = false;
         int righeSenzaEuro = 0;
+        boolean ricercaAvanzata = false;
 
         Set<String> stopParsingKeywords = Set.of(
                 "TOTALE FORNITURA ENERGIA ELETTRICA E IMPOSTE",
@@ -276,116 +214,122 @@ public class FileService {
         NodeList lineNodes = document.getElementsByTagName("Line");
         for (int i = 0; i < lineNodes.getLength(); i++) {
             Node lineNode = lineNodes.item(i);
-            if (lineNode.getNodeType() == Node.ELEMENT_NODE) {
-                String lineText = lineNode.getTextContent().trim();
+            if (lineNode.getNodeType() != Node.ELEMENT_NODE) continue;
 
-                if (lineText.contains("picco")) {
-                    sottoCategoria = "";
-                    categoriaCorrente = "";
-                    sezioneCorretta = false;
-                    continue;
-                }
+            String lineText = lineNode.getTextContent().trim();
 
-                if (stopParsingKeywords.stream().anyMatch(lineText::contains)) {
-                    break;
-                }
+            // 🔴 Interruzione parsing
+            if (stopParsingKeywords.stream().anyMatch(lineText::contains)) break;
 
-                String meseEstratto = estraiMese(lineText);
-                if (meseEstratto != null) {
-                    meseCorrente = meseEstratto;
-                }
+            // 📅 Estrazione mese
+            String meseEstratto = estraiMese(lineText);
+            if (meseEstratto != null) {
+                meseCorrente = meseEstratto;
+            }
 
-                if (lineText.contains("SPESA PER LA MATERIA ENERGIA")) {
-                    categoriaCorrente = "Materia Energia";
-                    categorieGiaViste.add(categoriaCorrente);
-                    controlloAttivo = false;
-                    righeSenzaEuro = 0;
-                    sezioneCorretta = false;
-                    continue;
-                }
-                if (lineText.contains("SPESA PER ONERI DI SISTEMA")) {
-                    categoriaCorrente = "Oneri di Sistema";
-                    categorieGiaViste.add(categoriaCorrente);
-                    controlloAttivo = false;
-                    righeSenzaEuro = 0;
-                    continue;
-                }
-                if (lineText.contains("SPESA PER IL TRASPORTO E LA GESTIONE DEL CONTATORE")) {
-                    categoriaCorrente = "Trasporto e Gestione Contatore";
-                    categorieGiaViste.add(categoriaCorrente);
-                    controlloAttivo = false;
-                    righeSenzaEuro = 0;
-                    continue;
-                }
-                if (lineText.contains("TOTALE IMPOSTE")) {
-                    categoriaCorrente = "Totale Imposte";
-                    categorieGiaViste.add(categoriaCorrente);
-                    controlloAttivo = false;
-                    righeSenzaEuro = 0;
-                    continue;
-                }
+            // 📌 Categorie principali
+            if (lineText.contains("SPESA PER LA MATERIA ENERGIA")) {
+                categoriaCorrente = "Materia Energia";
+                categorieGiaViste.add(categoriaCorrente);
+                controlloAttivo = false;
+                righeSenzaEuro = 0;
+                sezioneCorretta = false;
+                ricercaAvanzata = false;
+            } else if (lineText.contains("SPESA PER ONERI DI SISTEMA")) {
+                categoriaCorrente = "Oneri di Sistema";
+                categorieGiaViste.add(categoriaCorrente);
+                controlloAttivo = false;
+                righeSenzaEuro = 0;
+                sottoCategoria = "";
+                sezioneCorretta = false;
+            } else if (lineText.contains("SPESA PER IL TRASPORTO E LA GESTIONE DEL CONTATORE")) {
+                categoriaCorrente = "Trasporto e Gestione Contatore";
+                categorieGiaViste.add(categoriaCorrente);
+                controlloAttivo = false;
+                righeSenzaEuro = 0;
+                sottoCategoria = "";
+                sezioneCorretta = false;
+            } else if (lineText.contains("TOTALE IMPOSTE")) {
+                categoriaCorrente = "Totale Imposte";
+                categorieGiaViste.add(categoriaCorrente);
+                controlloAttivo = false;
+                righeSenzaEuro = 0;
+                sottoCategoria = "";
+                sezioneCorretta = false;
+            } else if (lineText.toLowerCase().contains("penalit")) {
+                categoriaCorrente = "Altro";
+                categorieGiaViste.add(categoriaCorrente);
+                controlloAttivo = false;
+                righeSenzaEuro = 0;
+                sottoCategoria = "";
+                sezioneCorretta = false;
+            }
 
-                // Sezione Materia Energia e sotto-categorie
-                if ("Materia Energia".equals(categoriaCorrente) || sezioneCorretta) {
-                    sezioneCorretta = true;
-                    String lowerLine = lineText.toLowerCase();
+            // 📍 Sotto-categorie (solo se siamo in "Materia Energia")
+            if ("Materia Energia".equals(categoriaCorrente) || sezioneCorretta && ricercaAvanzata) {
+                sezioneCorretta = true;
+                String lowerLine = lineText.toLowerCase();
 
-                    if (lowerLine.contains("perdite di rete f1")) {
-                        sottoCategoria = "Perdite F1";
-                    } else if (lowerLine.contains("perdite di rete f2")) {
-                        sottoCategoria = "Perdite F2";
-                    } else if (lowerLine.contains("perdite di rete f3")) {
-                        sottoCategoria = "Perdite F3";
-                    } else if (lowerLine.contains("materia energia f1") || lowerLine.contains("quota vendita f1")) {
-                        sottoCategoria = "Materia energia F1";
-                    } else if (lowerLine.contains("materia energia f2") || lowerLine.contains("quota vendita f2")) {
-                        sottoCategoria = "Materia energia F2";
-                    } else if (lowerLine.contains("materia energia f3") || lowerLine.contains("quota vendita f3")) {
-                        sottoCategoria = "Materia energia F3";
-                    } else if (lowerLine.contains("materia energia") || lowerLine.contains("quota vendita")) {
-                        sottoCategoria = "Materia energia F0";
-                    } else if (lowerLine.contains("corrispettivi di dispacciamento del")) {
-                        sottoCategoria = "dispacciamento";
-                    } else if (lowerLine.contains("corrispettivo mercato capacità ore fuori")) {
-                        sottoCategoria = "Fuori Picco";
-                    } else if (lowerLine.contains("corrispettivo mercato capacità ore picco")) {
-                        sottoCategoria = "Picco";
-                    }
+                if (lowerLine.contains("perdite di rete f1")) {
+                    sottoCategoria = "Perdite F1";
+                } else if (lowerLine.contains("perdite di rete f2")) {
+                    sottoCategoria = "Perdite F2";
+                } else if (lowerLine.contains("perdite di rete f3")) {
+                    sottoCategoria = "Perdite F3";
+                } else if (lowerLine.contains("materia energia f1") || lowerLine.contains("quota vendita f1")) {
+                    sottoCategoria = "Materia energia F1";
+                } else if (lowerLine.contains("materia energia f2") || lowerLine.contains("quota vendita f2")) {
+                    sottoCategoria = "Materia energia F2";
+                } else if (lowerLine.contains("materia energia f3") || lowerLine.contains("quota vendita f3")) {
+                    sottoCategoria = "Materia energia F3";
+                } else if (lowerLine.contains("materia energia") || lowerLine.contains("quota vendita")) {
+                    sottoCategoria = "Materia energia F0";
+                } else if (lowerLine.contains("corrispettivi di dispacciamento del")) {
+                    sottoCategoria = "dispacciamento";
+                } else if (lowerLine.contains("corrispettivo mercato capacità ore fuori")) {
+                    sottoCategoria = "Fuori Picco";
+                } else if (lowerLine.contains("corrispettivo mercato capacità ore picco")) {
+                    sottoCategoria = "Picco";
                 }
+            }
 
-                // Estrazione valore €
-                if ((!sottoCategoria.isEmpty() || !categoriaCorrente.isEmpty()) && lineText.contains("€")) {
-                    Double valore = extractEuroValue(lineText);
-                    if (valore != null) {
-                        String chiave = !sottoCategoria.isEmpty() ? sottoCategoria : categoriaCorrente;
-                        if (categorieGiaViste.contains(categoriaCorrente)) {
-                            categorieGiaViste.remove(categoriaCorrente);
-                            controlloAttivo = true;
-                            righeSenzaEuro = 0;
-                        }
-                        if (meseCorrente == null) {
-                            meseCorrente = "MeseSconosciuto";
-                        }
-                        spesePerMese
-                                .computeIfAbsent(meseCorrente, k -> new HashMap<>())
-                                .computeIfAbsent(chiave, k -> new ArrayList<>())
-                                .add(valore);
+            // 💶 Estrazione valore monetario
+            if ((categoriaCorrente != null && !categoriaCorrente.isEmpty()) && lineText.contains("€")) {
+                Double valore = extractEuroValue(lineText);
+                if (valore != null) {
+                    String chiave = !sottoCategoria.isEmpty() ? sottoCategoria : categoriaCorrente;
+
+                    if (categorieGiaViste.contains(categoriaCorrente)) {
+                        categorieGiaViste.remove(categoriaCorrente);
                         controlloAttivo = true;
                         righeSenzaEuro = 0;
                     }
-                } else if (controlloAttivo) {
-                    righeSenzaEuro++;
-                    if (righeSenzaEuro >= 10 &&
-                            !lineText.matches(".*(QUOTA|Componente|Corrispettivi|€/kWh|€/kW/mese|€/cliente/mese|QUOTA VARIABILE).*")) {
-                        categoriaCorrente = "";
-                        controlloAttivo = false;
-                        righeSenzaEuro = 0;
-                        sottoCategoria = "";
-                        sezioneCorretta = false;
+
+                    if (categoriaCorrente.equals("Materia Energia")) {
+                        ricercaAvanzata = true;
                     }
-                } else {
+
+                    if (meseCorrente == null) meseCorrente = "MeseSconosciuto";
+
+                    spesePerMese
+                            .computeIfAbsent(meseCorrente, k -> new HashMap<>())
+                            .computeIfAbsent(chiave, k -> new ArrayList<>())
+                            .add(valore);
+
+                    righeSenzaEuro = 0;
+                    controlloAttivo = true;
+                }
+            } else if (controlloAttivo) {
+                righeSenzaEuro++;
+                if (righeSenzaEuro >= 10 &&
+                        !lineText.matches(".*(QUOTA|Componente|Corrispettivi|€/kWh|€/kW/mese|€/cliente/mese|QUOTA VARIABILE).*")) {
+                    sottoCategoria = "";
+                    sezioneCorretta = false;
+                    controlloAttivo = false;
                     righeSenzaEuro = 0;
                 }
+            } else {
+                righeSenzaEuro = 0;
             }
         }
 
@@ -415,16 +359,12 @@ public class FileService {
             String lineText = lineNode.getTextContent().trim();
             String lowerLine = lineText.toLowerCase();
 
-            // 1. Interrompi se trovi un "fine sezione"
             if (stopParsingKeywords.stream().anyMatch(lineText::contains)) break;
 
-            // 2. Estrai il mese
             String meseEstratto = estraiMese(lineText);
-            if (meseEstratto != null) {
-                meseCorrente = meseEstratto;
-            }
+            if (meseEstratto != null) meseCorrente = meseEstratto;
 
-            // 3. Identifica la macro categoria
+            // Macro categorie
             if (lineText.contains("SPESA PER LA MATERIA ENERGIA")) {
                 macroCategoria = "Materia Energia";
                 categorieGiaViste.add(macroCategoria);
@@ -443,7 +383,20 @@ public class FileService {
                 continue;
             }
 
-            // 4. Rileva le sottocategorie in sezione "Materia Energia"
+            // Penalità (nuova categoria principale indipendente)
+            if (lowerLine.contains("penalità") && lineText.contains("kVARh")) {
+                Double valore = extractKwhValue(lineText);
+                if (valore != null) {
+                    String mese = meseCorrente != null ? meseCorrente : "MeseSconosciuto";
+                    kwhPerMese
+                            .computeIfAbsent(mese, k -> new HashMap<>())
+                            .computeIfAbsent("Altro", k -> new ArrayList<>())
+                            .add(valore);
+                }
+                continue;
+            }
+
+            // Sottocategorie sezione Materia Energia
             if ("Materia Energia".equals(macroCategoria) || sezioneMateria) {
                 sezioneMateria = true;
 
@@ -470,8 +423,8 @@ public class FileService {
                 }
             }
 
-            // 5. Estrai valore se trovi "kWh"
-            if (!sottoCategoria.isEmpty() && lineText.contains("kWh")) {
+            // Estrazione kWh (o simili)
+            if (!sottoCategoria.isEmpty() && (lineText.contains("kWh") || lineText.contains("kVARh"))) {
                 Double kwhValue = extractKwhValue(lineText);
                 if (kwhValue != null) {
                     if (categorieGiaViste.contains(macroCategoria)) {
@@ -525,26 +478,26 @@ public class FileService {
 
 
     private Double extractKwhValue(String text) {
-        // La regex seguente cerca numeri nel formato tipico italiano, es:
-        // "229.226,00 kWh" oppure "484,00 kWh"
-        Pattern pattern = Pattern.compile("([0-9]{1,3}(?:\\.[0-9]{3})*(?:,[0-9]{1,2})?)\\s*kWh");
+        // Regex per numeri con formattazione italiana seguiti da "kWh" o "kVARh"
+        Pattern pattern = Pattern.compile("([0-9]{1,3}(?:\\.[0-9]{3})*(?:,[0-9]{1,2})?)\\s*k(?:Wh|VARh)");
         Matcher matcher = pattern.matcher(text);
         Double lastMatch = null;
+
         while (matcher.find()) {
             String match = matcher.group(1);
-            // Rimuove i separatori delle migliaia (punti) e sostituisce la virgola con un punto
             match = match.replace(".", "").replace(",", ".");
             try {
                 lastMatch = Double.parseDouble(match);
             } catch (NumberFormatException e) {
-                System.err.println("Errore nel parsing del valore kWh: " + match);
+                System.err.println("Errore nel parsing del valore kWh/kVARh: " + match);
             }
         }
+
         if (lastMatch != null) {
-            System.out.println("✅ Valore kWh estratto: " + lastMatch);
+            System.out.println("✅ Valore kWh/kVARh estratto: " + lastMatch);
             return lastMatch;
         } else {
-            System.out.println("❌ Nessun valore kWh trovato in: " + text);
+            System.out.println("❌ Nessun valore kWh/kVARh trovato in: " + text);
             return null;
         }
     }
@@ -799,7 +752,6 @@ public class FileService {
                 .map(BollettaPodResponse::new)
                 .collect(Collectors.toList());
     }
-
 
 
     public List<BollettaPod> getDatiRicalcoli(int idSessione, String idPod) {

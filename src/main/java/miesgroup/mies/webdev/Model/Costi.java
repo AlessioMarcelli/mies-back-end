@@ -1,5 +1,6 @@
 package miesgroup.mies.webdev.Model;
 
+import com.fasterxml.jackson.annotation.JsonFormat;
 import io.quarkus.hibernate.orm.panache.PanacheEntityBase;
 import jakarta.persistence.*;
 
@@ -38,11 +39,16 @@ public class Costi extends PanacheEntityBase {
     @Column(name = "Classe_Agevolazione")
     private String classeAgevolazione;
 
+    @JsonFormat(shape = JsonFormat.Shape.STRING, pattern = "yyyy-MM-dd")
     @Column(name = "Data_Inserimento", columnDefinition = "DATE DEFAULT CURRENT_DATE")
     private Date dataInserimento;
 
     @Column(name = "anno_riferimento")
     private String annoRiferimento;
+
+    // Costruttore di default
+    public Costi() {
+    }
 
     // GETTER e SETTER
     public Integer getId() {

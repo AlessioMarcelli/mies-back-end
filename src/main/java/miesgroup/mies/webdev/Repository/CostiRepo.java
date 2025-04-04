@@ -1,6 +1,7 @@
 package miesgroup.mies.webdev.Repository;
 
 
+import io.quarkus.hibernate.orm.panache.PanacheQuery;
 import io.quarkus.hibernate.orm.panache.PanacheRepositoryBase;
 import jakarta.enterprise.context.ApplicationScoped;
 import miesgroup.mies.webdev.Model.Costi;
@@ -26,13 +27,7 @@ public class CostiRepo implements PanacheRepositoryBase<Costi, Integer> {
 
 
     public List<Costi> getAllCosti() {
-        List<Costi> costi = listAll();
-        costi.forEach(costo -> {
-            if (costo.getAnnoRiferimento() == null || costo.getAnnoRiferimento().isEmpty()) {
-                costo.setAnnoRiferimento(String.valueOf(LocalDate.now().getYear()));
-            }
-        });
-        return costi;
+        return listAll();
     }
 
 
@@ -93,6 +88,35 @@ public class CostiRepo implements PanacheRepositoryBase<Costi, Integer> {
             default -> 4;
         };
 
-        return find("categoria = ?1 AND (trimestre = ?2 OR anno =? 3) AND annoRiferimento = ?4 AND intervalloPotenza =? 5", categoria, trimestre, anno, anno, rangePotenza).list();
+        return find("""
+                 categoria = ?1\s
+                 AND annoRiferimento = ?2\s
+                 AND intervalloPotenza = ?3\s
+                 AND (trimestre = ?4 OR anno IS NOT NULL)
+                \s""", categoria, anno, rangePotenza, trimestre).list();
+    }
+
+
+    public List<Costi> getArticoliDispacciamento(String anno, String mese, String categoria) {
+        int trimestre = switch (mese.toLowerCase()) {
+            case "gennaio", "febbraio", "marzo" -> 1;
+            case "aprile", "maggio", "giugno" -> 2;
+            case "luglio", "agosto", "settembre" -> 3;
+            default -> 4;
+        };
+
+        return find("""
+                 categoria = ?1\s
+                 AND annoRiferimento = ?2\s
+                 AND (trimestre = ?3 OR anno IS NOT NULL)
+                \s""", categoria, anno, trimestre).list();
+    }
+
+    public PanacheQuery<Costi> getQueryAllCosti() {
+        return findAll();
+    }
+
+    public long deleteIds(List<Long> ids) {
+        return delete("id IN ?1", ids);
     }
 }

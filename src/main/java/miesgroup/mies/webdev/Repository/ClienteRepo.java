@@ -30,12 +30,10 @@ public class ClienteRepo implements PanacheRepositoryBase<Cliente, Integer> {
 
 
     public boolean existsByUsername(String username) {
-        return count("Username", username) > 0;
+        return count("username", username) > 0;
     }
 
-    public void insert(Cliente nuovoCliente) {
-        nuovoCliente.persist();
-    }
+
 
     public Optional<Cliente> findByUsername(String username) {
         return find("username", username).firstResultOptional();

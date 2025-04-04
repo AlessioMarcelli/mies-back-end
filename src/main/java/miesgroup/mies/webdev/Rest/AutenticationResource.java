@@ -40,7 +40,7 @@ public class AutenticationResource {
     @Consumes(MediaType.APPLICATION_JSON)
     @Produces(MediaType.APPLICATION_JSON)
     public Response register(Cliente cliente) throws ClienteCreationException {
-        autenticationService.register(cliente.getUsername(), cliente.getPassword(), cliente.getSedeLegale(), cliente.getpIva(), cliente.getEmail(), cliente.getTelefono(), cliente.getStato(), cliente.getTipologia());
+        autenticationService.register(cliente);
         return Response.ok("utente registrato").build();
     }
 

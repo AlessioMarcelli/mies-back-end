@@ -7,3 +7,6 @@ TODO: creare una nuova tabella per salvare i fixing ovvero costi accordati tra c
 
 TODO: creare tabella di inserimento per il budget (front-end) e tabella di salvataggio (back-end) per il budget
 
+TODO: Altro/ verifica altro per fare questo bisogna aspettare che quelli di A2A ci dicano come calcolano il costo
+
+TODO: Rimuovere Data Inserimento per i costi in quanto inutile e trasformare la voce annuale/anno in un boolean

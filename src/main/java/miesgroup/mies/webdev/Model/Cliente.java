@@ -61,7 +61,6 @@ public class Cliente extends PanacheEntityBase {
     public Cliente() {
     }
 
-
     public int getId() {
         return id;
     }

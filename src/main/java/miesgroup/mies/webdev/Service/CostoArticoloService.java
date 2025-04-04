@@ -28,9 +28,9 @@ public class CostoArticoloService {
     }
 
 
-    public void calcolaCostiArticoli(List<Costi> articoliTrasporti, BollettaPod b, Double maggiorePotenza, String categoriaArticolo) {
+    public void calcolaCostiArticoli(List<Costi> articoli, BollettaPod b, Double maggiorePotenza, String categoriaArticolo) {
         // Calcola i costi degli articoli
-        articoliTrasporti.forEach(articolo -> {
+        articoli.forEach(articolo -> {
             Double costoArticolo = switch (articolo.getUnitaMisura()) {
 
                 case "€/KWh" ->

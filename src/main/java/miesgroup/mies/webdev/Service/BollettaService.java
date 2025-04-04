@@ -7,7 +7,6 @@ import miesgroup.mies.webdev.Model.Cliente;
 import miesgroup.mies.webdev.Model.Costi;
 import miesgroup.mies.webdev.Model.Pod;
 import miesgroup.mies.webdev.Repository.BollettaRepo;
-import miesgroup.mies.webdev.Repository.CostoEnergiaRepo;
 
 import java.math.BigDecimal;
 import java.math.RoundingMode;
@@ -170,12 +169,8 @@ public class BollettaService {
                     .orElse(0.0);
             Double costoFuoriPicco = Optional.ofNullable(bollettaRepo.getCostoFuoriPicco(trimestre, b.getAnno(), rangePotenza))
                     .orElse(0.0);
-            System.out.println("Verifica completata per " + b.getNomeBolletta() + ": Picco = " + arrotonda(piccoKwh * costoPicco) +
-                    ", Fuori Picco = " + arrotonda(fuoriPiccoKwh * costoFuoriPicco));
             bollettaRepo.updateVerificaPicco(arrotonda(piccoKwh * costoPicco), b.getNomeBolletta(), b.getMese());
             bollettaRepo.updateVerificaFuoriPicco(arrotonda(fuoriPiccoKwh * costoFuoriPicco), b.getNomeBolletta(), b.getMese());
-            System.out.println("Verifica completata per " + b.getNomeBolletta() + ": Picco = " + arrotonda(piccoKwh * costoPicco) +
-                    ", Fuori Picco = " + arrotonda(fuoriPiccoKwh * costoFuoriPicco));
 
             // ──────────────────────────────────────────────
             // 12. Recupero dei costi per Materia Energia per il cliente e calcolo dei costi in € in base ai kWh
@@ -235,10 +230,8 @@ public class BollettaService {
             costoArticoloService.calcolaCostiArticoli(articoliTrasporti, b, maggiorePotenza, "trasporti");
 
             // Calcolo del costo per ogni articolo del dispacciamento
-/*
-            List<Costi> articoliImposte = costiService.getArticoli(b.getAnno(), b.getMese(), "dispacciamento", rangePotenza);
-            costoArticoloService.calcolaCostiArticoli(articoliImposte, b, maggiorePotenza, "dispacciamento");
-*/
+            List<Costi> articoliDispacciamento = costiService.getArticoliDispacciamento(b.getAnno(), b.getMese(), "dispacciamento");
+            costoArticoloService.calcolaCostiArticoli(articoliDispacciamento, b, maggiorePotenza, "dispacciamento");
 
             // Calcolo del costo per ogni articolo degli oneri
             List<Costi> articoliOneri = costiService.getArticoli(b.getAnno(), b.getMese(), "oneri", rangePotenza);

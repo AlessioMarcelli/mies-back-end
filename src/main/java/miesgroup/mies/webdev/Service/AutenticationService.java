@@ -24,21 +24,21 @@ public class AutenticationService {
     }
 
     @Transactional
-    public void register(String username, String password, String sedelegale, String pIva, String email, String telefono, String stato, String tipologia) throws ClienteCreationException {
-        if (clienteRepo.existsByUsername(username)) {
+    public void register(Cliente c) throws ClienteCreationException {
+        if (clienteRepo.existsByUsername(c.getUsername())) {
             throw new ClienteCreationException();
         }
-        String hash = hashCalculator.calculateHash(password);
+        String hash = hashCalculator.calculateHash(c.getPassword());
         Cliente nuovoCliente = new Cliente();
-        nuovoCliente.setUsername(username);
+        nuovoCliente.setUsername(c.getUsername());
         nuovoCliente.setPassword(hash);
-        nuovoCliente.setEmail(email);
-        nuovoCliente.setpIva(pIva);
-        nuovoCliente.setSedeLegale(sedelegale);
-        nuovoCliente.setTelefono(telefono);
-        nuovoCliente.setStato(stato);
-        nuovoCliente.setTipologia(tipologia);
-        clienteRepo.insert(nuovoCliente);
+        nuovoCliente.setEmail(c.getEmail());
+        nuovoCliente.setpIva(c.getpIva());
+        nuovoCliente.setSedeLegale(c.getSedeLegale());
+        nuovoCliente.setTelefono(c.getTelefono());
+        nuovoCliente.setStato(c.getStato());
+        nuovoCliente.setTipologia(c.getTipologia());
+        clienteRepo.persist(nuovoCliente);
     }
 
     @Transactional

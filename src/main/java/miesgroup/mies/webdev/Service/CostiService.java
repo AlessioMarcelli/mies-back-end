@@ -1,9 +1,12 @@
 package miesgroup.mies.webdev.Service;
 
+import io.quarkus.hibernate.orm.panache.PanacheQuery;
+import io.quarkus.panache.common.Page;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.transaction.Transactional;
 import miesgroup.mies.webdev.Model.Costi;
 import miesgroup.mies.webdev.Repository.CostiRepo;
+import miesgroup.mies.webdev.Rest.Model.CostiDTO;
 import org.apache.poi.ss.usermodel.*;
 import org.apache.poi.xssf.usermodel.XSSFSheet;
 import org.apache.poi.xssf.usermodel.XSSFWorkbook;
@@ -11,7 +14,10 @@ import org.apache.poi.xssf.usermodel.XSSFWorkbook;
 import java.io.ByteArrayOutputStream;
 import java.io.InputStream;
 import java.sql.SQLException;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
+import java.util.Optional;
 
 @ApplicationScoped
 public class CostiService {
@@ -35,16 +41,6 @@ public class CostiService {
         costo.setClasseAgevolazione(classeAgevolazione);
         return costiRepo.aggiungiCosto(costo);
     }
-
-
-    @Transactional
-    public List<Costi> getAllCosti(Integer idSessione) {
-        if (idSessione == null) {
-            throw new IllegalArgumentException("ID sessione mancante");
-        }
-        return costiRepo.getAllCosti();
-    }
-
 
     @Transactional
     public Costi getSum(String intervalloPotenza) {
@@ -254,4 +250,88 @@ public class CostiService {
     public List<Costi> getArticoli(String anno, String mese, String categoria, String rangePotenza) {
         return costiRepo.getArticoli(anno, mese, categoria, rangePotenza);
     }
+
+    public List<Costi> getArticoliDispacciamento(String anno, String mese, String dispacciamento) {
+        return costiRepo.getArticoliDispacciamento(anno, mese, dispacciamento);
+    }
+
+    public PanacheQuery<Costi> getQueryAllCosti(Integer idSessione) {
+        if (idSessione == null) {
+            throw new IllegalArgumentException("ID sessione mancante");
+        }
+        return costiRepo.getQueryAllCosti();
+    }
+
+    public long deleteIds(List<Long> ids) {
+        if (ids == null || ids.isEmpty()) {
+            throw new IllegalArgumentException("Lista di ID mancante o vuota");
+        }
+        return costiRepo.deleteIds(ids);
+    }
+
+    public List<CostiDTO> getCostiFiltrati(
+            Optional<String> categoria,
+            Optional<String> anno,
+            Optional<String> annoRiferimento,
+            Optional<String> intervalloPotenza,
+            int page,
+            int size
+    ) {
+        Map<String, Object> params = new HashMap<>();
+        StringBuilder query = new StringBuilder("1=1");
+
+        categoria.ifPresent(cat -> {
+            query.append(" AND categoria = :categoria");
+            params.put("categoria", cat);
+        });
+
+        anno.ifPresent(a -> {
+            query.append(" AND anno = :anno");
+            params.put("anno", a);
+        });
+
+        annoRiferimento.ifPresent(ar -> {
+            query.append(" AND annoRiferimento = :annoRiferimento");
+            params.put("annoRiferimento", ar);
+        });
+
+        intervalloPotenza.ifPresent(p -> {
+            query.append(" AND intervalloPotenza = :intervalloPotenza");
+            params.put("intervalloPotenza", p);
+        });
+
+        return costiRepo.find(query.toString(), params)
+                .page(Page.of(page, size))
+                .stream()
+                .map(CostiDTO::new)
+                .toList();
+    }
+
+    public long countCostiFiltrati(Optional<String> categoria, Optional<String> anno, Optional<String> annoRif, Optional<String> intervalloPotenza) {
+        Map<String, Object> params = new HashMap<>();
+        StringBuilder query = new StringBuilder("1=1");
+
+        categoria.ifPresent(cat -> {
+            query.append(" AND categoria = :categoria");
+            params.put("categoria", cat);
+        });
+
+        anno.ifPresent(a -> {
+            query.append(" AND anno = :anno");
+            params.put("anno", a);
+        });
+
+        annoRif.ifPresent(ar -> {
+            query.append(" AND annoRiferimento = :annoRiferimento");
+            params.put("annoRiferimento", ar);
+        });
+
+        intervalloPotenza.ifPresent(p -> {
+            query.append(" AND intervalloPotenza = :intervalloPotenza");
+            params.put("intervalloPotenza", p);
+        });
+
+        return costiRepo.count(query.toString(), params);
+    }
+
 }

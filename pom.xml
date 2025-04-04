@@ -167,6 +167,7 @@
         </dependency>
     </dependencies>
 
+
     <build>
         <plugins>
             <plugin>
@@ -184,15 +185,19 @@
                     </execution>
                 </executions>
             </plugin>
+
+            <!-- ✅ Plugin compilatore con -parameters -->
             <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-compiler-plugin</artifactId>
                 <version>${compiler-plugin.version}</version>
                 <configuration>
-                    <compilerArgs>
-                        <arg>-parameters</arg>
-                    </compilerArgs>
+                    <source>21</source> <!-- Modifica se usi un'altra versione -->
+                    <target>21</target>
+                    <parameters>true</parameters> <!-- ✅ Obbligatorio per abilitare i nomi dei parametri -->
                 </configuration>
             </plugin>
+
             <plugin>
                 <artifactId>maven-surefire-plugin</artifactId>
                 <version>${surefire-plugin.version}</version>
@@ -204,6 +209,7 @@
                     </systemPropertyVariables>
                 </configuration>
             </plugin>
+
             <plugin>
                 <artifactId>maven-failsafe-plugin</artifactId>
                 <version>${surefire-plugin.version}</version>
@@ -217,8 +223,7 @@
                 </executions>
                 <configuration>
                     <systemPropertyVariables>
-                        <native.image.path>${project.build.directory}/${project.build.finalName}-runner
-                        </native.image.path>
+                        <native.image.path>${project.build.directory}/${project.build.finalName}-runner</native.image.path>
                         <java.util.logging.manager>org.jboss.logmanager.LogManager</java.util.logging.manager>
                         <!--suppress UnresolvedMavenProperty -->
                         <maven.home>${maven.home}</maven.home>
@@ -226,6 +231,7 @@
                 </configuration>
             </plugin>
         </plugins>
+
     </build>
 
     <profiles>
