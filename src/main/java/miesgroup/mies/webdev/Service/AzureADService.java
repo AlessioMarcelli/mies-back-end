@@ -35,13 +35,9 @@ public class AzureADService {
         if (clientSecret == null) {
             throw new RuntimeException("Secret not found in database");
         }
-        System.out.println("AzureADService initialized with secret: " + clientSecret.getSecret());
     }
 
     public String getPowerBIAccessToken() {
-        System.out.println("clientId: " + clientId);
-        System.out.println("tenantId: " + tenantId);
-        System.out.println("clientSecret: " + (clientSecret != null ? clientSecret.getSecret() : "NULL"));
 
         if (clientSecret == null) {
             throw new RuntimeException("Client secret is null. Check database records.");
@@ -63,7 +59,6 @@ public class AzureADService {
                 throw new RuntimeException("Failed to retrieve access token.");
             }
 
-            System.out.println("Access token: " + token.getToken());
             return token.getToken();
         } catch (Exception e) {
             e.printStackTrace();
