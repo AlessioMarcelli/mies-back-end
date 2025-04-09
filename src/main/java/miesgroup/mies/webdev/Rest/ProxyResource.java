@@ -5,6 +5,8 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import jakarta.ws.rs.*;
 import jakarta.ws.rs.core.*;
+import miesgroup.mies.webdev.Model.Sessione;
+import miesgroup.mies.webdev.Repository.SessionRepo;
 import miesgroup.mies.webdev.Service.AzureADService;
 import miesgroup.mies.webdev.Service.SessionController;
 
@@ -13,6 +15,7 @@ import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
 import java.net.URI;
 import java.io.IOException;
+import java.util.Optional;
 
 @Path("/proxy")
 @Produces(MediaType.APPLICATION_JSON)
@@ -20,12 +23,14 @@ import java.io.IOException;
 public class ProxyResource {
     private final SessionController sessionController;
     private final AzureADService azureADService;
+    private final SessionRepo sessionRepo;
     private static final String DATASET_ID_CONTROLLO = "82512a63-c371-49e5-96e1-987ec353857a";
     private static final String TABLE_NAME = "articoli";
 
-    public ProxyResource(SessionController sessionController, AzureADService azureADService) {
+    public ProxyResource(SessionController sessionController, AzureADService azureADService, SessionRepo sessionRepo) {
         this.sessionController = sessionController;
         this.azureADService = azureADService;
+        this.sessionRepo = sessionRepo;
     }
 
     @GET
@@ -134,16 +139,22 @@ public class ProxyResource {
     @GET
     @Path("/articoli")
     @Produces(MediaType.APPLICATION_JSON)
-    public Response inviaArticoliAPowerBI() {
+    public Response inviaArticoliAPowerBI(@CookieParam("SESSION_COOKIE") Integer sessionCookie) {
         try {
             // 🔐 Recupero session ID
-            String sessionCookie = sessionController.getSessionValue();
-            if (sessionCookie == null || sessionCookie.isEmpty()) {
+
+            sessionCookie = sessionRepo.getSessionById(sessionCookie)
+                    .map(Sessione::getId)
+                    .orElse(null);
+
+            if (sessionCookie == null) {
                 return Response.status(Response.Status.UNAUTHORIZED)
                         .entity("{\"error\":\"Missing SESSION_COOKIE\"}")
                         .build();
             }
 
+            String cookie = String.valueOf(sessionCookie);
+            System.out.println("cookie");
             // 🌐 Chiamata all'API per ottenere i dati
             HttpClient client = HttpClient.newHttpClient();
             String targetUrl = "http://energyportfolio.it:8081/costo-articolo?session_id=" + sessionCookie;
@@ -151,7 +162,7 @@ public class ProxyResource {
             HttpRequest request = HttpRequest.newBuilder()
                     .uri(URI.create(targetUrl))
                     .header("Origin", "https://app.powerbi.com")
-                    .header("X-Session-Id", sessionCookie)
+                    .header("X-Session-Id", cookie)
                     .GET()
                     .build();
 
