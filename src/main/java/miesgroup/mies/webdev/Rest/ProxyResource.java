@@ -138,6 +138,7 @@ public class ProxyResource {
 
     @GET
     @Path("/articoli")
+    @Consumes(MediaType.APPLICATION_JSON)
     @Produces(MediaType.APPLICATION_JSON)
     public Response inviaArticoliAPowerBI(@CookieParam("SESSION_COOKIE") Integer sessionCookie) {
         try {
@@ -187,6 +188,7 @@ public class ProxyResource {
 
             // 🔐 Ottieni token da AzureADService
             String token = azureADService.getPowerBIAccessToken();
+            System.out.println("Token: " + token);
 
             // 📤 Invia i dati a Power BI
             HttpRequest powerBIRequest = HttpRequest.newBuilder()
@@ -201,6 +203,8 @@ public class ProxyResource {
             if (powerBIResponse.statusCode() == 200) {
                 // (opzionale) 🔄 Avvia il refresh del report
                 refreshDataset(token, DATASET_ID_CONTROLLO); // solo se usi un dataset import/push
+                System.out.println("Status refresh: " + response.statusCode());
+                //System.out.println("Body refresh: " + response.body());
 
                 return Response.ok("{\"status\":\"Dati inviati con successo a Power BI\"}").build();
             } else {
