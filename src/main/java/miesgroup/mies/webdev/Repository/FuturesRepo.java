@@ -7,6 +7,7 @@ import miesgroup.mies.webdev.Model.Yearly;
 
 import java.time.LocalDate;
 import java.util.List;
+import java.util.Objects;
 
 @ApplicationScoped
 public class FuturesRepo {
@@ -30,7 +31,7 @@ public class FuturesRepo {
         return Yearly.findAll()
                 .<Yearly>stream()
                 .map(y -> y.getFuture().getDate())
-                .filter(d -> d != null)
+                .filter(Objects::nonNull)
                 .max(LocalDate::compareTo)
                 .map(LocalDate::toString)
                 .orElse(null);

@@ -86,7 +86,7 @@ public class FuturesResource {
     @GET
     @Path("/last-date")
     @Produces(MediaType.APPLICATION_JSON)
-    public Response getLastDate() throws SQLException {
+    public Response getLastDate(){
         String lastDate = futuresService.getLastDate();
 
         if (lastDate == null) {
