@@ -71,7 +71,7 @@ public class EmailScheduler {
 
         if (alertData != null) {
             List<Future> extractedFutures;
-
+/*
             if (alertData.length == 3) {
                 extractedFutures = futuresService.getFuturesYear(previousMondayStr);
                 futures.addAll(extractedFutures);
@@ -104,6 +104,7 @@ public class EmailScheduler {
                     futures.addAll(extractedFutures);
                 }
             }
+ */
         }
 
         // Creazione mappa prezzi per inizio e fine settimana
