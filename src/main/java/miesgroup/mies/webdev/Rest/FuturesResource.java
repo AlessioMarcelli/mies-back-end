@@ -6,7 +6,6 @@ import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
 import miesgroup.mies.webdev.Service.FuturesService;
 
-import java.sql.SQLException;
 import java.util.List;
 import java.util.Map;
 
