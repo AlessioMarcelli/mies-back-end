@@ -103,13 +103,52 @@ public class EmailService {
 
 
 
-    public List<PanacheEntityBase> checkUserAlertFillField(int idUtente) {
-        List<PanacheEntityBase> alerts = new ArrayList<>();
+    public List<Map<String, Object>> checkUserAlertFillField(int idUtente) {
+        List<Map<String, Object>> alerts = new ArrayList<>();
 
-        generalAlertRepo.findByUserId(idUtente).ifPresent(alerts::add);
-        monthlyAlertRepo.findByUserId(idUtente).ifPresent(alerts::add);
-        quarterlyAlertRepo.findByUserId(idUtente).ifPresent(alerts::add);
-        yearlyAlertRepo.findByUserId(idUtente).ifPresent(alerts::add);
+        generalAlertRepo.findByUserId(idUtente).ifPresent(g -> {
+            Map<String, Object> map = new HashMap<>();
+            map.put("futuresType", "GeneralAlert");
+            map.put("maxPriceValue", g.getMaxPriceValue());
+            map.put("minPriceValue", g.getMinPriceValue());
+            map.put("frequencyA", g.getFrequencyA());
+            map.put("checkModality", g.getCheckModality());
+            map.put("idUtente", idUtente);
+            alerts.add(map);
+        });
+
+        monthlyAlertRepo.findByUserId(idUtente).ifPresent(m -> {
+            Map<String, Object> map = new HashMap<>();
+            map.put("futuresType", "MonthlyAlert");
+            map.put("maxPriceValue", m.getMaxPriceValue());
+            map.put("minPriceValue", m.getMinPriceValue());
+            map.put("frequencyA", m.getFrequencyA());
+            map.put("checkModality", m.getCheckModality());
+            map.put("idUtente", idUtente);
+            alerts.add(map);
+        });
+
+        quarterlyAlertRepo.findByUserId(idUtente).ifPresent(q -> {
+            Map<String, Object> map = new HashMap<>();
+            map.put("futuresType", "QuarterlyAlert");
+            map.put("maxPriceValue", q.getMaxPriceValue());
+            map.put("minPriceValue", q.getMinPriceValue());
+            map.put("frequencyA", q.getFrequencyA());
+            map.put("checkModality", q.getCheckModality());
+            map.put("idUtente", idUtente);
+            alerts.add(map);
+        });
+
+        yearlyAlertRepo.findByUserId(idUtente).ifPresent(y -> {
+            Map<String, Object> map = new HashMap<>();
+            map.put("futuresType", "YearlyAlert");
+            map.put("maxPriceValue", y.getMaxPriceValue());
+            map.put("minPriceValue", y.getMinPriceValue());
+            map.put("frequencyA", y.getFrequencyA());
+            map.put("checkModality", y.getCheckModality());
+            map.put("idUtente", idUtente);
+            alerts.add(map);
+        });
 
         return alerts;
     }

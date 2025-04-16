@@ -46,8 +46,8 @@ public class EmailScheduler {
         List<Cliente> clients = clienteService.getClientsCheckEmail();
 
         for (Cliente cliente : clients) {
-            List<PanacheEntityBase> alerts = emailService.checkUserAlertFillField(cliente.getId());
-            sendSpecialEmail(cliente, alerts);
+            //List<PanacheEntityBase> alerts = emailService.checkUserAlertFillField(cliente.getId());
+            //sendSpecialEmail(cliente, alerts);
         }
     }
     // Ogni giorno alle 5:00
@@ -75,11 +75,11 @@ public class EmailScheduler {
         for (Cliente cliente : clients) {
             System.out.println("Verifica alert per cliente ID: " + cliente.getId());
 
-            List<PanacheEntityBase> alerts = emailService.checkUserAlertFillField(cliente.getId());
-            sendRegularEmail(cliente, alerts);
+            //List<PanacheEntityBase> alerts = emailService.checkUserAlertFillField(cliente.getId());
+            //sendRegularEmail(cliente, alerts);
 
             if (today.equals(firstMonday)) {
-                sendSpecialEmail(cliente, alerts);
+                //sendSpecialEmail(cliente, alerts);
             }
         }
     }
