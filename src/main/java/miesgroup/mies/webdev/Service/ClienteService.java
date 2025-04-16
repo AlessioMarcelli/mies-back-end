@@ -45,4 +45,8 @@ public class ClienteService {
     public List<Cliente> getClientsCheckEmail() {
         return clienteRepo.find("checkEmail", true).list();
     }
+
+    public Cliente getClienteByPod(String idPod){
+        return  clienteRepo.getClienteByPod(idPod);
+    }
 }

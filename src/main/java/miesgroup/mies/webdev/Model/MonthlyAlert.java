@@ -8,86 +8,76 @@ import jakarta.persistence.*;
 public class MonthlyAlert extends PanacheEntityBase {
 
     @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Long id;
+    @Column(name = "Id_Utente", insertable = false, updatable = false)
+    private Integer idUtente;
 
     private Double maxPriceValue;
-
     private Double minPriceValue;
 
-    private Integer Id_Utente;
-
     private String frequencyA;
-
     private Boolean checkModality;
 
     @ManyToOne
     @JoinColumn(name = "Id_Utente")
     private Cliente utente;
 
-    // Costruttori
     public MonthlyAlert() {}
 
-    public MonthlyAlert(Double maxPriceValue, Double minPriceValue, Integer Id_Utente, String frequencyA, Boolean checkModality) {
+    public MonthlyAlert(Double maxPriceValue, Double minPriceValue, Integer idUtente, String frequencyA, Boolean checkModality) {
         this.maxPriceValue = maxPriceValue;
         this.minPriceValue = minPriceValue;
-        this.Id_Utente = Id_Utente;
+        this.idUtente = idUtente;
         this.frequencyA = frequencyA;
         this.checkModality = checkModality;
     }
 
     // Getter e Setter
-    public Long getId() {
-        return id;
-    }
 
-    public Double getMaxPriceValue() {
+    public Double getMaxPriceValue(){
         return maxPriceValue;
     }
 
-    public void setMaxPriceValue(Double maxPriceValue) {
+    public void setMaxPriceValue(Double maxPriceValue){
         this.maxPriceValue = maxPriceValue;
     }
 
-    public Double getMinPriceValue() {
+    public Double getMinPriceValue(){
         return minPriceValue;
     }
 
-    public void setMinPriceValue(Double minPriceValue) {
+    public void setMinPriceValue(Double minPriceValue){
         this.minPriceValue = minPriceValue;
     }
 
-    public Integer getId_Utente() {
-        return Id_Utente;
+    public Integer getIdUtente(){
+        return idUtente;
     }
 
-    public void setId_Utente(Integer id_Utente) {
-        Id_Utente = id_Utente;
+    public void setIdUtente(Integer idUtente){
+        this.idUtente = idUtente;
     }
 
-    public String getFrequencyA() {
+    public String getFrequencyA(){
         return frequencyA;
     }
 
-    public void setFrequencyA(String frequencyA) {
+    public void setFrequencyA(String frequencyA){
         this.frequencyA = frequencyA;
     }
 
-    public Boolean getCheckModality() {
+    public Boolean getCheckModality(){
         return checkModality;
     }
 
-    public void setCheckModality(Boolean checkModality) {
+    public void setCheckModality(Boolean checkModality){
         this.checkModality = checkModality;
     }
 
-    public Cliente getUtente() {
+    public Cliente getUtente(){
         return utente;
     }
 
-    public void setUtente(Cliente utente) {
+    public void setUtente(Cliente utente){
         this.utente = utente;
     }
-
 }
-

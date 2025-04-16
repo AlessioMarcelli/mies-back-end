@@ -7,7 +7,7 @@ import jakarta.persistence.*;
 @Table(name = "monthly_futures")
 public class Monthly extends PanacheEntityBase {
     @Id
-    private Integer id; // 🔹 Ora è private
+    private Integer id;
 
     private Integer year;
     private Integer month;

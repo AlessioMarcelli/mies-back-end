@@ -115,5 +115,11 @@ public class ClienteRepo implements PanacheRepositoryBase<Cliente, Integer> {
     }
 
 
-
+    public Cliente getClienteByPod(String idPod) {
+        Pod p = podRepo.find("id", idPod).firstResult();
+        if (p == null) {
+            return null;
+        }
+        return p.getUtente();
+    }
 }
