@@ -2,8 +2,6 @@ package miesgroup.mies.webdev.Rest.Model;
 
 import miesgroup.mies.webdev.Model.Costi;
 
-import java.time.LocalDate;
-
 public class CostiDTO {
     public String descrizione;
     public String unitaMisura;
@@ -14,6 +12,7 @@ public class CostiDTO {
     public String intervalloPotenza;
     public String classeAgevolazione;
     public String annoRiferimento;
+    public Integer id;
 
     public CostiDTO(Costi entity) {
         this.descrizione = entity.getDescrizione();
@@ -25,5 +24,6 @@ public class CostiDTO {
         this.intervalloPotenza = entity.getIntervalloPotenza();
         this.classeAgevolazione = entity.getClasseAgevolazione();
         this.annoRiferimento = entity.getAnnoRiferimento();
+        this.id = entity.getId();
     }
 }

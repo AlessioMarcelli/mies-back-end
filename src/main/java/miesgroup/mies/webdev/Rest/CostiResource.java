@@ -143,15 +143,21 @@ public class CostiResource {
         }
     }
 
-    @POST
+    @DELETE
     @Path("/delete-ids")
     @Consumes(MediaType.APPLICATION_JSON)
     @Produces(MediaType.APPLICATION_JSON)
-    public Response deleteCostiByIds(List<Long> ids) {
+    public Response deleteCostiByIds(List<Long> ids, @CookieParam("SESSION_COOKIE") int idSessione) {
         if (ids == null || ids.isEmpty()) {
             return Response.status(Response.Status.BAD_REQUEST)
                     .entity("Lista di ID vuota o nulla")
                     .build();
+        }
+
+        // Verifica se l'utente ha i permessi per eliminare
+        Cliente c = sessionService.trovaUtenteCategoryBySessione(idSessione);
+        if (!"Admin".equals(c.getTipologia())) {
+            return Response.status(Response.Status.UNAUTHORIZED).build();
         }
 
         long deletedCount = costiService.deleteIds(ids);
@@ -167,11 +173,12 @@ public class CostiResource {
             @QueryParam("anno") Optional<String> anno,
             @QueryParam("annoRiferimento") Optional<String> annoRif,
             @QueryParam("intervalloPotenza") Optional<String> intervalloPotenza,
+            @QueryParam("id") Optional<Integer> id,
             @QueryParam("page") @DefaultValue("0") int page,
             @QueryParam("size") @DefaultValue("50") int size
     ) {
         // Recupera la lista dei costi filtrati con paginazione
-        List<CostiDTO> dtoList = costiService.getCostiFiltrati(categoria, anno, annoRif, intervalloPotenza, page, size);
+        List<CostiDTO> dtoList = costiService.getCostiFiltrati(categoria, anno, annoRif, intervalloPotenza, id, page, size);
 
         // Recupera il totale degli elementi filtrati
         long total = costiService.countCostiFiltrati(categoria, anno, annoRif, intervalloPotenza);

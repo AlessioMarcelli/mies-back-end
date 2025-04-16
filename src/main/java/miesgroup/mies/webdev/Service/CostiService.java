@@ -274,11 +274,17 @@ public class CostiService {
             Optional<String> anno,
             Optional<String> annoRiferimento,
             Optional<String> intervalloPotenza,
+            Optional<Integer> id,
             int page,
             int size
     ) {
         Map<String, Object> params = new HashMap<>();
         StringBuilder query = new StringBuilder("1=1");
+
+        id.ifPresent(i -> {
+            query.append(" AND id = :id");
+            params.put("id", i);
+        });
 
         categoria.ifPresent(cat -> {
             query.append(" AND categoria = :categoria");
