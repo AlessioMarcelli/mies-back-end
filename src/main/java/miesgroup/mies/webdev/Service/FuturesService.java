@@ -2,11 +2,10 @@ package miesgroup.mies.webdev.Service;
 
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
-import miesgroup.mies.webdev.Model.Future;
 import miesgroup.mies.webdev.Repository.FuturesRepo;
 
-import java.sql.SQLException;
-import java.util.List;
+import java.util.*;
+import java.util.stream.Collectors;
 
 @ApplicationScoped
 public class FuturesService {
@@ -17,85 +16,62 @@ public class FuturesService {
         this.futuresRepo = futuresRepo;
     }
 
-    // Metodo per ottenere i futures in base alla data e al tipo di future (anno, trimestre, mese)
-    public List<Future> getFutures(String date, String type) {
-        try {
-            switch (type) {
-                case "year":
-                    return futuresRepo.findByYear(date); // Query per ottenere tutti i futures annuali
-                case "quarter":
-                    return futuresRepo.findByQuarter(date); // Query per ottenere i futures trimestrali
-                case "month":
-                    return futuresRepo.findByMonth(date); // Query per ottenere i futures mensili
-                default:
-                    return List.of();  // Se il tipo non è valido, restituisci una lista vuota
-            }
-        } catch (SQLException e) {
-            throw new RuntimeException(e);
-        }
+    // Metodo generico per ottenere i futures in base al tipo
+    public List<Map<String, Object>> getFutures(String date, String type) {
+        return switch (type) {
+            case "year" -> getFuturesYear(date);
+            case "quarter" -> getFuturesQuarter(date);
+            case "month" -> getFuturesMonth(date);
+            default -> List.of();  // Se il tipo non è valido, restituisci una lista vuota
+        };
     }
 
-    public List<Future> getFuturesYear(String date) {
-        try {
-            return futuresRepo.findByYear(date); // Query per ottenere tutti i futures annuali
-        } catch (SQLException e) {
-            throw new RuntimeException(e);
-        }
+    public List<Map<String, Object>> getFuturesYear(String date) {
+        return futuresRepo.findByYear(date).stream()
+                .map(y -> {
+                    Map<String, Object> map = new HashMap<>();
+                    map.put("year", y.getYear());
+                    map.put("settlementPrice", y.getFuture().getSettlementPrice());
+                    return map;
+                })
+                .collect(Collectors.toList());
     }
 
-    public List<Future> getFutureYear(String date) {
-        try {
-            return futuresRepo.findByYear(date); // Query per ottenere tutti i futures annuali
-        } catch (SQLException e) {
-            throw new RuntimeException(e);
-        }
+    public List<Map<String, Object>> getFuturesQuarter(String date) {
+        return futuresRepo.findByQuarter(date).stream()
+                .map(q -> {
+                    Map<String, Object> map = new HashMap<>();
+                    map.put("year", q.getYear());
+                    map.put("quarter", q.getQuarter());
+                    map.put("settlementPrice", q.getFuture().getSettlementPrice());
+                    return map;
+                })
+                .collect(Collectors.toList());
     }
 
-    public List<Future> getFuturesQuarter(String date) {
-        try {
-            return futuresRepo.findByQuarter(date); // Query per ottenere tutti i futures annuali
-        } catch (SQLException e) {
-            throw new RuntimeException(e);
-        }
+    public List<Map<String, Object>> getFuturesMonth(String date) {
+        return futuresRepo.findByMonth(date).stream()
+                .map(m -> {
+                    Map<String, Object> map = new HashMap<>();
+                    map.put("year", m.getYear());
+                    map.put("month", m.getMonth());
+                    map.put("settlementPrice", m.getFuture().getSettlementPrice());
+                    return map;
+                })
+                .collect(Collectors.toList());
     }
 
-    public List<Future> getFuturesMonth(String date) {
-        try {
-            return futuresRepo.findByMonth(date); // Query per ottenere tutti i futures annuali
-        } catch (SQLException e) {
-            throw new RuntimeException(e);
-        }
+    public String getLastDate() {
+        return futuresRepo.getLastDateFromYearlyFutures();
     }
 
-
-
-
-    // Metodo per ottenere l'ultima data disponibile
-    public String getLastDate() throws SQLException {
-        return futuresRepo.getLastDateFromYearlyFutures(); // Chiamata al metodo nel repository per ottenere l'ultima data
-    }
-
-    // Metodo per determinare il trimestre in base al mese
     private String getQuarter(String month) {
-        switch (month) {
-            case "01":
-            case "02":
-            case "03":
-                return "Q1";
-            case "04":
-            case "05":
-            case "06":
-                return "Q2";
-            case "07":
-            case "08":
-            case "09":
-                return "Q3";
-            case "10":
-            case "11":
-            case "12":
-                return "Q4";
-            default:
-                return "";
-        }
+        return switch (month) {
+            case "01", "02", "03" -> "Q1";
+            case "04", "05", "06" -> "Q2";
+            case "07", "08", "09" -> "Q3";
+            case "10", "11", "12" -> "Q4";
+            default -> "";
+        };
     }
 }

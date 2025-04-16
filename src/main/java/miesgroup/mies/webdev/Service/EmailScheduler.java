@@ -1,36 +1,32 @@
 package miesgroup.mies.webdev.Service;
 
+import io.quarkus.scheduler.Scheduled;
 import io.quarkus.mailer.Mail;
 import io.quarkus.mailer.Mailer;
 import jakarta.enterprise.context.ApplicationScoped;
+import jakarta.inject.Inject;
+import miesgroup.mies.webdev.Model.*;
+import org.eclipse.microprofile.config.inject.ConfigProperty;
+import io.quarkus.hibernate.orm.panache.PanacheEntityBase;
 
 import java.time.LocalDate;
 import java.time.temporal.TemporalAdjusters;
 import java.util.*;
-
-import jakarta.inject.Inject;
-import miesgroup.mies.webdev.Model.AlertData;
-import miesgroup.mies.webdev.Model.Cliente;
-import miesgroup.mies.webdev.Model.Future;
-import org.eclipse.microprofile.config.inject.ConfigProperty;
-
+/*TODO
+ * - se futures type All bisogna presentare all'utente tutte e tre le tabelle in riga (se triggherato da alert)
+ * - correggo presa delle date da mese a mese
+ * - abbellisco Email styling
+ * - finisco firma email
+ * - dopo l'estrazione future faccio controllo con alert utente se viene triggherato allora l'email verrà inviata
+ */
 @ApplicationScoped
 public class EmailScheduler {
-    /*TODO
-     * - se futures type All bisogna presentare all'utente tutte e tre le tabelle in riga (se triggherato da alert)
-     * - correggo presa delle date da mese a mese
-     * - abbellisco Email styling
-     * - finisco firma email
-     * - dopo l'estrazione future faccio controllo con alert utente se viene triggherato allora l'email verrà inviata
-     */
 
     private final Mailer mailer;
 
-    @Inject
-    ClienteService clienteService;
-
-    @Inject
-    FuturesService futuresService;
+    @Inject ClienteService clienteService;
+    @Inject FuturesService futuresService;
+    @Inject EmailService emailService;
 
     @ConfigProperty(name = "quarkus.mailer.from")
     String from;
@@ -38,11 +34,38 @@ public class EmailScheduler {
     public EmailScheduler(Mailer mailer) {
         this.mailer = mailer;
     }
+    // Ogni lunedì alle 8:00
+    @Scheduled(cron = "0 0 8 ? * MON")
+    public void sendWeeklyEmailEveryMonday() {
+        sendScheduledEmail();
+    }
+    // Ogni 1 del mese alle 6:00
+    @Scheduled(cron = "0 0 6 1 * ?")
+    public void sendMonthlySpecialEmail() {
+        LocalDate today = LocalDate.now();
+        List<Cliente> clients = clienteService.getClientsCheckEmail();
 
-    //secondi (0-59), minuti (0-59), ore (0-23), giorno del mese (1-31), mese (1-12, JAN-DEC), giorno della settimana 1-7 (o SUN-SAT)
-    //se ? = qualsiasi o * = nessuno
-    //@Scheduled(cron = "0 19 18 ? * *") //test
-    //@Scheduled(cron = "0 0 8 ? * MON") // Ogni lunedì alle 08:00
+        for (Cliente cliente : clients) {
+            //List<PanacheEntityBase> alerts = emailService.checkUserAlertFillField(cliente.getId());
+            //sendSpecialEmail(cliente, alerts);
+        }
+    }
+    // Ogni giorno alle 5:00
+    /*
+    @Scheduled(cron = "0 0 5 * * ?")
+    public void checkTriggeredAlertsDaily() {
+        List<Cliente> clients = clienteService.listAll();
+
+        for (Cliente cliente : clients) {
+            List<PanacheEntityBase> alerts = emailService.checkUserAlertFillField(cliente.getId());
+            if (!alerts.isEmpty()) {
+                System.out.println("Alert trigger verificato per cliente ID: " + cliente.getId());
+                // Logica personalizzata per gestire l'alert triggerato
+            }
+        }
+    }
+     */
+
     public void sendScheduledEmail() {
         LocalDate today = LocalDate.now();
         LocalDate firstMonday = today.with(TemporalAdjusters.firstInMonth(java.time.DayOfWeek.MONDAY));
@@ -52,77 +75,57 @@ public class EmailScheduler {
         for (Cliente cliente : clients) {
             System.out.println("Verifica alert per cliente ID: " + cliente.getId());
 
-            AlertData[] alertData = clienteService.checkUserAlertFillField(cliente.getId());
-            sendRegularEmail(cliente, alertData);
-            if (today.equals(firstMonday)) {
-                //sendSpecialEmail(cliente, alertData);
-            } else {
+            //List<PanacheEntityBase> alerts = emailService.checkUserAlertFillField(cliente.getId());
+            //sendRegularEmail(cliente, alerts);
 
+            if (today.equals(firstMonday)) {
+                //sendSpecialEmail(cliente, alerts);
             }
         }
     }
 
-    private void sendRegularEmail(Cliente cliente, AlertData[] alertData) {
+    private void sendRegularEmail(Cliente cliente, List<PanacheEntityBase> alerts) {
         LocalDate previousMonday = DateUtils.getPreviousMonday(LocalDate.now());
         LocalDate previousFriday = DateUtils.getPreviousFriday(LocalDate.now());
         String previousMondayStr = previousMonday.toString();
         String previousFridayStr = previousFriday.toString();
-        List<Future> futures = new ArrayList<>();
 
-        if (alertData != null) {
-            List<Future> extractedFutures;
+        List<Map<String, Object>> futures = new ArrayList<>();
 
-            if (alertData.length == 3) {
-                extractedFutures = futuresService.getFuturesYear(previousMondayStr);
-                futures.addAll(extractedFutures);
-                extractedFutures = futuresService.getFuturesYear(previousFridayStr);
-                futures.addAll(extractedFutures);
-                extractedFutures = futuresService.getFuturesQuarter(previousMondayStr);
-                futures.addAll(extractedFutures);
-                extractedFutures = futuresService.getFuturesQuarter(previousFridayStr);
-                futures.addAll(extractedFutures);
-                extractedFutures = futuresService.getFuturesMonth(previousMondayStr);
-                futures.addAll(extractedFutures);
-                extractedFutures = futuresService.getFuturesMonth(previousFridayStr);
-                futures.addAll(extractedFutures);
-            } else {
-                String type = alertData[0].getFuturesType();
-                if ("MonthlyAlert".equals(type)) {
-                    extractedFutures = futuresService.getFuturesMonth(previousMondayStr);
-                    futures.addAll(extractedFutures);
-                    extractedFutures = futuresService.getFuturesMonth(previousFridayStr);
-                    futures.addAll(extractedFutures);
-                } else if ("QuarterlyAlert".equals(type)) {
-                    extractedFutures = futuresService.getFuturesQuarter(previousMondayStr);
-                    futures.addAll(extractedFutures);
-                    extractedFutures = futuresService.getFuturesQuarter(previousFridayStr);
-                    futures.addAll(extractedFutures);
-                } else if ("YearlyAlert".equals(type)) {
-                    extractedFutures = futuresService.getFuturesYear(previousMondayStr);
-                    futures.addAll(extractedFutures);
-                    extractedFutures = futuresService.getFuturesYear(previousFridayStr);
-                    futures.addAll(extractedFutures);
-                }
+        for (PanacheEntityBase alert : alerts) {
+            if (alert instanceof MonthlyAlert) {
+                futures.addAll(futuresService.getFuturesMonth(previousMondayStr));
+                futures.addAll(futuresService.getFuturesMonth(previousFridayStr));
+            } else if (alert instanceof QuarterlyAlert) {
+                futures.addAll(futuresService.getFuturesQuarter(previousMondayStr));
+                futures.addAll(futuresService.getFuturesQuarter(previousFridayStr));
+            } else if (alert instanceof YearlyAlert) {
+                futures.addAll(futuresService.getFuturesYear(previousMondayStr));
+                futures.addAll(futuresService.getFuturesYear(previousFridayStr));
             }
         }
 
-        // Creazione mappa prezzi per inizio e fine settimana
         Map<String, Double> settlementStart = new HashMap<>();
         Map<String, Double> settlementEnd = new HashMap<>();
 
-        for (Future future : futures) {
-            if (future.getDate() != null) {  // Evita il NullPointerException
-                if (future.getDate().equals(previousMondayStr)) {
-                    settlementStart.put("future.getFutureType()", future.getSettlementPrice());
-                } else if (future.getDate().equals(previousFridayStr)) {
-                    settlementEnd.put("future.getFutureType()", future.getSettlementPrice());
-                }
-            } else {
-                System.out.println("Attenzione: un oggetto Future ha la data null! " + future);
+        for (Map<String, Object> future : futures) {
+            Object dateObj = future.get("date");
+            Object typeObj = future.get("future_type");
+            Object priceObj = future.get("settlementPrice");
+
+            if (dateObj == null || typeObj == null || priceObj == null) continue;
+
+            String date = dateObj.toString();
+            String futureType = typeObj.toString();
+            double price = (priceObj instanceof Number) ? ((Number) priceObj).doubleValue() : Double.parseDouble(priceObj.toString());
+
+            if (date.equals(previousMondayStr)) {
+                settlementStart.put(futureType, price);
+            } else if (date.equals(previousFridayStr)) {
+                settlementEnd.put(futureType, price);
             }
         }
 
-        // Creazione corpo email
         String body = buildEmailBody(settlementStart, settlementEnd, previousMondayStr, previousFridayStr, cliente);
 
         mailer.send(
@@ -131,7 +134,7 @@ public class EmailScheduler {
         System.out.println("Email settimanale inviata a: " + cliente.getEmail());
     }
 
-    // Metodo per costruire il corpo dell'email
+
     private String buildEmailBody(Map<String, Double> start, Map<String, Double> end, String startDate, String endDate, Cliente cliente) {
         StringBuilder sb = new StringBuilder();
         sb.append("Ciao ").append(cliente.getUsername()).append(",\n\n")
@@ -163,9 +166,7 @@ public class EmailScheduler {
         return sb.toString();
     }
 
-
-    private void sendSpecialEmail(Cliente cliente, AlertData[] alertData) {
-        //String emailContent = generateSpecialEmailContent(alertData);
+    private void sendSpecialEmail(Cliente cliente, List<PanacheEntityBase> alerts) {
         LocalDate today = LocalDate.now();
         LocalDate firstBusinessDay = DateUtils.getFirstBusinessDayOfPreviousMonth(today);
         LocalDate lastBusinessDay = DateUtils.getLastBusinessDayOfPreviousMonth(today);
@@ -180,27 +181,4 @@ public class EmailScheduler {
         );
         System.out.println("Email speciale inviata a: " + cliente.getEmail());
     }
-/*
-    private String generateEmailContent(AlertData[] alertData) {
-
-        StringBuilder sb = new StringBuilder("Questa è l'email settimanale.\n\nAlert ricevuti:\n");
-
-        for (AlertData alert : alertData) {
-            sb.append("- ").append(alert.getMessage()).append("\n");
-        }
-
-        return sb.toString();
-    }
-
-    private String generateSpecialEmailContent(AlertData[] alertData) {
-        StringBuilder sb = new StringBuilder("Questa è l'email speciale del primo lunedì del mese.\n\nAlert ricevuti:\n");
-
-        for (AlertData alert : alertData) {
-            sb.append("- ").append(alert.getMessage()).append("\n");
-        }
-
-        return sb.toString();
-    }
-
- */
 }
