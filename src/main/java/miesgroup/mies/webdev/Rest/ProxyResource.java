@@ -1,173 +1,82 @@
 package miesgroup.mies.webdev.Rest;
 
-import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.databind.node.ObjectNode;
 import jakarta.ws.rs.*;
 import jakarta.ws.rs.core.*;
 import miesgroup.mies.webdev.Model.Sessione;
 import miesgroup.mies.webdev.Repository.SessionRepo;
-import miesgroup.mies.webdev.Service.AzureADService;
-import miesgroup.mies.webdev.Service.SessionController;
+import miesgroup.mies.webdev.Service.PowerBIService;
 
-import java.net.http.HttpClient;
-import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
-import java.net.URI;
-import java.io.IOException;
-import java.util.Optional;
+import java.util.HashMap;
+import java.util.Map;
 
 @Path("/proxy")
 @Produces(MediaType.APPLICATION_JSON)
 @Consumes(MediaType.APPLICATION_JSON)
 public class ProxyResource {
-    private final SessionController sessionController;
-    private final AzureADService azureADService;
+    // Costanti per i dataset e le tabelle
+    private static final String DATASET_ID_CONTROLLO = "0872c391-5ed8-4fde-b65f-6cce3d0e5870";
+    private static final String ARTICOLI = "dettaglio_articolo";
+    private static final String BOLLETTE = "bolletta_pod";
+    private static final String POD = "pod_info";
+
+    // URL di base per le API
+    private static final String BASE_URL_PROD = "https://energyportfolio.it";
+    private static final String BASE_URL_DEV = "http://localhost:8080";
+    private static final String API_PORT_PROD = ":8081";
+
+    // Flag per ambiente di sviluppo/produzione
+    private static final boolean IS_DEV_ENV = true; // Cambia a false per produzione
+
     private final SessionRepo sessionRepo;
-    private static final String DATASET_ID_CONTROLLO = "82512a63-c371-49e5-96e1-987ec353857a";
-    private static final String TABLE_NAME = "articoli";
+    private final PowerBIService powerBIService;
 
-    public ProxyResource(SessionController sessionController, AzureADService azureADService, SessionRepo sessionRepo) {
-        this.sessionController = sessionController;
-        this.azureADService = azureADService;
+    public ProxyResource(SessionRepo sessionRepo, PowerBIService powerBIService) {
         this.sessionRepo = sessionRepo;
+        this.powerBIService = powerBIService;
     }
 
-    @GET
-    @Path("/pod")
-    @Produces(MediaType.APPLICATION_JSON)
-    public Response getPod() {
-        try {
-            // Recuperiamo il valore del cookie dalla classe SessionControl
-            String sessionCookie = sessionController.getSessionValue();
-
-            System.out.println("Session ID: " + sessionCookie);
-
-            // Se il valore è null o vuoto, restituiamo un errore
-            if (sessionCookie == null || sessionCookie.isEmpty()) {
-                return Response.status(Response.Status.UNAUTHORIZED)
-                        .entity("{\"error\":\"Missing SESSION_COOKIE porco dio\"}")
-                        .build();
-            }
-
-            // Creazione client HTTP
-            HttpClient client = HttpClient.newHttpClient();
-
-            // URL della vera API (con session ID come header)
-            String targetUrl = "http://energyportfolio.it:8081/pod/dati?session_id=" + sessionCookie;
-
-            HttpRequest request = HttpRequest.newBuilder()
-                    .uri(URI.create(targetUrl))
-                    .header("Origin", "https://app.powerbi.com") // Aggiunto per compatibilità Power BI
-                    .header("X-Session-Id", sessionCookie) // Passiamo il valore come HEADER
-                    .GET()
-                    .build();
-
-            // Eseguiamo la richiesta
-            HttpResponse<String> response = client.send(request, HttpResponse.BodyHandlers.ofString());
-
-            // Log per debugging
-            System.out.println("Request to: " + targetUrl);
-            System.out.println("Session ID: " + sessionCookie);
-            System.out.println("Response Code: " + response.statusCode());
-            System.out.println("Response Body: " + response.body());
-
-            // Restituiamo la risposta della vera API
-            return Response.status(response.statusCode())
-                    .entity(response.body())
-                    .build();
-
-        } catch (IOException | InterruptedException e) {
-            return Response.status(Response.Status.INTERNAL_SERVER_ERROR)
-                    .entity("{\"error\":\"Errore nel proxy: " + e.getMessage() + "\"}")
-                    .build();
+    /**
+     * Valida il cookie di sessione e restituisce l'ID sessione.
+     */
+    private String validateSessionCookie(Integer sessionCookie) {
+        if (sessionCookie == null) {
+            return null;
         }
-    }
 
-
-    @GET
-    @Path("/bollette")
-    @Produces(MediaType.APPLICATION_JSON)
-    public Response getBollette() {
-        try {
-            // Recuperiamo il valore del cookie dalla classe SessionControl
-            String sessionCookie = sessionController.getSessionValue();
-
-            System.out.println("Session ID: " + sessionCookie);
-
-            // Se il valore è null o vuoto, restituiamo un errore
-            if (sessionCookie == null || sessionCookie.isEmpty()) {
-                return Response.status(Response.Status.UNAUTHORIZED)
-                        .entity("{\"error\":\"Missing SESSION_COOKIE porco dio\"}")
-                        .build();
-            }
-
-            // Creazione client HTTP
-            HttpClient client = HttpClient.newHttpClient();
-
-            // URL della vera API (con session ID come header)
-            String targetUrl = "http://energyportfolio.it:8081/files/dati?session_id=" + sessionCookie;
-
-            HttpRequest request = HttpRequest.newBuilder()
-                    .uri(URI.create(targetUrl))
-                    .header("Origin", "https://app.powerbi.com") // Aggiunto per compatibilità Power BI
-                    .header("X-Session-Id", sessionCookie) // Passiamo il valore come HEADER
-                    .GET()
-                    .build();
-
-            // Eseguiamo la richiesta
-            HttpResponse<String> response = client.send(request, HttpResponse.BodyHandlers.ofString());
-
-            // Log per debugging
-            System.out.println("Request to: " + targetUrl);
-            System.out.println("Session ID: " + sessionCookie);
-            System.out.println("Response Code: " + response.statusCode());
-            System.out.println("Response Body: " + response.body());
-
-            // Restituiamo la risposta della vera API
-            return Response.status(response.statusCode())
-                    .entity(response.body())
-                    .build();
-
-        } catch (IOException | InterruptedException e) {
-            return Response.status(Response.Status.INTERNAL_SERVER_ERROR)
-                    .entity("{\"error\":\"Errore nel proxy: " + e.getMessage() + "\"}")
-                    .build();
-        }
+        return sessionRepo.getSessionById(sessionCookie)
+                .map(Sessione::getId)
+                .map(String::valueOf)
+                .orElse(null);
     }
 
     @GET
     @Path("/articoli")
-    @Consumes(MediaType.APPLICATION_JSON)
     @Produces(MediaType.APPLICATION_JSON)
     public Response inviaArticoliAPowerBI(@CookieParam("SESSION_COOKIE") Integer sessionCookie) {
         try {
-            // 🔐 Recupero session ID
+            // Valida la sessione
+            String sessionId = validateSessionCookie(sessionCookie);
 
-            sessionCookie = sessionRepo.getSessionById(sessionCookie)
-                    .map(Sessione::getId)
-                    .orElse(null);
-
-            if (sessionCookie == null) {
+            if (sessionId == null) {
                 return Response.status(Response.Status.UNAUTHORIZED)
                         .entity("{\"error\":\"Missing SESSION_COOKIE\"}")
                         .build();
             }
 
-            String cookie = String.valueOf(sessionCookie);
-            System.out.println("cookie");
-            // 🌐 Chiamata all'API per ottenere i dati
-            HttpClient client = HttpClient.newHttpClient();
-            String targetUrl = "http://energyportfolio.it:8081/costo-articolo?session_id=" + sessionCookie;
+            System.out.println("cookie: " + sessionId);
 
-            HttpRequest request = HttpRequest.newBuilder()
-                    .uri(URI.create(targetUrl))
-                    .header("Origin", "https://app.powerbi.com")
-                    .header("X-Session-Id", cookie)
-                    .GET()
-                    .build();
+            // Determina l'URL corretto in base all'ambiente
+            String baseUrl = IS_DEV_ENV ? BASE_URL_DEV : BASE_URL_PROD;
+            String targetUrl = baseUrl + "/costo-articolo?session_id=" + sessionId;
 
-            HttpResponse<String> response = client.send(request, HttpResponse.BodyHandlers.ofString());
+            // Prepara gli header
+            Map<String, String> headers = new HashMap<>();
+            headers.put("User-Agent", "MiesApp/1.0");
+            headers.put("X-Session-Id", sessionId);
+
+            // Esegui la richiesta
+            HttpResponse<String> response = powerBIService.getExternalData(targetUrl, headers);
 
             if (response.statusCode() != 200) {
                 System.out.println("Response Code: " + response.statusCode());
@@ -175,43 +84,15 @@ public class ProxyResource {
                 return Response.status(response.statusCode())
                         .entity("{\"error\":\"Errore dal server dati\"}")
                         .build();
-
-
             }
 
-            // ✅ Riceviamo i dati come JSON (presumibilmente una lista di articoli)
+            // Riceviamo i dati come JSON
             String rawJson = response.body();
             System.out.println("Dati ricevuti da energyportfolio: " + rawJson);
 
-            // 🎯 Convertilo nel formato richiesto da Power BI
-            String powerBIJson = wrapArticoliForPowerBI(rawJson); // funzione helper che vediamo sotto
-
-            // 🔐 Ottieni token da AzureADService
-            String token = azureADService.getPowerBIAccessToken();
-            System.out.println("Token: " + token);
-
-            // 📤 Invia i dati a Power BI
-            HttpRequest powerBIRequest = HttpRequest.newBuilder()
-                    .uri(URI.create("https://api.powerbi.com/v1.0/myorg/datasets/" + DATASET_ID_CONTROLLO + "/tables/" + TABLE_NAME + "/rows"))
-                    .header("Authorization", "Bearer " + token)
-                    .header("Content-Type", "application/json")
-                    .POST(HttpRequest.BodyPublishers.ofString(powerBIJson))
-                    .build();
-
-            HttpResponse<String> powerBIResponse = client.send(powerBIRequest, HttpResponse.BodyHandlers.ofString());
-
-            if (powerBIResponse.statusCode() == 200) {
-                // (opzionale) 🔄 Avvia il refresh del report
-                refreshDataset(token, DATASET_ID_CONTROLLO); // solo se usi un dataset import/push
-                System.out.println("Status refresh: " + response.statusCode());
-                //System.out.println("Body refresh: " + response.body());
-
-                return Response.ok("{\"status\":\"Dati inviati con successo a Power BI\"}").build();
-            } else {
-                return Response.status(powerBIResponse.statusCode())
-                        .entity("{\"error\":\"Errore durante l'invio a Power BI: " + powerBIResponse.body() + "\"}")
-                        .build();
-            }
+            // Convertilo nel formato richiesto da Power BI e aggiorna la tabella
+            String powerBIJson = powerBIService.wrapArticoliForPowerBI(rawJson);
+            return powerBIService.aggiornaTabella(DATASET_ID_CONTROLLO, ARTICOLI, powerBIJson);
 
         } catch (Exception e) {
             e.printStackTrace();
@@ -221,40 +102,107 @@ public class ProxyResource {
         }
     }
 
-    private String wrapArticoliForPowerBI(String rawJson) throws IOException {
-        ObjectMapper mapper = new ObjectMapper();
+    @GET
+    @Path("/pod")
+    @Produces(MediaType.APPLICATION_JSON)
+    public Response inviaPodAPowerBI(@CookieParam("SESSION_COOKIE") Integer sessionCookie) {
+        try {
+            // Valida la sessione
+            String sessionId = validateSessionCookie(sessionCookie);
 
-        // Presumo che rawJson sia un array di oggetti come:
-        // [{ "categoria": "...", "descrizione": "...", "costo": 123.45 }, ...]
-        JsonNode articoliArray = mapper.readTree(rawJson);
+            if (sessionId == null) {
+                return Response.status(Response.Status.UNAUTHORIZED)
+                        .entity("{\"error\":\"Missing SESSION_COOKIE\"}")
+                        .build();
+            }
 
-        ObjectNode root = mapper.createObjectNode();
-        root.set("rows", articoliArray);
+            System.out.println("cookie: " + sessionId);
 
-        return mapper.writeValueAsString(root);
-    }
+            // Determina l'URL corretto in base all'ambiente
+            String baseUrl = IS_DEV_ENV ? BASE_URL_DEV : (BASE_URL_PROD + API_PORT_PROD);
+            String targetUrl = baseUrl + "/pod/dati?session_id=" + sessionId;
 
-    public void refreshDataset(String accessToken, String datasetId) throws IOException, InterruptedException {
-        String url = "https://api.powerbi.com/v1.0/myorg/datasets/" + datasetId + "/refreshes";
+            // Prepara gli header
+            Map<String, String> headers = new HashMap<>();
+            headers.put("User-Agent", "MiesApp/1.0");
+            headers.put("X-Session-Id", sessionId);
 
-        HttpClient client = HttpClient.newHttpClient(); // Definizione del client HTTP
+            // Esegui la richiesta
+            HttpResponse<String> response = powerBIService.getExternalData(targetUrl, headers);
 
-        // Creazione della richiesta HTTP
-        HttpRequest request = HttpRequest.newBuilder()
-                .uri(URI.create(url))
-                .header("Authorization", "Bearer " + accessToken)
-                .POST(HttpRequest.BodyPublishers.noBody()) // corpo vuoto
-                .build();
+            if (response.statusCode() != 200) {
+                System.out.println("Response Code: " + response.statusCode());
+                System.out.println("Response Body: " + response.body());
+                return Response.status(response.statusCode())
+                        .entity("{\"error\":\"Errore dal server dati\"}")
+                        .build();
+            }
 
-        HttpResponse<String> response = client.send(request, HttpResponse.BodyHandlers.ofString());
+            // Riceviamo i dati come JSON
+            String rawJson = response.body();
+            System.out.println("Dati ricevuti da energyportfolio: " + rawJson);
 
-        if (response.statusCode() == 202) {
-            System.out.println("✅ Refresh del dataset avviato correttamente.");
-        } else {
-            System.err.println("❌ Errore nel refresh dataset: " + response.body());
+            // Convertilo nel formato richiesto da Power BI e aggiorna la tabella
+            String powerBIJson = powerBIService.wrapPodForPowerBI(rawJson);
+            return powerBIService.aggiornaTabella(DATASET_ID_CONTROLLO, POD, powerBIJson);
+
+        } catch (Exception e) {
+            e.printStackTrace();
+            return Response.status(Response.Status.INTERNAL_SERVER_ERROR)
+                    .entity("{\"error\":\"Errore generale: " + e.getMessage() + "\"}")
+                    .build();
         }
     }
 
+    @GET
+    @Path("/bollette")
+    @Produces(MediaType.APPLICATION_JSON)
+    public Response inviaBolletteAPowerBI(@CookieParam("SESSION_COOKIE") Integer sessionCookie) {
+        try {
+            // Valida la sessione
+            String sessionId = validateSessionCookie(sessionCookie);
 
+            if (sessionId == null) {
+                return Response.status(Response.Status.UNAUTHORIZED)
+                        .entity("{\"error\":\"Missing SESSION_COOKIE\"}")
+                        .build();
+            }
+
+            System.out.println("cookie: " + sessionId);
+
+            // Determina l'URL corretto in base all'ambiente
+            String baseUrl = IS_DEV_ENV ? BASE_URL_DEV : (BASE_URL_PROD + API_PORT_PROD);
+            String targetUrl = baseUrl + "/files/dati?session_id=" + sessionId;
+
+            // Prepara gli header
+            Map<String, String> headers = new HashMap<>();
+            headers.put("User-Agent", "MiesApp/1.0");
+            headers.put("X-Session-Id", sessionId);
+
+            // Esegui la richiesta
+            HttpResponse<String> response = powerBIService.getExternalData(targetUrl, headers);
+
+            if (response.statusCode() != 200) {
+                System.out.println("Response Code: " + response.statusCode());
+                System.out.println("Response Body: " + response.body());
+                return Response.status(response.statusCode())
+                        .entity("{\"error\":\"Errore dal server dati\"}")
+                        .build();
+            }
+
+            // Riceviamo i dati come JSON
+            String rawJson = response.body();
+            System.out.println("Dati ricevuti da energyportfolio: " + rawJson);
+
+            // Convertilo nel formato richiesto da Power BI e aggiorna la tabella
+            String powerBIJson = powerBIService.wrapBolletteForPowerBI(rawJson);
+            return powerBIService.aggiornaTabella(DATASET_ID_CONTROLLO, BOLLETTE, powerBIJson);
+
+        } catch (Exception e) {
+            e.printStackTrace();
+            return Response.status(Response.Status.INTERNAL_SERVER_ERROR)
+                    .entity("{\"error\":\"Errore generale: " + e.getMessage() + "\"}")
+                    .build();
+        }
+    }
 }
-

@@ -32,8 +32,8 @@ public class SessionController {
         Optional<Sessione> sessione = sessionRepo.getSessionById(sessionCookie);
         sessione.ifPresent(s -> setUserId(s.getUtente().getId()));
 
-        System.out.println("Session ID: " + this.sessionValue);
-        System.out.println("User ID associato: " + this.userId);
+/*        System.out.println("Session ID: " + this.sessionValue);
+        System.out.println("User ID associato: " + this.userId);*/
     }
 
     public String getSessionValue() {

@@ -21,6 +21,7 @@ public class PBIApiResource {
     public Response getPBIAccessToken() {
         try {
             String accessToken = azureADService.getPowerBIAccessToken();
+            System.out.println("Access Token: " + accessToken);
             return Response.ok(Map.of("token", accessToken)).build();
         } catch (Exception e) {
             e.printStackTrace();
