@@ -4,6 +4,7 @@ import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
 import miesgroup.mies.webdev.Repository.FuturesRepo;
 
+import java.time.LocalDate;
 import java.util.*;
 import java.util.stream.Collectors;
 
@@ -74,4 +75,43 @@ public class FuturesService {
             default -> "";
         };
     }
+
+    public List<Map<String, Object>> getAllFuturesByDate(String date) {
+        List<Map<String, Object>> combined = new ArrayList<>();
+
+        List<Map<String, Object>> monthly = getFuturesMonth(date).stream()
+                .map(f -> {
+                    f.put("future_type", "Monthly");
+                    f.put("date", date);
+                    return f;
+                }).toList();
+
+        List<Map<String, Object>> quarterly = getFuturesQuarter(date).stream()
+                .map(f -> {
+                    f.put("future_type", "Quarterly");
+                    f.put("date", date);
+                    return f;
+                }).toList();
+
+        List<Map<String, Object>> yearly = getFuturesYear(date).stream()
+                .map(f -> {
+                    f.put("future_type", "Yearly");
+                    f.put("date", date);
+                    return f;
+                }).toList();
+
+        combined.addAll(monthly);
+        combined.addAll(quarterly);
+        combined.addAll(yearly);
+
+        return combined;
+    }
+    public List<Map<String, Object>> getAllFuturesBetweenDates(LocalDate start, LocalDate end) {
+        List<Map<String, Object>> all = new ArrayList<>();
+        for (LocalDate d = start; !d.isAfter(end); d = d.plusDays(1)) {
+            all.addAll(getAllFuturesByDate(d.toString()));
+        }
+        return all;
+    }
+
 }

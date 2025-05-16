@@ -1,23 +1,16 @@
 package miesgroup.mies.webdev.Rest;
 
-import io.quarkus.mailer.Mail;
 import io.quarkus.mailer.Mailer;
 import jakarta.inject.Inject;
-import jakarta.json.JsonNumber;
-import jakarta.json.JsonObject;
 import jakarta.ws.rs.*;
 import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
-import miesgroup.mies.webdev.Model.AlertData;
-import miesgroup.mies.webdev.Model.AlertResponse;
 import miesgroup.mies.webdev.Model.Cliente;
 import miesgroup.mies.webdev.Model.CostoEnergia;
 import miesgroup.mies.webdev.Service.ClienteService;
 import miesgroup.mies.webdev.Service.CostoEnergiaService;
-import miesgroup.mies.webdev.Service.EmailScheduler;
 import miesgroup.mies.webdev.Service.SessionService;
 
-import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
@@ -30,9 +23,6 @@ public class ClienteResource {
 
     @Inject
     Mailer mailer;
-
-    @Inject
-    EmailScheduler emailScheduler;
 
     public ClienteResource(ClienteService clienteService, SessionService sessionService, CostoEnergiaService costoEnergiaService) {
         this.clienteService = clienteService;

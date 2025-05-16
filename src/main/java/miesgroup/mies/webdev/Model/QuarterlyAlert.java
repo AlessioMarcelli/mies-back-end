@@ -8,26 +8,23 @@ import jakarta.persistence.*;
 public class QuarterlyAlert extends PanacheEntityBase {
 
     @Id
-    @Column(name = "Id_Utente", insertable = false, updatable = false)
-    private Integer idUtente;
+    @Column(name = "Id_Utente")
+    private Integer idUtente; // usato come PK
 
     private Double maxPriceValue;
     private Double minPriceValue;
-
-    private String frequencyA;
     private Boolean checkModality;
 
     @ManyToOne
-    @JoinColumn(name = "Id_Utente")
+    @JoinColumn(name = "Id_Utente", insertable = false, updatable = false)
     private Cliente utente;
 
     public QuarterlyAlert() {}
 
-    public QuarterlyAlert(Double maxPriceValue, Double minPriceValue, Integer idUtente, String frequencyA, Boolean checkModality) {
+    public QuarterlyAlert(Double maxPriceValue, Double minPriceValue, Integer idUtente, Boolean checkModality) {
         this.maxPriceValue = maxPriceValue;
         this.minPriceValue = minPriceValue;
         this.idUtente = idUtente;
-        this.frequencyA = frequencyA;
         this.checkModality = checkModality;
     }
 
@@ -55,14 +52,6 @@ public class QuarterlyAlert extends PanacheEntityBase {
 
     public void setIdUtente(Integer idUtente){
         this.idUtente = idUtente;
-    }
-
-    public String getFrequencyA(){
-        return frequencyA;
-    }
-
-    public void setFrequencyA(String frequencyA){
-        this.frequencyA = frequencyA;
     }
 
     public Boolean getCheckModality(){

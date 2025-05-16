@@ -8,30 +8,36 @@ import jakarta.persistence.*;
 public class GeneralAlert extends PanacheEntityBase {
 
     @Id
-    @Column(name = "Id_Utente", insertable = false, updatable = false)
-    private Integer idUtente;
+    @Column(name = "Id_Utente")
+    private Integer idUtente; // usato come PK
 
     private Double maxPriceValue;
     private Double minPriceValue;
-
-    private String frequencyA;
     private Boolean checkModality;
 
     @ManyToOne
-    @JoinColumn(name = "Id_Utente")
+    @JoinColumn(name = "Id_Utente", insertable = false, updatable = false)
     private Cliente utente;
 
     public GeneralAlert() {}
 
-    public GeneralAlert(Double maxPriceValue, Double minPriceValue, Integer idUtente, String frequencyA, Boolean checkModality) {
+    public GeneralAlert(Double maxPriceValue, Double minPriceValue, Integer idUtente, Boolean checkModality) {
         this.maxPriceValue = maxPriceValue;
         this.minPriceValue = minPriceValue;
         this.idUtente = idUtente;
-        this.frequencyA = frequencyA;
         this.checkModality = checkModality;
     }
 
     // Getter e Setter
+
+
+    public Integer getIdUtente() {
+        return idUtente;
+    }
+
+    public void setIdUtente(Integer idUtente) {
+        this.idUtente = idUtente;
+    }
 
     public Double getMaxPriceValue(){
         return maxPriceValue;
@@ -47,14 +53,6 @@ public class GeneralAlert extends PanacheEntityBase {
 
     public void setMinPriceValue(Double minPriceValue){
         this.minPriceValue = minPriceValue;
-    }
-
-    public String getFrequencyA(){
-        return frequencyA;
-    }
-
-    public void setFrequencyA(String frequencyA){
-        this.frequencyA = frequencyA;
     }
 
     public Boolean getCheckModality(){

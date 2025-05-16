@@ -1,6 +1,7 @@
 package miesgroup.mies.webdev.Repository;
 
 import jakarta.enterprise.context.ApplicationScoped;
+import miesgroup.mies.webdev.Model.MonthlyAlert;
 import miesgroup.mies.webdev.Model.QuarterlyAlert;
 import miesgroup.mies.webdev.Model.Cliente;
 import io.quarkus.hibernate.orm.panache.PanacheRepositoryBase;
@@ -22,15 +23,21 @@ public class QuarterlyAlertRepo implements PanacheRepositoryBase<QuarterlyAlert,
         return find("utente.id", userId).firstResultOptional();
     }
 
-    public boolean saveOrUpdate(Cliente cliente, double max, double min, String frequency, boolean check) {
-        Optional<QuarterlyAlert> existing = findByUserId(cliente.getId());
+    public boolean saveOrUpdate(Cliente cliente, double max, double min, boolean check) {
+        Optional<QuarterlyAlert> existing = find("idUtente", cliente.getId()).firstResultOptional();
+
         QuarterlyAlert alert = existing.orElseGet(QuarterlyAlert::new);
+
+        alert.setIdUtente(cliente.getId());
         alert.setUtente(cliente);
         alert.setMaxPriceValue(max);
         alert.setMinPriceValue(min);
-        alert.setFrequencyA(frequency);
         alert.setCheckModality(check);
-        alert.persist();
+
+        if (existing.isEmpty()) {
+            persist(alert); // solo se nuovo
+        }
+
         return true;
     }
 }
