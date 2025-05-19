@@ -22,15 +22,22 @@ public class GeneralAlertRepo implements PanacheRepositoryBase<GeneralAlert, Lon
         return find("utente.id", userId).firstResultOptional();
     }
 
-    public boolean saveOrUpdate(Cliente cliente, double max, double min, String frequency, boolean check) {
-        Optional<GeneralAlert> existing = findByUserId(cliente.getId());
+    public boolean saveOrUpdate(Cliente cliente, double max, double min, boolean check) {
+        Optional<GeneralAlert> existing = find("idUtente", cliente.getId()).firstResultOptional();
+
         GeneralAlert alert = existing.orElseGet(GeneralAlert::new);
+
+        alert.setIdUtente(cliente.getId());
         alert.setUtente(cliente);
         alert.setMaxPriceValue(max);
         alert.setMinPriceValue(min);
-        alert.setFrequencyA(frequency);
         alert.setCheckModality(check);
-        alert.persist();
+
+        if (existing.isEmpty()) {
+            persist(alert); // solo se nuovo
+        }
+
         return true;
     }
+
 }
