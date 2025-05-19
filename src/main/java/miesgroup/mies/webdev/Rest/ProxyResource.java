@@ -15,10 +15,11 @@ import java.util.Map;
 @Consumes(MediaType.APPLICATION_JSON)
 public class ProxyResource {
     // Costanti per i dataset e le tabelle
-    private static final String DATASET_ID_CONTROLLO = "0872c391-5ed8-4fde-b65f-6cce3d0e5870";
+    private static final String DATASET_ID_CONTROLLO = "5ee09b8c-9750-4fee-9050-eb4f59de94f5";
     private static final String ARTICOLI = "dettaglio_articolo";
     private static final String BOLLETTE = "bolletta_pod";
     private static final String POD = "pod_info";
+    private static final String CALENDARIO = "calendario";
 
     // URL di base per le API
     private static final String BASE_URL_PROD = "https://energyportfolio.it";

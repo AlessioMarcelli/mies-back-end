@@ -1,10 +1,29 @@
 package miesgroup.mies.webdev.Service;
 
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.node.ObjectNode;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
+
+// Scegliamo solo le importazioni di RESTEasy Classic
+import jakarta.ws.rs.client.Client;
+import jakarta.ws.rs.client.ClientBuilder;
+import jakarta.ws.rs.client.Entity;
+import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
 
+// JSON-P per la manipolazione di JSON
+import jakarta.json.Json;
+import jakarta.json.JsonObject;
+import jakarta.json.JsonReader;
+
+// Logging
+import org.jboss.logging.Logger;
+
+// Utility
 import java.io.IOException;
+import java.io.StringReader;
 import java.net.URI;
 import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
@@ -13,9 +32,10 @@ import java.time.Duration;
 import java.util.HashMap;
 import java.util.Map;
 
-import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.databind.node.ObjectNode;
+// Config
+import org.eclipse.microprofile.config.inject.ConfigProperty;
+
+
 
 @ApplicationScoped
 public class PowerBIService {
@@ -189,5 +209,112 @@ public class PowerBIService {
         root.set("rows", bolletteArray);
 
         return mapper.writeValueAsString(root);
+    }
+
+
+    private static final Logger LOG = Logger.getLogger(PowerBIService.class);
+
+    @ConfigProperty(name = "powerbi.workspace.id", defaultValue = "d62409c0-b987-4280-b892-67d8a24f9755")
+    String workspaceId;
+
+    @ConfigProperty(name = "powerbi.api.base.url", defaultValue = "https://api.powerbi.com/v1.0/myorg")
+    String powerBIApiBaseUrl;
+
+    /**
+     * Ottiene le informazioni di embed (URL e token) per un report Power BI
+     * @param reportId ID del report
+     * @param accessToken Token di accesso Azure AD
+     * @return Mappa con token di embed e URL di embed
+     */
+    public Map<String, Object> getEmbedInfo(String reportId, String accessToken) throws Exception {
+        Map<String, Object> result = new HashMap<>();
+
+        try {
+            // 1. Ottieni l'URL di embed direttamente dal report nel workspace
+            String embedUrl = getReportEmbedUrlFromWorkspace(reportId, accessToken);
+            result.put("embedUrl", embedUrl);
+
+            // 2. Genera un token di embed per il report
+            String embedToken = generateEmbedToken(reportId, accessToken);
+            result.put("token", embedToken);
+
+            return result;
+        } catch (Exception e) {
+            LOG.error("Error getting embed info", e);
+            throw e;
+        }
+    }
+
+    /**
+     * Ottiene l'URL di embed dal report all'interno del workspace
+     */
+    private String getReportEmbedUrlFromWorkspace(String reportId, String accessToken) throws Exception {
+        Client client = ClientBuilder.newClient();
+        // Usa l'endpoint specifico che include il groupId (workspaceId)
+        String endpoint = powerBIApiBaseUrl + "/groups/" + workspaceId + "/reports/" + reportId;
+
+        LOG.info("Calling Power BI API: " + endpoint);
+
+        Response response = client.target(endpoint)
+                .request(MediaType.APPLICATION_JSON)
+                .header("Authorization", "Bearer " + accessToken)
+                .get();
+
+        if (response.getStatus() != 200) {
+            String errorResponse = response.readEntity(String.class);
+            LOG.error("Failed to get report info. Status: " + response.getStatus() +
+                    ", Response: " + errorResponse);
+            throw new Exception("Failed to get report info. Status: " + response.getStatus() +
+                    ", Response: " + errorResponse);
+        }
+
+        String jsonString = response.readEntity(String.class);
+        LOG.info("Report info response received");
+
+        try (JsonReader jsonReader = Json.createReader(new StringReader(jsonString))) {
+            JsonObject jsonObject = jsonReader.readObject();
+            String embedUrl = jsonObject.getString("embedUrl");
+            LOG.info("Embed URL obtained: " + embedUrl.substring(0, Math.min(embedUrl.length(), 50)) + "...");
+            return embedUrl;
+        }
+    }
+
+    /**
+     * Genera un token di embed per un report
+     */
+    private String generateEmbedToken(String reportId, String accessToken) throws Exception {
+        Client client = ClientBuilder.newClient();
+        // Usa l'endpoint specifico che include il groupId (workspaceId)
+        String endpoint = powerBIApiBaseUrl + "/groups/" + workspaceId + "/reports/" + reportId + "/GenerateToken";
+
+        LOG.info("Generating embed token: " + endpoint);
+
+        // Payload per generare un token di sola visualizzazione
+        JsonObject payload = Json.createObjectBuilder()
+                .add("accessLevel", "View")
+                .build();
+
+        Response response = client.target(endpoint)
+                .request(MediaType.APPLICATION_JSON)
+                .header("Authorization", "Bearer " + accessToken)
+                .post(Entity.entity(payload.toString(), MediaType.APPLICATION_JSON));
+
+        if (response.getStatus() != 200) {
+            String errorResponse = response.readEntity(String.class);
+            LOG.error("Failed to generate embed token. Status: " + response.getStatus() +
+                    ", Response: " + errorResponse);
+            throw new Exception("Failed to generate embed token. Status: " + response.getStatus() +
+                    ", Response: " + errorResponse);
+        }
+
+        String jsonString = response.readEntity(String.class);
+        LOG.info("Generate token response received");
+
+        try (JsonReader jsonReader = Json.createReader(new StringReader(jsonString))) {
+            JsonObject jsonObject = jsonReader.readObject();
+            String token = jsonObject.getString("token");
+            LOG.info("Token generated successfully");
+            return token;
+        }
     }
 }

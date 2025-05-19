@@ -36,7 +36,7 @@
     </dependencyManagement>
 
     <dependencies>
-        <!-- Quarkus dependencies -->
+        <!-- RESTEasy Classic (no Reactive) -->
         <dependency>
             <groupId>io.quarkus</groupId>
             <artifactId>quarkus-resteasy</artifactId>
@@ -47,19 +47,35 @@
         </dependency>
         <dependency>
             <groupId>io.quarkus</groupId>
+            <artifactId>quarkus-resteasy-jsonb</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>io.quarkus</groupId>
+            <artifactId>quarkus-resteasy-jackson</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>io.quarkus</groupId>
+            <artifactId>quarkus-resteasy-client</artifactId>
+        </dependency>
+
+        <!-- Database -->
+        <dependency>
+            <groupId>io.quarkus</groupId>
             <artifactId>quarkus-agroal</artifactId>
         </dependency>
         <dependency>
             <groupId>io.quarkus</groupId>
             <artifactId>quarkus-jdbc-mysql</artifactId>
         </dependency>
-        <!-- Dependency for get data from eex website -->
+
+        <!-- HTML Parsing -->
         <dependency>
             <groupId>org.jsoup</groupId>
             <artifactId>jsoup</artifactId>
             <version>1.16.1</version>
         </dependency>
-        <!-- Dependency for automatise the clock code  -->
+
+        <!-- Scheduling -->
         <dependency>
             <groupId>io.quarkus</groupId>
             <artifactId>quarkus-scheduler</artifactId>
@@ -69,11 +85,14 @@
             <artifactId>quartz</artifactId>
             <version>2.3.2</version>
         </dependency>
-        <!--  -->
+
+        <!-- Core -->
         <dependency>
             <groupId>io.quarkus</groupId>
             <artifactId>quarkus-arc</artifactId>
         </dependency>
+
+        <!-- Testing -->
         <dependency>
             <groupId>io.quarkus</groupId>
             <artifactId>quarkus-junit5</artifactId>
@@ -85,6 +104,7 @@
             <scope>test</scope>
         </dependency>
 
+        <!-- Office Document Processing -->
         <dependency>
             <groupId>org.apache.poi</groupId>
             <artifactId>poi-ooxml</artifactId>
@@ -101,21 +121,17 @@
             <artifactId>quarkus-hibernate-orm-panache</artifactId>
         </dependency>
 
-        <!-- Azure Identity -->
+        <!-- Azure -->
         <dependency>
             <groupId>com.azure</groupId>
             <artifactId>azure-identity</artifactId>
             <version>1.12.2</version>
         </dependency>
-
-        <!-- Azure Core (obbligatoria per azure-identity) -->
         <dependency>
             <groupId>com.azure</groupId>
             <artifactId>azure-core</artifactId>
             <version>1.47.0</version>
         </dependency>
-
-        <!-- Netty HTTP Client (necessario per le richieste HTTP) -->
         <dependency>
             <groupId>com.azure</groupId>
             <artifactId>azure-core-http-netty</artifactId>
@@ -128,14 +144,14 @@
             <artifactId>quarkus-mailer</artifactId>
         </dependency>
 
-        <!-- PDFBox for PDF manipulation -->
+        <!-- PDF Manipulation -->
         <dependency>
             <groupId>org.apache.pdfbox</groupId>
             <artifactId>pdfbox</artifactId>
             <version>${pdfbox.version}</version>
         </dependency>
 
-        <!-- XML Parsing -->
+        <!-- XML Processing -->
         <dependency>
             <groupId>org.glassfish.jaxb</groupId>
             <artifactId>jaxb-runtime</artifactId>
@@ -149,28 +165,24 @@
             <version>${commons-lang.version}</version>
         </dependency>
 
-        <!-- SmallRye Config .env-->
+        <!-- Config -->
         <dependency>
             <groupId>io.smallrye.config</groupId>
             <artifactId>smallrye-config-source-file-system</artifactId>
             <version>3.12.2</version>
         </dependency>
 
+        <!-- JSON-P for JSON processing -->
         <dependency>
             <groupId>io.quarkus</groupId>
-            <artifactId>quarkus-resteasy-jsonb</artifactId>
+            <artifactId>quarkus-jsonp</artifactId>
         </dependency>
 
-        <dependency>
-            <groupId>io.quarkus</groupId>
-            <artifactId>quarkus-resteasy-jackson</artifactId>
-        </dependency>
-
+        <!-- JSON Processing with Jackson -->
         <dependency>
             <groupId>com.fasterxml.jackson.core</groupId>
             <artifactId>jackson-databind</artifactId>
         </dependency>
-
     </dependencies>
 
 
@@ -192,15 +204,14 @@
                 </executions>
             </plugin>
 
-            <!-- ✅ Plugin compilatore con -parameters -->
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-compiler-plugin</artifactId>
                 <version>${compiler-plugin.version}</version>
                 <configuration>
-                    <source>21</source> <!-- Modifica se usi un'altra versione -->
+                    <source>21</source>
                     <target>21</target>
-                    <parameters>true</parameters> <!-- ✅ Obbligatorio per abilitare i nomi dei parametri -->
+                    <parameters>true</parameters>
                 </configuration>
             </plugin>
 
