@@ -29,9 +29,9 @@ public class BollettaPodResponse {
     private Double verificaPicco, verificaFuoriPicco, totAttivaPerdite;
     private Double quotaVariabileTrasporti, quotaFissaTrasporti, quotaPotenzaTrasporti;
     private Double quotaEnergiaOneri, quotaFissaOneri, quotaPotenzaOneri;
+    private String meseAnno;
 
     // Costruttori, getter e setter generati automaticamente oppure con Lombok
-
 
 
     public BollettaPodResponse(BollettaPod b) {
@@ -101,8 +101,17 @@ public class BollettaPodResponse {
         this.quotaEnergiaOneri = b.getQuotaEnergiaOneri();
         this.quotaFissaOneri = b.getQuotaFissaOneri();
         this.quotaPotenzaOneri = b.getQuotaPotenzaOneri();
+        this.meseAnno = b.getMeseAnno();
     }
 
+
+    public String getMeseAnno() {
+        return meseAnno;
+    }
+
+    public void setMeseAnno(String meseAnno) {
+        this.meseAnno = meseAnno;
+    }
 
     public Integer getId() {
         return id;

@@ -21,9 +21,6 @@ public class ClienteResource {
     private final SessionService sessionService;
     private final CostoEnergiaService costoEnergiaService;
 
-    @Inject
-    Mailer mailer;
-
     public ClienteResource(ClienteService clienteService, SessionService sessionService, CostoEnergiaService costoEnergiaService) {
         this.clienteService = clienteService;
         this.sessionService = sessionService;

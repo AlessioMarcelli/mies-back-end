@@ -55,7 +55,7 @@ public class PowerBIService {
     public boolean eliminazioneRighe(String datasetId, String tableName) throws Exception {
         String token = azureADService.getPowerBIAccessToken();
         HttpClient client = HttpClient.newBuilder()
-                .connectTimeout(Duration.ofSeconds(10))
+                .connectTimeout(Duration.ofSeconds(100))
                 .build();
 
         String deleteRowsUrl = BASE_URL + datasetId + "/tables/" + tableName + "/rows";
@@ -63,7 +63,7 @@ public class PowerBIService {
         HttpRequest deleteRequest = HttpRequest.newBuilder()
                 .uri(URI.create(deleteRowsUrl))
                 .header("Authorization", "Bearer " + token)
-                .timeout(Duration.ofSeconds(30))
+                .timeout(Duration.ofSeconds(300))
                 .DELETE()
                 .build();
 
@@ -86,7 +86,7 @@ public class PowerBIService {
         try {
             String token = azureADService.getPowerBIAccessToken();
             HttpClient client = HttpClient.newBuilder()
-                    .connectTimeout(Duration.ofSeconds(10))
+                    .connectTimeout(Duration.ofSeconds(100))
                     .build();
 
             String powerBIUrl = BASE_URL + datasetId + "/tables/" + tableName + "/rows";
@@ -95,7 +95,7 @@ public class PowerBIService {
                     .uri(URI.create(powerBIUrl))
                     .header("Authorization", "Bearer " + token)
                     .header("Content-Type", "application/json")
-                    .timeout(Duration.ofSeconds(30))
+                    .timeout(Duration.ofSeconds(300))
                     .POST(HttpRequest.BodyPublishers.ofString(jsonData))
                     .build();
 

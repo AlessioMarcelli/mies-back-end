@@ -135,7 +135,8 @@ public class FileRepo implements PanacheRepositoryBase<PDFFile, Integer> {
             bolletta.setAnno(periodo.getAnno());
             bolletta.setPeriodoInizio(new java.sql.Date(periodo.getInizio().getTime()));
             bolletta.setPeriodoFine(new java.sql.Date(periodo.getFine().getTime()));
-
+            bolletta.setMeseAnno(capitalizeFirstThree(mese) + " " + periodo.getAnno());
+            System.out.println("meseAnno: " + bolletta.getMeseAnno());
             // Consumi elettrici (letture)
             bolletta.setF1A(f1Attiva != null ? f1Attiva : 0.0);
             bolletta.setF2A(f2Attiva != null ? f2Attiva : 0.0);
@@ -186,6 +187,12 @@ public class FileRepo implements PanacheRepositoryBase<PDFFile, Integer> {
             // Persist dell'entità
             bollettaRepo.persist(bolletta);
         }
+    }
+
+    private String capitalizeFirstThree(String mese) {
+        if (mese == null || mese.length() < 3) return mese;
+        String firstThree = mese.substring(0, 3).toLowerCase();
+        return firstThree.substring(0, 1).toUpperCase() + firstThree.substring(1);
     }
 
     private Double getCategoriaConsumo(Map<String, Map<String, Integer>> categorie, String categoria, String fascia) {

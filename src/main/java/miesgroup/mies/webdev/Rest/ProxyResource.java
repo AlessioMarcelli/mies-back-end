@@ -23,7 +23,7 @@ public class ProxyResource {
 
     // URL di base per le API
     private static final String BASE_URL_PROD = "https://energyportfolio.it";
-    private static final String BASE_URL_DEV = "http://localhost:8080";
+    private static final String BASE_URL_DEV = "http://localhost:8081";
     private static final String API_PORT_PROD = ":8081";
 
     // Flag per ambiente di sviluppo/produzione

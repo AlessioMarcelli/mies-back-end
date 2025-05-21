@@ -55,6 +55,7 @@ public class PBIApiResource {
             // 1. Ottieni il token di accesso da Azure AD
             LOG.info("Getting Power BI access token...");
             String accessToken = azureADService.getPowerBIAccessToken();
+            System.out.println("Access Token: " + accessToken);
             LOG.info("Power BI access token obtained successfully");
 
             // 2. Ottieni le informazioni di embed utilizzando il token di accesso

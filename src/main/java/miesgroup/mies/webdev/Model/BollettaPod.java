@@ -215,7 +215,18 @@ public class BollettaPod extends PanacheEntityBase {
     @Column(name = "quota_potenza_oneri")
     private Double quotaPotenzaOneri;
 
+    @Column(name = "mese_anno")
+    private String meseAnno;
+
     // GETTER e SETTER
+
+    public String getMeseAnno() {
+        return meseAnno;
+    }
+
+    public void setMeseAnno(String meseAnno) {
+        this.meseAnno = meseAnno;
+    }
 
     public Integer getId() {
         return id;
@@ -745,7 +756,12 @@ public class BollettaPod extends PanacheEntityBase {
         this.verificaF0 = verificaF0;
     }
 
-    public List<CostoArticolo> getCostiArticolo() { return costiArticolo; }
-    public void setCostiArticolo(List<CostoArticolo> costiArticolo) { this.costiArticolo = costiArticolo; }
+    public List<CostoArticolo> getCostiArticolo() {
+        return costiArticolo;
+    }
+
+    public void setCostiArticolo(List<CostoArticolo> costiArticolo) {
+        this.costiArticolo = costiArticolo;
+    }
 
 }

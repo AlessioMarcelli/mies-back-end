@@ -241,7 +241,8 @@ public class BollettaRepo implements PanacheRepositoryBase<BollettaPod, Integer>
             bolletta.setMese(mese);
             bolletta.setAnno(periodo.getAnno());
             bolletta.setIdPod(idPod);
-
+            bolletta.setMeseAnno(capitalizeFirstThree(mese) + " " + periodo.getAnno());
+            System.out.println("meseAnno: " + bolletta.getMeseAnno());
             // Impostazione diretta con controllo null
             bolletta.setF1P(ricalcoli.get("f1") != null ? ricalcoli.get("f1") : 0.0);
             bolletta.setF2P(ricalcoli.get("f2") != null ? ricalcoli.get("f2") : 0.0);
@@ -273,6 +274,12 @@ public class BollettaRepo implements PanacheRepositoryBase<BollettaPod, Integer>
 
             persist(bolletta);
         }
+    }
+
+    private String capitalizeFirstThree(String mese) {
+        if (mese == null || mese.length() < 3) return mese;
+        String firstThree = mese.substring(0, 3).toLowerCase();
+        return firstThree.substring(0, 1).toUpperCase() + firstThree.substring(1);
     }
 
     public void updateVerificaMateriaEnergia(Double spesaMateriaEnergia, String nomeBolletta, String mese) {
