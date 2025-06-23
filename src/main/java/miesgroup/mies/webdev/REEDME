@@ -10,3 +10,51 @@ TODO: creare tabella di inserimento per il budget (front-end) e tabella di salva
 TODO: Altro/ verifica altro per fare questo bisogna aspettare che quelli di A2A ci dicano come calcolano il costo
 
 TODO: Rimuovere Data Inserimento per i costi in quanto inutile e trasformare la voce annuale/anno in un boolean
+
+TODO: settare schema su pbi PUSH ATTEXIONE USARE NOMI CLASSI JAVA A ogni inizio chiamata cancellare il contenuto delle colonne e poi aggiudtare refresh.
+
+creare sistema per accedere ai profili di tutti i clienti
+
+colonna totale nel PBI di controllo mancante
+
+aggiungere download ricalcolo dei singoli articoli MA PRIMA RICONTROLLARE LE FORMULE(PRENDE GLI STESSI DATI PIù VOLTE)
+
+aggiungere colonna IDBolletta al pdf della bolletta stessa per dar possibilità di eliminazione congiunta
+
+gestione costi corrente aggiornamento:
+
+prezzo(
+1: varia da fornitore a fornitore
+2: può variare per pod
+
+per singolo pod si posso avere prezzi differenti a livello mensile e in suddivisioni differenti come (F1,F2,F3, picco o fuori picco)
+gestione di queste possibilità tramite flag (va anche rigestito il vario codice che gestiva i costi nella pagina di inserimento bollette)
+si può avere anche un prezzo variabile(PUN(GME) + Spread(Contrattuale)) definito da contratto
+
+per consumi orari abbiamo tre strade
+- Accesso al portale concessa dal cliente
+
+- Inserimento excel da parte del cliente( Primario chiedere excel a paolo)
+
+- Un miscuglio
+)
+
+ANALiSI:
+
+1) BUDGET:
+
+CHANCE DI DOWNLOAD
+
+-Costi(conosciuti)-> deve poter essere modificata, prendere sempre di default l'anno precedente per poi farlo modificare in percentuale
+-KWh(conosciuti)-> deve poter essere modificata, prendere sempre di default l'anno precedente per poi farlo modificare in percentuale
+-Oneri(conosciuti) -> prendere sempre di default l'anno precedente per poi farlo modificare in percentuale
+- Consumi (conosciuti) -> default consumi dell'anno precedente
+
+vanno modificati in percentuale tramite input
+
+
+
+2) FUTURES: Dire a stefano di aggiornare i dati in automatico dei futures
+
+
+TUTTO VA SEMPRE SALVATO DA DB
